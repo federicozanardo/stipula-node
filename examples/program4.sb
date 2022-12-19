@@ -1,0 +1,17 @@
+/*
+  * int a = 6;
+  * int b = 4;
+  * int c = a + b;
+  */
+PUSH int 6
+INST int a
+STORE a
+PUSH int 4
+INST int b
+STORE b
+LOAD a
+LOAD b
+ADD
+INST int c
+STORE c
+HALT

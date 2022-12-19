@@ -1,0 +1,6 @@
+PUSH int 1
+PUSH int 2
+PUSH int 3
+ADD
+ADD
+HALT

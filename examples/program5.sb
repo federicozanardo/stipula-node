@@ -1,0 +1,24 @@
+/*
+  * int a = 6;
+  * int b = 4;
+  * int c = a + b; // avoid
+  * int c = a + b + 1;
+  */
+PUSH int 6
+INST int a
+STORE a
+PUSH int 4
+INST int b
+STORE b
+LOAD a
+LOAD b
+ADD
+JMP sum
+INST int c
+STORE c
+sum:
+PUSH int 1
+ADD
+INST int c
+STORE c
+HALT

@@ -1,0 +1,8 @@
+PUSH int 1
+PUSH int 2
+PUSH int 3
+MUL
+ADD
+PUSH int 7
+DIV
+HALT
