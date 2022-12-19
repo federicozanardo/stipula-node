@@ -1,3 +1,8 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Scanner;
+
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
@@ -14,17 +19,12 @@ import types.IntType;
 import types.StringType;
 import types.Type;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Scanner;
-
 class Main {
     private static boolean running = true;
     private static int i = -1;
-    private static Stack<Type> stack = new Stack<Type>(10);
-    private static HashMap<String, Type> dataSpace = new HashMap<String, Type>();
-    private static Trap trap = new Trap();
+    private static final Stack<Type> stack = new Stack<Type>(10);
+    private static final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
+    private static final Trap trap = new Trap();
     // private static String stuffToStore; // TODO: data to save in a blockchain transaction
     // private static int programCounter; // or instructionPointer
     // private static int stackPointer;
@@ -34,7 +34,7 @@ class Main {
         String path = currentDirectory + "/examples/";
 
         System.out.println("Loading the program...");
-        String bytecode = readProgram(path + "program1.sb");
+        String bytecode = readProgram(path + "program6.sb");
         System.out.println("Program loaded");
 
         System.out.println("Program\n" + bytecode);
@@ -48,104 +48,109 @@ class Main {
         while (running) {
             if (!trap.isStackEmpty()) {
                 haltProgramExecution();
-            } else {
-                try {
-                    i++;
-                    String singleInstruction = singleInstructions[i].trim();
-                    String[] instruction = singleInstruction.split(" ");
+                break;
+            }
 
-                    if (!(instruction.length == 1 && instruction[0].substring(instruction[0].length() - 1).equals(":"))) {
-                        switch (instruction[0]) {
-                            case "PUSH":
-                                if ((instruction.length - 1) < 2) {
-                                    trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                    break;
-                                }
+            try {
+                i++;
+                String singleInstruction = singleInstructions[i].trim();
+                String[] instruction = singleInstruction.split(" ");
 
-                                System.out.println("HAVE YOU BEEN HERE?");
-                                pushOperation(instruction[1], instruction[2]);
+                if (!(instruction.length == 1 && instruction[0].substring(instruction[0].length() - 1).equals(":"))) {
+                    switch (instruction[0]) {
+                        case "PUSH":
+                            if ((instruction.length - 1) < 2) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "ADD":
-                                addOperation();
+                            }
+                            pushOperation(instruction[1], instruction[2]);
+                            break;
+                        case "ADD":
+                            addOperation();
+                            break;
+                        case "SUB":
+                            subOperation();
+                            break;
+                        case "MUL":
+                            mulOperation();
+                            break;
+                        case "DIV":
+                            divOperation();
+                            break;
+                        case "INST":
+                            if ((instruction.length - 1) < 2) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "SUB":
-                                subOperation();
+                            }
+                            instOperation(instruction[1], instruction[2]);
+                            break;
+                        case "LOAD":
+                            if ((instruction.length - 1) < 1) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "MUL":
-                                mulOperation();
+                            }
+                            loadOperation(instruction[1]);
+                            break;
+                        case "STORE":
+                            if ((instruction.length - 1) < 1) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "DIV":
-                                divOperation();
+                            }
+                            storeOperation(instruction[1]);
+                            break;
+                        case "JMP":
+                            if ((instruction.length - 1) < 1) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "INST":
-                                if ((instruction.length - 1) < 2) {
-                                    // TRAP
-                                }
-                                instOperation(instruction[1], instruction[2]);
+                            }
+                            jmpOperation(instruction[1], singleInstructions);
+                            break;
+                        case "JMPIF":
+                            if ((instruction.length - 1) < 1) {
+                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
-                            case "LOAD":
-                                if ((instruction.length - 1) < 1) {
-                                    // TRAP
-                                }
-                                loadOperation(instruction[1]);
+                            }
+
+                            Type resultOfEvaluation = stack.pop();
+
+                            if (!resultOfEvaluation.getType().equals("bool")) {
+                                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
                                 break;
-                            case "STORE":
-                                if ((instruction.length - 1) < 1) {
-                                    // TRAP
-                                }
-                                storeOperation(instruction[1]);
-                                break;
-                            case "JMP":
-                                if ((instruction.length - 1) < 1) {
-                                    // TRAP
-                                }
+                            }
+
+                            BoolType resultOfEvaluationVal = new BoolType((Boolean) resultOfEvaluation.getValue());
+
+                            if (resultOfEvaluationVal.getValue()) {
                                 jmpOperation(instruction[1], singleInstructions);
-                                break;
-                            case "JMPIF":
-                                if ((instruction.length - 1) < 1) {
-                                    // TRAP
-                                }
-
-                                Type resultOfEvaluation = stack.pop();
-
-                                if (!resultOfEvaluation.getType().equals("bool")) {
-                                    trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
-                                } else {
-                                    BoolType resultOfEvaluationVal = new BoolType((Boolean) resultOfEvaluation.getValue());
-
-                                    if (resultOfEvaluationVal.getValue()) {
-                                        jmpOperation(instruction[1], singleInstructions);
-                                    } else {
-                                        stack.push(resultOfEvaluation);
-                                    }
-                                }
-                                break;
-                            case "ISEQ":
-                                iseqOperation();
-                                break;
-                            case "ISGE":
-                                isgeOperation();
-                                break;
-                            case "ISGT":
-                                isgtOperation();
-                                break;
-                            case "ISLE":
-                                isleOperation();
-                                break;
-                            case "ISLT":
-                                isltOperation();
-                                break;
-                            case "HALT":
-                                // Terminate the program
-                                haltProgramExecution();
-                                break;
-                            default:
-                                trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, (i + 1), instruction[0]);
-                        }
+                            } else {
+                                stack.push(resultOfEvaluation);
+                            }
+                            break;
+                        case "ISEQ":
+                            iseqOperation();
+                            break;
+                        case "ISGE":
+                            isgeOperation();
+                            break;
+                        case "ISGT":
+                            isgtOperation();
+                            break;
+                        case "ISLE":
+                            isleOperation();
+                            break;
+                        case "ISLT":
+                            isltOperation();
+                            break;
+                        case "HALT":
+                            // Terminate the program
+                            haltProgramExecution();
+                            break;
+                        default:
+                            trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, (i + 1), instruction[0]);
                     }
-                } catch (StackOverflowException | StackUnderflowException error) {
-                    trap.raiseError(error.getCode(), (i + 1));
                 }
+            } catch (StackOverflowException | StackUnderflowException error) {
+                trap.raiseError(error.getCode(), (i + 1));
             }
         }
 
@@ -155,7 +160,7 @@ class Main {
             System.out.println("\nThe stack is empty");
         } else {
             System.out.println("\nStack");
-            while (stack.isEmpty() == false) {
+            while (!stack.isEmpty()) {
                 try {
                     System.out.println("Value: " + stack.pop().getValue().toString());
                 } catch (StackUnderflowException error) {
