@@ -39,10 +39,10 @@ class Main {
 
         System.out.println("Program\n" + bytecode);
 
-        String[] singleInstructions = bytecode.split("\n");
+        String[] instructions = bytecode.split("\n");
 
-        if (!singleInstructions[singleInstructions.length - 1].equals("HALT")) {
-            trap.raiseError(TrapErrorCodes.MISS_HALT_INSTRUCTION, singleInstructions.length);
+        if (!instructions[instructions.length - 1].equals("HALT")) {
+            trap.raiseError(TrapErrorCodes.MISS_HALT_INSTRUCTION, instructions.length);
         }
 
         while (running) {
@@ -53,7 +53,7 @@ class Main {
 
             try {
                 i++;
-                String singleInstruction = singleInstructions[i].trim();
+                String singleInstruction = instructions[i].trim();
                 String[] instruction = singleInstruction.split(" ");
 
                 if (!(instruction.length == 1 && instruction[0].substring(instruction[0].length() - 1).equals(":"))) {
@@ -63,18 +63,40 @@ class Main {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
+
+                            if ((instruction.length - 1) > 2) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
                             pushOperation(instruction[1], instruction[2]);
                             break;
                         case "ADD":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             addOperation();
                             break;
                         case "SUB":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             subOperation();
                             break;
                         case "MUL":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             mulOperation();
                             break;
                         case "DIV":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             divOperation();
                             break;
                         case "INST":
@@ -82,6 +104,12 @@ class Main {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
+
+                            if ((instruction.length - 1) > 2) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
                             instOperation(instruction[1], instruction[2]);
                             break;
                         case "LOAD":
@@ -89,6 +117,12 @@ class Main {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
+
+                            if ((instruction.length - 1) > 1) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
                             loadOperation(instruction[1]);
                             break;
                         case "STORE":
@@ -96,6 +130,12 @@ class Main {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
+
+                            if ((instruction.length - 1) > 1) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
                             storeOperation(instruction[1]);
                             break;
                         case "JMP":
@@ -103,11 +143,22 @@ class Main {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
-                            jmpOperation(instruction[1], singleInstructions);
+
+                            if ((instruction.length - 1) > 1) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
+                            jmpOperation(instruction[1], instructions);
                             break;
                         case "JMPIF":
                             if ((instruction.length - 1) < 1) {
                                 trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
+                            if ((instruction.length - 1) > 1) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
                                 break;
                             }
 
@@ -121,27 +172,52 @@ class Main {
                             BoolType resultOfEvaluationVal = new BoolType((Boolean) resultOfEvaluation.getValue());
 
                             if (resultOfEvaluationVal.getValue()) {
-                                jmpOperation(instruction[1], singleInstructions);
+                                jmpOperation(instruction[1], instructions);
                             } else {
                                 stack.push(resultOfEvaluation);
                             }
                             break;
                         case "ISEQ":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             iseqOperation();
                             break;
                         case "ISGE":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             isgeOperation();
                             break;
                         case "ISGT":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             isgtOperation();
                             break;
                         case "ISLE":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             isleOperation();
                             break;
                         case "ISLT":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
                             isltOperation();
                             break;
                         case "HALT":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+                                break;
+                            }
+
                             // Terminate the program
                             haltProgramExecution();
                             break;
@@ -177,7 +253,7 @@ class Main {
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + Boolean.toString(running) +
                 "\ni -> " + Integer.toString(i) +
-                "\nlength of the program -> " + Integer.toString(singleInstructions.length));
+                "\nlength of the program -> " + Integer.toString(instructions.length));
 
         if (!trap.isStackEmpty()) {
             System.out.println("\nErrors in the stack");
@@ -237,6 +313,8 @@ class Main {
 
         return bytecode;
     }
+
+    // Instructions
 
     private static void pushOperation(String type, String value) throws StackOverflowException {
         switch (type) {
