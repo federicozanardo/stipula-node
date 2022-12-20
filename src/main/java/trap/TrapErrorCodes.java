@@ -51,6 +51,11 @@ public enum TrapErrorCodes {
       return "STACK_UNDERFLOW";
     }
   },
+  TOO_MANY_ARGUMENTS {
+    public String toString() {
+      return "TOO_MANY_ARGUMENTS";
+    }
+  },
   TYPE_DOES_NOT_EXIST {
     public String toString() {
       return "TYPE_DOES_NOT_EXIST";

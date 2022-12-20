@@ -20,6 +20,7 @@ public class Trap {
       this.put(TrapErrorCodes.QUEUE_UNDERFLOW, "Queue underflow");
       this.put(TrapErrorCodes.STACK_OVERFLOW, "Stack overflow");
       this.put(TrapErrorCodes.STACK_UNDERFLOW, "Stack underflow");
+      this.put(TrapErrorCodes.TOO_MANY_ARGUMENTS, "There are too many arguments for the current instruction");
       this.put(TrapErrorCodes.TYPE_DOES_NOT_EXIST, "This type does not exist");
       this.put(TrapErrorCodes.VARIABLE_ALREADY_EXIST, "This variable already exist in the stack");
       this.put(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, "This variable does not exist in the stack");
