@@ -12,6 +12,7 @@ import instructions.math.Add;
 import instructions.math.Div;
 import instructions.math.Mul;
 import instructions.math.Sub;
+import jdk.jshell.spi.ExecutionControl;
 import trap.Trap;
 import trap.TrapErrorCodes;
 import types.BoolType;
@@ -34,7 +35,7 @@ class Main {
         String path = currentDirectory + "/examples/";
 
         System.out.println("Loading the program...");
-        String bytecode = readProgram(path + "program6.sb");
+        String bytecode = readProgram(path + "program7.sb");
         System.out.println("Program loaded");
 
         System.out.println("Program\n" + bytecode);
@@ -431,14 +432,43 @@ class Main {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") || !second.getType().equals("int")) {
+        if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
             return;
         }
 
-        IntType firstVal = new IntType((Integer) first.getValue());
-        IntType secondVal = new IntType((Integer) second.getValue());
-        stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
+        if (!first.getType().equals("int") && !first.getType().equals("str") && !first.getType().equals("bool") && !first.getType().equals("addr")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
+            return;
+        }
+
+        if (first.getType().equals("int")) {
+            IntType firstVal = new IntType((Integer) first.getValue());
+            IntType secondVal = new IntType((Integer) second.getValue());
+            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
+            return;
+        }
+
+        if (first.getType().equals("bool")) {
+            BoolType firstVal = new BoolType((Boolean) first.getValue());
+            BoolType secondVal = new BoolType((Boolean) second.getValue());
+            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
+            return;
+        }
+
+        if (first.getType().equals("str")) {
+            StringType firstVal = new StringType((String) first.getValue());
+            StringType secondVal = new StringType((String) second.getValue());
+            stack.push(new BoolType(firstVal.getValue().equals(secondVal.getValue())));
+            return;
+        }
+
+        if (first.getType().equals("addr")) {
+//            IntType firstVal = new IntType((Integer) first.getValue());
+//            IntType secondVal = new IntType((Integer) second.getValue());
+//            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
+//            return;
+        }
     }
 
     private static void isgtOperation() throws StackOverflowException, StackUnderflowException {
