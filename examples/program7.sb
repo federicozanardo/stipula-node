@@ -1,0 +1,35 @@
+/*
+  * int a = 6;
+  * int b = 6;
+  * int c;
+  * if (a == b) {       // true
+  *     c = b;          // c = 6
+  * } else {
+  *     c = a + 1;
+  * }
+  * int d = c + 1;      // d = 6 + 1
+  */
+PUSH int 6
+INST int a
+STORE a
+PUSH int 4
+INST int b
+STORE b
+INST int c
+LOAD a
+LOAD b
+ISEQ
+JMPIF if_label
+LOAD a
+STORE c
+JMP end
+if_label:
+LOAD b
+STORE c
+end:
+INST int d
+LOAD c
+PUSH int 1
+ADD
+STORE d 
+HALT
