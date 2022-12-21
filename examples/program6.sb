@@ -2,12 +2,12 @@
   * int a = 6;
   * int b = 4;
   * int c;
-  * if (a > b) {    // true
-  * c = b;          // c = 4
+  * if (a > b) {        // true
+  *     c = b;          // c = 4
   * } else {
-  * c = a;
+  *     c = a;
   * }
-  * int d = c + 1;  // d = 4 + 1
+  * int d = c + 1;      // d = 4 + 1
   */
 PUSH int 6
 INST int a
