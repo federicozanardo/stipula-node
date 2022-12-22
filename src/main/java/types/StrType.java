@@ -1,14 +1,14 @@
 package types;
 
-public class StringType extends Type {
+public class StrType extends Type {
   final private String type = "str";
   private String value;
 
-  public StringType() {
+  public StrType() {
     this.value = "";
   }
 
-  public StringType(String value) {
+  public StrType(String value) {
     this.value = value;
   }
 

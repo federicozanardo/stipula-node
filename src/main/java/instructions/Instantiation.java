@@ -3,7 +3,7 @@ package instructions;
 import exceptions.trap.TrapException;
 import trap.TrapErrorCodes;
 import types.IntType;
-import types.StringType;
+import types.StrType;
 import types.Type;
 
 public class Instantiation extends Instruction {
@@ -22,7 +22,7 @@ public class Instantiation extends Instruction {
         return new IntType();
       case "str":
         // dataSpace.put(variableName, new StringType());
-        return new StringType();
+        return new StrType();
       default:
         throw new TrapException(TrapErrorCodes.TYPE_DOES_NOT_EXIST);
     }

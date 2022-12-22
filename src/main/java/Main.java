@@ -16,7 +16,7 @@ import trap.Trap;
 import trap.TrapErrorCodes;
 import types.BoolType;
 import types.IntType;
-import types.StringType;
+import types.StrType;
 import types.Type;
 
 class Main {
@@ -259,7 +259,7 @@ class Main {
                 stack.push(new BoolType(Boolean.parseBoolean(value)));
                 break;
             case "str":
-                stack.push(new StringType(value));
+                stack.push(new StrType(value));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));
@@ -357,7 +357,7 @@ class Main {
                 dataSpace.put(variableName, new IntType());
                 break;
             case "str":
-                dataSpace.put(variableName, new StringType());
+                dataSpace.put(variableName, new StrType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));
@@ -494,8 +494,8 @@ class Main {
         }
 
         if (first.getType().equals("str")) {
-            StringType firstVal = new StringType((String) first.getValue());
-            StringType secondVal = new StringType((String) second.getValue());
+            StrType firstVal = new StrType((String) first.getValue());
+            StrType secondVal = new StrType((String) second.getValue());
             stack.push(new BoolType(firstVal.getValue().equals(secondVal.getValue())));
             return;
         }
@@ -607,7 +607,7 @@ class Main {
                 argumentsSpace.put(variableName, new IntType());
                 break;
             case "str":
-                argumentsSpace.put(variableName, new StringType());
+                argumentsSpace.put(variableName, new StrType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));
@@ -676,7 +676,7 @@ class Main {
                 globalSpace.put(variableName, new IntType());
                 break;
             case "str":
-                globalSpace.put(variableName, new StringType());
+                globalSpace.put(variableName, new StrType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));

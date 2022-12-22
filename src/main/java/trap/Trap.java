@@ -4,10 +4,10 @@ import java.util.HashMap;
 
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
-import types.StringType;
+import types.StrType;
 
 public class Trap {
-  private Stack<StringType> stack = new Stack<StringType>(100);
+  private Stack<StrType> stack = new Stack<StrType>(100);
   private HashMap<TrapErrorCodes, String> map = new HashMap<TrapErrorCodes, String>() {
     {
       this.put(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, "This error code does not exist");
@@ -44,7 +44,7 @@ public class Trap {
   private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line) {
     try {
       this.stack
-          .push(new StringType(errorCode.toString() + " at line " + Integer.toString(line) + ": " + errorMessage));
+          .push(new StrType(errorCode.toString() + " at line " + Integer.toString(line) + ": " + errorMessage));
     } catch (StackOverflowException error) {
       System.exit(-1);
     }
@@ -52,7 +52,7 @@ public class Trap {
 
   private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, String instruction) {
     try {
-      this.stack.push(new StringType(errorCode.toString() + " at line " + Integer.toString(line) + ": " + errorMessage
+      this.stack.push(new StrType(errorCode.toString() + " at line " + Integer.toString(line) + ": " + errorMessage
           + "\nInstruction: " + instruction));
     } catch (StackOverflowException error) {
       System.exit(-1);
