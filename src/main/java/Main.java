@@ -12,7 +12,6 @@ import instructions.math.Add;
 import instructions.math.Div;
 import instructions.math.Mul;
 import instructions.math.Sub;
-import jdk.jshell.spi.ExecutionControl;
 import trap.Trap;
 import trap.TrapErrorCodes;
 import types.BoolType;
@@ -25,6 +24,8 @@ class Main {
     private static int i = -1;
     private static final Stack<Type> stack = new Stack<Type>(10);
     private static final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
+    private static final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
+    private static final HashMap<String, Type> globalSpace = new HashMap<String, Type>();
     private static final Trap trap = new Trap();
     // private static String stuffToStore; // TODO: data to save in a blockchain transaction
     // private static int programCounter; // or instructionPointer
@@ -60,158 +61,49 @@ class Main {
                 if (!(instruction.length == 1 && instruction[0].substring(instruction[0].length() - 1).equals(":"))) {
                     switch (instruction[0]) {
                         case "PUSH":
-                            if ((instruction.length - 1) < 2) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 2) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            pushOperation(instruction[1], instruction[2]);
+                            pushOperation(instruction);
                             break;
                         case "ADD":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            addOperation();
+                            addOperation(instruction);
                             break;
                         case "SUB":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            subOperation();
+                            subOperation(instruction);
                             break;
                         case "MUL":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            mulOperation();
+                            mulOperation(instruction);
                             break;
                         case "DIV":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            divOperation();
+                            divOperation(instruction);
                             break;
                         case "INST":
-                            if ((instruction.length - 1) < 2) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 2) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            instOperation(instruction[1], instruction[2]);
+                            instOperation(instruction);
                             break;
                         case "LOAD":
-                            if ((instruction.length - 1) < 1) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 1) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            loadOperation(instruction[1]);
+                            loadOperation(instruction);
                             break;
                         case "STORE":
-                            if ((instruction.length - 1) < 1) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 1) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            storeOperation(instruction[1]);
+                            storeOperation(instruction);
                             break;
                         case "JMP":
-                            if ((instruction.length - 1) < 1) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 1) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            jmpOperation(instruction[1], instructions);
+                            jmpOperation(instruction, instructions);
                             break;
                         case "JMPIF":
-                            if ((instruction.length - 1) < 1) {
-                                trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            if ((instruction.length - 1) > 1) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-
-                            Type resultOfEvaluation = stack.pop();
-
-                            if (!resultOfEvaluation.getType().equals("bool")) {
-                                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
-                                break;
-                            }
-
-                            BoolType resultOfEvaluationVal = new BoolType((Boolean) resultOfEvaluation.getValue());
-
-                            if (resultOfEvaluationVal.getValue()) {
-                                jmpOperation(instruction[1], instructions);
-                            } else {
-                                stack.push(resultOfEvaluation);
-                            }
+                            jmpifOperation(instruction, instructions);
                             break;
                         case "ISEQ":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            iseqOperation();
+                            iseqOperation(instruction);
                             break;
                         case "ISGE":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            isgeOperation();
+                            isgeOperation(instruction);
                             break;
                         case "ISGT":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            isgtOperation();
+                            isgtOperation(instruction);
                             break;
                         case "ISLE":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            isleOperation();
+                            isleOperation(instruction);
                             break;
                         case "ISLT":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
-                                break;
-                            }
-                            isltOperation();
+                            isltOperation(instruction);
                             break;
                         case "HALT":
                             if ((instruction.length - 1) > 0) {
@@ -317,10 +209,26 @@ class Main {
 
     // Instructions
 
-    private static void pushOperation(String type, String value) throws StackOverflowException {
+    private static void pushOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 2) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 2) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String type = instruction[1];
+        String value = instruction[2];
+
         switch (type) {
             case "int":
                 stack.push(new IntType(Integer.parseInt(value)));
+                break;
+            case "bool":
+                stack.push(new BoolType(Boolean.parseBoolean(value)));
                 break;
             case "str":
                 stack.push(new StringType(value));
@@ -330,7 +238,12 @@ class Main {
         }
     }
 
-    private static void addOperation() throws StackOverflowException, StackUnderflowException {
+    private static void addOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
         Instruction addInstruction = new Add(first, second);
@@ -342,7 +255,12 @@ class Main {
         }
     }
 
-    private static void subOperation() throws StackOverflowException, StackUnderflowException {
+    private static void subOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
         Instruction subInstruction = new Sub(first, second);
@@ -354,7 +272,12 @@ class Main {
         }
     }
 
-    private static void mulOperation() throws StackOverflowException, StackUnderflowException {
+    private static void mulOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
         Instruction mulInstruction = new Mul(first, second);
@@ -366,7 +289,12 @@ class Main {
         }
     }
 
-    private static void divOperation() throws StackOverflowException, StackUnderflowException {
+    private static void divOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
         Instruction divInstruction = new Div(first, second);
@@ -378,7 +306,20 @@ class Main {
         }
     }
 
-    private static void instOperation(String type, String variableName) {
+    private static void instOperation(String[] instruction) {
+        if ((instruction.length - 1) < 2) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 2) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String type = instruction[1];
+        String variableName = instruction[2];
+
         if (dataSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
         }
@@ -395,14 +336,38 @@ class Main {
         }
     }
 
-    private static void loadOperation(String variableName) throws StackOverflowException {
+    private static void loadOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
         if (!dataSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1));
         }
         stack.push(dataSpace.get(variableName));
     }
 
-    private static void storeOperation(String variableName) throws StackUnderflowException {
+    private static void storeOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
         if (!dataSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
         }
@@ -410,7 +375,19 @@ class Main {
         dataSpace.put(variableName, value);
     }
 
-    private static void jmpOperation(String label, String[] singleInstructions) {
+    private static void jmpOperation(String[] instruction, String[] singleInstructions) {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String label = instruction[1];
+
         int j = i;
         boolean found = false;
 
@@ -428,7 +405,39 @@ class Main {
         }
     }
 
-    private static void iseqOperation() throws StackOverflowException, StackUnderflowException {
+    private static void jmpifOperation(String[] instruction, String[] singleInstructions) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        Type resultOfEvaluation = stack.pop();
+
+        if (!resultOfEvaluation.getType().equals("bool")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1));
+            return;
+        }
+
+        BoolType resultOfEvaluationVal = new BoolType((Boolean) resultOfEvaluation.getValue());
+
+        if (resultOfEvaluationVal.getValue()) {
+            jmpOperation(instruction, singleInstructions);
+        } else {
+            stack.push(resultOfEvaluation);
+        }
+    }
+
+    private static void iseqOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
 
@@ -471,7 +480,12 @@ class Main {
         }
     }
 
-    private static void isgtOperation() throws StackOverflowException, StackUnderflowException {
+    private static void isgtOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
 
@@ -485,7 +499,12 @@ class Main {
         stack.push(new BoolType(firstVal.getValue() > secondVal.getValue()));
     }
 
-    private static void isgeOperation() throws StackOverflowException, StackUnderflowException {
+    private static void isgeOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
 
@@ -499,7 +518,12 @@ class Main {
         stack.push(new BoolType(firstVal.getValue() >= secondVal.getValue()));
     }
 
-    private static void isltOperation() throws StackOverflowException, StackUnderflowException {
+    private static void isltOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
 
@@ -513,7 +537,12 @@ class Main {
         stack.push(new BoolType(firstVal.getValue() < secondVal.getValue()));
     }
 
-    private static void isleOperation() throws StackOverflowException, StackUnderflowException {
+    private static void isleOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
         Type second = stack.pop();
         Type first = stack.pop();
 
