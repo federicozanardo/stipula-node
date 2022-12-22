@@ -43,9 +43,9 @@ class Main {
 
         String[] instructions = bytecode.split("\n");
 
-        if (!instructions[instructions.length - 1].equals("HALT")) {
-            trap.raiseError(TrapErrorCodes.MISS_HALT_INSTRUCTION, instructions.length);
-        }
+//        if (!instructions[instructions.length - 1].equals("HALT")) {
+//            trap.raiseError(TrapErrorCodes.MISS_HALT_INSTRUCTION, instructions.length);
+//        }
 
         while (running) {
             if (!trap.isStackEmpty()) {
@@ -114,6 +114,24 @@ class Main {
                             // Terminate the program
                             haltProgramExecution();
                             break;
+                        case "AINST":
+                            ainstOperation(instruction);
+                            break;
+                        case "ASTORE":
+                            astoreOperation(instruction);
+                            break;
+                        case "ALOAD":
+                            aloadOperation(instruction);
+                            break;
+                        case "GINST":
+                            ginstOperation(instruction);
+                            break;
+                        case "GSTORE":
+                            gstoreOperation(instruction);
+                            break;
+                        case "GLOAD":
+                            gloadOperation(instruction);
+                            break;
                         default:
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, (i + 1), instruction[0]);
                     }
@@ -136,6 +154,16 @@ class Main {
                     System.exit(-1);
                 }
             }
+        }
+
+        System.out.println("\nGlobalSpace");
+        for (HashMap.Entry<String, Type> entry : globalSpace.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+        }
+
+        System.out.println("\nArgumentsSpace");
+        for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
         }
 
         System.out.println("\nDataSpace");
@@ -554,5 +582,143 @@ class Main {
         IntType firstVal = new IntType((Integer) first.getValue());
         IntType secondVal = new IntType((Integer) second.getValue());
         stack.push(new BoolType(firstVal.getValue() <= secondVal.getValue()));
+    }
+
+    private static void ainstOperation(String[] instruction) {
+        if ((instruction.length - 1) < 2) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 2) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String type = instruction[1];
+        String variableName = instruction[2];
+
+        if (argumentsSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
+        }
+
+        switch (type) {
+            case "int":
+                argumentsSpace.put(variableName, new IntType());
+                break;
+            case "str":
+                argumentsSpace.put(variableName, new StringType());
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));
+        }
+    }
+
+    private static void astoreOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!argumentsSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
+        }
+        Type value = stack.pop();
+        argumentsSpace.put(variableName, value);
+    }
+
+    private static void aloadOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!argumentsSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1));
+        }
+        stack.push(argumentsSpace.get(variableName));
+    }
+
+    private static void ginstOperation(String[] instruction) {
+        if ((instruction.length - 1) < 2) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 2) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String type = instruction[1];
+        String variableName = instruction[2];
+
+        if (globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
+        }
+
+        switch (type) {
+            case "int":
+                globalSpace.put(variableName, new IntType());
+                break;
+            case "str":
+                globalSpace.put(variableName, new StringType());
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1));
+        }
+    }
+
+    private static void gstoreOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1));
+        }
+        Type value = stack.pop();
+        globalSpace.put(variableName, value);
+    }
+
+    private static void gloadOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1));
+        }
+        stack.push(globalSpace.get(variableName));
     }
 }
