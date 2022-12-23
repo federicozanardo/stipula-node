@@ -7,6 +7,8 @@ import java.security.SignatureException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
@@ -65,7 +67,7 @@ class Main {
 
         // Load the function
         // String bytecode = readProgram(path + "program7.sb");
-        String rawBytecode = loadFunction(path + "program8.sb");
+        String rawBytecode = loadFunction(path + "contract1.sb");
 
         // Load arguments
         HashMap<String, String> arguments = loadArguments(agreementCallMessage);
