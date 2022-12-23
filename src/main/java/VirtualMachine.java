@@ -133,12 +133,12 @@ public class VirtualMachine {
             }
         }
 
-        System.out.println("\nFinal state of the execution below");
+        System.out.println("Final state of the execution below");
 
         if (stack.isEmpty()) {
-            System.out.println("\nThe stack is empty");
+            System.out.println("Stack: The stack is empty");
         } else {
-            System.out.println("\nStack");
+            System.out.println("Stack");
             while (!stack.isEmpty()) {
                 try {
                     System.out.println("Value: " + stack.pop().getValue().toString());
@@ -148,25 +148,39 @@ public class VirtualMachine {
             }
         }
 
-        System.out.println("\nGlobalSpace");
-        for (HashMap.Entry<String, Type> entry : globalSpace.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+        if (globalSpace.isEmpty()) {
+            System.out.println("\nGlobalSpace: The global space is empty");
+        } else {
+            System.out.println("\nGlobalSpace");
+            for (HashMap.Entry<String, Type> entry : globalSpace.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+            }
         }
 
-        System.out.println("\nArgumentsSpace");
-        for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+        if (argumentsSpace.isEmpty()) {
+            System.out.println("\nArgumentsSpace: The argument space is empty");
+        } else {
+            System.out.println("\nArgumentsSpace");
+            for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+            }
         }
 
-        System.out.println("\nDataSpace");
-        for (HashMap.Entry<String, Type> entry : dataSpace.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+        if (dataSpace.isEmpty()) {
+            System.out.println("\nDataSpace: The data space is empty");
+        } else {
+            System.out.println("\nDataSpace");
+            for (HashMap.Entry<String, Type> entry : dataSpace.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+            }
         }
 
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + Boolean.toString(running) +
                 "\ni -> " + Integer.toString(i) +
-                "\nlength of the program -> " + Integer.toString(instructions.length));
+                "\ni (with offset) -> " + Integer.toString(i + offset) +
+                "\nlength of the program -> " + Integer.toString(instructions.length) +
+                "\nlength of the program (with offset) -> " + Integer.toString(instructions.length + offset));
 
         if (!trap.isStackEmpty()) {
             System.out.println("\nErrors in the stack");
@@ -302,8 +316,14 @@ public class VirtualMachine {
             case "int":
                 dataSpace.put(variableName, new IntType());
                 break;
+            case "bool":
+                dataSpace.put(variableName, new BoolType());
+                break;
             case "str":
                 dataSpace.put(variableName, new StrType());
+                break;
+            case "addr":
+                dataSpace.put(variableName, new AddrType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
@@ -420,37 +440,28 @@ public class VirtualMachine {
             return;
         }
 
-        if (!first.getType().equals("int") && !first.getType().equals("str") && !first.getType().equals("bool") && !first.getType().equals("addr")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
-            return;
-        }
-
-        if (first.getType().equals("int")) {
-            IntType firstVal = new IntType((Integer) first.getValue());
-            IntType secondVal = new IntType((Integer) second.getValue());
-            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
-            return;
-        }
-
-        if (first.getType().equals("bool")) {
-            BoolType firstVal = new BoolType((Boolean) first.getValue());
-            BoolType secondVal = new BoolType((Boolean) second.getValue());
-            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
-            return;
-        }
-
-        if (first.getType().equals("str")) {
-            StrType firstVal = new StrType((String) first.getValue());
-            StrType secondVal = new StrType((String) second.getValue());
-            stack.push(new BoolType(firstVal.getValue().equals(secondVal.getValue())));
-            return;
-        }
-
-        if (first.getType().equals("addr")) {
-//            IntType firstVal = new IntType((Integer) first.getValue());
-//            IntType secondVal = new IntType((Integer) second.getValue());
-//            stack.push(new BoolType(firstVal.getValue() == secondVal.getValue()));
-//            return;
+        switch (first.getType()) {
+            case "int":
+                IntType firstInt = new IntType((Integer) first.getValue());
+                IntType secondInt = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstInt.getValue() == secondInt.getValue()));
+                break;
+            case "bool":
+                BoolType firstBool = new BoolType((Boolean) first.getValue());
+                BoolType secondBool = new BoolType((Boolean) second.getValue());
+                stack.push(new BoolType(firstBool.getValue() == secondBool.getValue()));
+                break;
+            case "str":
+                StrType firstStr = new StrType((String) first.getValue());
+                StrType secondStr = new StrType((String) second.getValue());
+                stack.push(new BoolType(firstStr.getValue().equals(secondStr.getValue())));
+                break;
+            case "addr":
+                AddrType firstAddr = new AddrType((Address) first.getValue());
+                AddrType secondAddr = new AddrType((Address) second.getValue());
+                stack.push(new BoolType(firstAddr.getValue().equals(secondAddr.getValue())));
+                break;
+            default: trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
         }
     }
 
@@ -552,8 +563,14 @@ public class VirtualMachine {
             case "int":
                 argumentsSpace.put(variableName, new IntType());
                 break;
+            case "bool":
+                argumentsSpace.put(variableName, new BoolType());
+                break;
             case "str":
                 argumentsSpace.put(variableName, new StrType());
+                break;
+            case "addr":
+                argumentsSpace.put(variableName, new AddrType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
@@ -620,6 +637,9 @@ public class VirtualMachine {
         switch (type) {
             case "int":
                 globalSpace.put(variableName, new IntType());
+                break;
+            case "bool":
+                globalSpace.put(variableName, new BoolType());
                 break;
             case "str":
                 globalSpace.put(variableName, new StrType());
