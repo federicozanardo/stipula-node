@@ -7,31 +7,28 @@ import types.IntType;
 import types.Type;
 
 public class Div extends MathInstruction {
-  final private Type first;
-  final private Type second;
+    final private Type first;
+    final private Type second;
 
-  public Div(Type first, Type second) {
-    super("DIV");
-    this.first = first;
-    this.second = second;
-  }
-
-  @Override
-  public IntType execute() throws TrapException {
-    if (this.checkTypes()) {
-      IntType firstVal = new IntType((Integer) first.getValue());
-      IntType secondVal = new IntType((Integer) second.getValue());
-      return new IntType((Integer) firstVal.getValue() / (Integer) secondVal.getValue());
-    } else {
-      throw new TrapException(TrapErrorCodes.INCORRECT_TYPE);
+    public Div(Type first, Type second) {
+        super("DIV");
+        this.first = first;
+        this.second = second;
     }
-  }
 
-  @Override
-  public boolean checkTypes() {
-    if (!first.getType().equals("int") || !second.getType().equals("int")) {
-      return false;
+    @Override
+    public IntType execute() throws TrapException {
+        if (this.checkTypes()) {
+            IntType firstVal = new IntType((Integer) first.getValue());
+            IntType secondVal = new IntType((Integer) second.getValue());
+            return new IntType(firstVal.getValue() / secondVal.getValue());
+        } else {
+            throw new TrapException(TrapErrorCodes.INCORRECT_TYPE);
+        }
     }
-    return true;
-  }
+
+    @Override
+    public boolean checkTypes() {
+        return first.getType().equals("int") && second.getType().equals("int");
+    }
 }

@@ -1,6 +1,5 @@
 package messages;
 
-import types.Type;
 import types.address.Address;
 
 import java.util.HashMap;

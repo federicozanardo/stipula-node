@@ -5,8 +5,8 @@ import trap.TrapErrorCodes;
 
 public class QueueUnderflowException extends QueueException {
 
-  public QueueUnderflowException() {
-    super(TrapErrorCodes.QUEUE_UNDERFLOW);
-  }
-  
+    public QueueUnderflowException() {
+        super(TrapErrorCodes.QUEUE_UNDERFLOW);
+    }
+
 }
