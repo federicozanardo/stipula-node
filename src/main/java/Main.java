@@ -1,37 +1,16 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import datastructures.Stack;
-import exceptions.stack.StackOverflowException;
-import exceptions.stack.StackUnderflowException;
-import exceptions.trap.TrapException;
-import instructions.Instruction;
-import instructions.math.Add;
-import instructions.math.Div;
-import instructions.math.Mul;
-import instructions.math.Sub;
 import messages.AgreementCallMessage;
 import messages.Message;
 import messages.SignedMessage;
-import trap.Trap;
-import trap.TrapErrorCodes;
-import types.BoolType;
-import types.IntType;
-import types.StrType;
-import types.Type;
+import types.TraceChange;
 import types.address.Address;
 
-import static crypto.Crypto.generateKeyPair;
-import static crypto.Crypto.sign;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.security.*;
+import java.util.*;
+
+import static lib.crypto.Crypto.generateKeyPair;
+import static lib.crypto.Crypto.sign;
 
 class Main {
     private static int offset = 0;
@@ -40,22 +19,33 @@ class Main {
         File currentDirectory = new File(new File(".").getAbsolutePath());
         String path = currentDirectory + "/examples/";
 
+        // Start example of signed message
         Base64.Encoder encoder = Base64.getEncoder();
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
+        // Generate keys
         KeyPair lenderKeys = generateKeyPair();
         KeyPair borrowerKeys = generateKeyPair();
 
-        Address lenderPubKey = new Address(encoder.encodeToString(lenderKeys.getPublic().getEncoded()));
-        Address borrowerPubKey = new Address(encoder.encodeToString(borrowerKeys.getPublic().getEncoded()));
+        // Get public key as String
+        String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
+        String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
+
+        // Set up the addresses
+        Address lenderAddress = new Address(lenderPubKey);
+        Address borrowerAddress = new Address(borrowerPubKey);
+
+        // Load the parties' addresses
         HashMap<String, Address> parties = new HashMap<>();
-        parties.put("Lender", lenderPubKey);
-        parties.put("Borrower", borrowerPubKey);
+        parties.put("Lender", lenderAddress);
+        parties.put("Borrower", borrowerAddress);
 
         HashMap<String, String> argumentsMessage = new HashMap<>();
         argumentsMessage.put("cost", "12");
         argumentsMessage.put("rent_time", "1");
 
         AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
+        Message message = agreementCallMessage;
 
         String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
         String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
@@ -64,21 +54,52 @@ class Main {
         signatures.put("Borrower", borrowerSign);
 
         SignedMessage signedMessage = new SignedMessage(agreementCallMessage, signatures);
+        // End example of signed message
 
         // Load the function
-        // String bytecode = readProgram(path + "program7.sb");
         String rawBytecode = loadFunction(path + "contract1.sb");
 
         // Load arguments
-        HashMap<String, String> arguments = loadArguments(agreementCallMessage);
+        HashMap<String, String> arguments = loadArguments(message);
 
         // Load the bytecode
         String bytecode = loadBytecode(rawBytecode, arguments);
         String[] instructions = bytecode.split("\n");
 
+        HashMap<String, TraceChange> globalSpace;
+
+        // Prepare the virtual machine
+        VirtualMachine vm;
+
+        if (message instanceof AgreementCallMessage) {
+            // Create a new global space
+            globalSpace = new HashMap<>();
+
+            // Execute the function
+            vm = new VirtualMachine(instructions, offset);
+        } else {
+            // Load global space
+            globalSpace = loadGlobalSpace();
+
+            // Execute the function
+            vm = new VirtualMachine(instructions, offset, globalSpace);
+        }
+
         // Execute the code
-        VirtualMachine vm = new VirtualMachine(instructions, offset);
-        vm.execute();
+        boolean result = vm.execute();
+
+        if (!result) {
+            System.out.println("main: Error while executing the function");
+            return;
+        }
+
+        System.out.println("main: Updating the global store...");
+        if (vm.getGlobalSpace().isEmpty()) {
+            System.out.println("There is anything to save in the global space");
+        } else {
+            storeGlobalSpace(globalSpace, vm.getGlobalSpace());
+            System.out.println("main: Global store updated");
+        }
     }
 
     private static String readProgram(String pathname) {
@@ -96,15 +117,15 @@ class Main {
             while (fileReader.hasNextLine()) {
                 String data = fileReader.nextLine().trim();
 
-                if (data.substring(0, 2).equals("/*")) {
+                if (data.startsWith("/*")) {
                     startMultilineComment = true;
                 }
 
-                if (data.substring(0, 2).equals("*/")) {
+                if (data.startsWith("*/")) {
                     endMultilineComment = true;
                 }
 
-                if (data.substring(0, 2).equals("//")) {
+                if (data.startsWith("//")) {
                     isCommentLine = true;
                     // System.out.println("comment line: " + data);
                 }
@@ -184,7 +205,7 @@ class Main {
 
     private static String loadBytecode(String rawBytecode, HashMap<String, String> arguments) {
         String bytecode = "";
-        String localInstruction = "";
+        String substitution = "";
         String[] instructions = rawBytecode.split("\n");
 
         System.out.println("loadBytecode: Loading the function...");
@@ -193,11 +214,11 @@ class Main {
 
             if (arguments.containsKey(instruction[instruction.length - 1].substring(1))) {
                 for (int j = 0; j < instruction.length - 1; j++) {
-                    localInstruction += instruction[j] + " ";
+                    substitution += instruction[j] + " ";
                 }
-                localInstruction += arguments.get(instruction[instruction.length - 1].substring(1));
-                bytecode += localInstruction + "\n";
-                localInstruction = "";
+                substitution += arguments.get(instruction[instruction.length - 1].substring(1));
+                bytecode += substitution + "\n";
+                substitution = "";
             } else {
                 bytecode += instructions[i].trim() + "\n";
             }
@@ -206,5 +227,34 @@ class Main {
         System.out.println("loadBytecode: Function\n" + bytecode);
 
         return bytecode;
+    }
+
+    private static HashMap<String, TraceChange> loadGlobalSpace() {
+        HashMap<String, TraceChange> globalSpace = new HashMap<>();
+        // globalSpace.put("use_code", new TraceChange(new IntType(), true));
+        return globalSpace;
+    }
+
+    private static void storeGlobalSpace(HashMap<String, TraceChange> globalSpace, HashMap<String, TraceChange> newGlobalSpace) {
+        if (globalSpace.isEmpty()) {
+
+        } else {
+            for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
+                TraceChange value = entry.getValue();
+                System.out.println("storeGlobalSpace (globalSpace): " + entry.getKey() + ": " +
+                        value.getValue().getValue() +
+                        " (isChanged = " + value.isChanged() + ")");
+            }
+
+            // Hypothesis: length(keys(globalSpace)) < length(keys(newGlobalSpace))
+            Set<String> difference = new HashSet<String>(newGlobalSpace.keySet());
+            difference.removeAll(globalSpace.keySet());
+            for (String missingKey : difference) {
+                TraceChange value = newGlobalSpace.get(missingKey); //entry.getValue();
+                System.out.println("storeGlobalSpace (newGlobalSpace): " + missingKey + ": " +
+                        value.getValue().getValue() +
+                        " (isChanged = " + value.isChanged() + ")");
+            }
+        }
     }
 }
