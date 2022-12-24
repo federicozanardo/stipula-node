@@ -4,7 +4,7 @@ import types.Type;
 
 public class AddrType extends Type {
     final private String type = "addr";
-    private Address value;
+    private final Address value;
 
     public AddrType() {
         this.value = null;
@@ -21,7 +21,14 @@ public class AddrType extends Type {
 
     @Override
     public String getValue() {
-        return value.getPublicKey();
+        return value.getAddress() + " " + value.getPublicKey();
     }
 
+    public String getAddress() {
+        return value.getAddress();
+    }
+
+    public String getPublicKey() {
+        return value.getPublicKey();
+    }
 }
