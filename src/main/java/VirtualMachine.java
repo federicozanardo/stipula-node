@@ -1,32 +1,30 @@
-import java.util.HashMap;
-
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import exceptions.trap.TrapException;
 import instructions.Instruction;
-import instructions.math.Div;
-import instructions.math.Sub;
 import instructions.math.Add;
+import instructions.math.Div;
 import instructions.math.Mul;
+import instructions.math.Sub;
 import trap.Trap;
 import trap.TrapErrorCodes;
-import types.BoolType;
-import types.IntType;
-import types.StrType;
-import types.Type;
+import types.*;
 import types.address.AddrType;
 import types.address.Address;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+
 public class VirtualMachine {
     private final String[] instructions;
-    private boolean running = true;
+    private boolean isRunning = true;
     private int i = -1;
     private final int offset;
     private final Stack<Type> stack = new Stack<Type>(10);
     private final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
-    private final HashMap<String, Type> globalSpace = new HashMap<String, Type>();
+    private final HashMap<String, TraceChange> globalSpace;
     private final Trap trap = new Trap();
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
     // private int programCounter; // or instructionPointer
@@ -35,10 +33,21 @@ public class VirtualMachine {
     public VirtualMachine(String[] instructions, int offset) {
         this.instructions = instructions;
         this.offset = offset;
+        this.globalSpace = new HashMap<String, TraceChange>();
     }
 
-    public void execute() {
-        while (running) {
+    public VirtualMachine(String[] instructions, int offset, HashMap<String, TraceChange> globalSpace) {
+        this.instructions = instructions;
+        this.offset = offset;
+        this.globalSpace = globalSpace;
+    }
+
+    public HashMap<String, TraceChange> getGlobalSpace() {
+        return globalSpace;
+    }
+
+    public boolean execute() {
+        while (isRunning) {
             if (!trap.isStackEmpty()) {
                 haltProgramExecution();
                 break;
@@ -49,7 +58,7 @@ public class VirtualMachine {
                 String singleInstruction = this.instructions[i].trim();
                 String[] instruction = singleInstruction.split(" ");
 
-                if (!(instruction.length == 1 && instruction[0].substring(instruction[0].length() - 1).equals(":"))) {
+                if (!(instruction.length == 1 && instruction[0].endsWith(":"))) {
                     switch (instruction[0]) {
                         case "PUSH":
                             this.pushOperation(instruction);
@@ -124,13 +133,22 @@ public class VirtualMachine {
                             this.gloadOperation(instruction);
                             break;
                         default:
-                            System.out.println("offset: " + Integer.toString(offset));
+                            System.out.println("offset: " + offset);
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, (i + 1), (i + 1 + offset), instruction[0]);
                     }
                 }
             } catch (StackOverflowException | StackUnderflowException error) {
                 trap.raiseError(error.getCode(), (i + 1), (i + 1 + offset));
+            } catch (NoSuchAlgorithmException error) {
+                System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
+                throw new RuntimeException(error);
             }
+        }
+
+        if (!trap.isStackEmpty()) {
+            System.out.println("\nErrors in the stack");
+            System.out.println(trap.printStack());
+            return false;
         }
 
         System.out.println("Final state of the execution below");
@@ -152,8 +170,14 @@ public class VirtualMachine {
             System.out.println("\nGlobalSpace: The global space is empty");
         } else {
             System.out.println("\nGlobalSpace");
-            for (HashMap.Entry<String, Type> entry : globalSpace.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
+            for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
+                TraceChange value = entry.getValue();
+                if (value.getValue().getType().equals("addr")) {
+                    AddrType address = (AddrType) value.getValue();
+                    System.out.println(entry.getKey() + ": " + address.getAddress() + " " + address.getPublicKey());
+                } else {
+                    System.out.println(entry.getKey() + ": " + value.getValue().getValue());
+                }
             }
         }
 
@@ -176,25 +200,22 @@ public class VirtualMachine {
         }
 
         System.out.println("\nGlobal state of the execution" +
-                "\nrunning -> " + Boolean.toString(running) +
-                "\ni -> " + Integer.toString(i) +
-                "\ni (with offset) -> " + Integer.toString(i + offset) +
-                "\nlength of the program -> " + Integer.toString(instructions.length) +
-                "\nlength of the program (with offset) -> " + Integer.toString(instructions.length + offset));
+                "\nrunning -> " + isRunning +
+                "\ni -> " + i +
+                "\ni (with offset) -> " + (i + offset) +
+                "\nlength of the program -> " + instructions.length +
+                "\nlength of the program (with offset) -> " + (instructions.length + offset));
 
-        if (!trap.isStackEmpty()) {
-            System.out.println("\nErrors in the stack");
-            System.out.println(trap.printStack());
-        }
+        return !isRunning;
     }
 
     private void haltProgramExecution() {
-        running = false;
+        isRunning = false;
     }
 
     // Instructions
 
-    private void pushOperation(String[] instruction) throws StackOverflowException {
+    private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 2) {
             trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
@@ -461,7 +482,8 @@ public class VirtualMachine {
                 AddrType secondAddr = new AddrType((Address) second.getValue());
                 stack.push(new BoolType(firstAddr.getValue().equals(secondAddr.getValue())));
                 break;
-            default: trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+            default:
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
         }
     }
 
@@ -632,27 +654,28 @@ public class VirtualMachine {
 
         if (globalSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1), (i + 1 + offset));
+            return;
         }
 
         switch (type) {
             case "int":
-                globalSpace.put(variableName, new IntType());
+                globalSpace.put(variableName, new TraceChange(new IntType(), true));
                 break;
             case "bool":
-                globalSpace.put(variableName, new BoolType());
+                globalSpace.put(variableName, new TraceChange(new BoolType(), true));
                 break;
             case "str":
-                globalSpace.put(variableName, new StrType());
+                globalSpace.put(variableName, new TraceChange(new StrType(), true));
                 break;
             case "addr":
-                globalSpace.put(variableName, new AddrType());
+                globalSpace.put(variableName, new TraceChange(new AddrType(), true));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
         }
     }
 
-    private void gstoreOperation(String[] instruction) throws StackUnderflowException {
+    private void gstoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 1) {
             trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
@@ -670,7 +693,13 @@ public class VirtualMachine {
         }
 
         Type value = stack.pop();
-        globalSpace.put(variableName, value);
+        if (value.getType().equals("addr")) {
+            AddrType address = (AddrType) value;
+            globalSpace.put(variableName, new TraceChange(new AddrType(new Address(address.getPublicKey())), true));
+        } else {
+            globalSpace.put(variableName, new TraceChange(value, true));
+        }
+
     }
 
     private void gloadOperation(String[] instruction) throws StackOverflowException {
@@ -689,6 +718,6 @@ public class VirtualMachine {
         if (!globalSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
         }
-        stack.push(globalSpace.get(variableName));
+        stack.push(globalSpace.get(variableName).getValue());
     }
 }
