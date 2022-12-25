@@ -1,9 +1,10 @@
 import messages.AgreementCallMessage;
 import messages.Message;
 import messages.SignedMessage;
+import vm.VirtualMachine;
+import vm.storage.GlobalStorage;
 import vm.types.TraceChange;
 import vm.types.address.Address;
-import vm.VirtualMachine;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -67,20 +68,17 @@ class Main {
         String bytecode = loadBytecode(rawBytecode, arguments);
         String[] instructions = bytecode.split("\n");
 
-        HashMap<String, TraceChange> globalSpace;
+        GlobalStorage globalStorage = new GlobalStorage();
 
         // Prepare the virtual machine
         VirtualMachine vm;
 
         if (message instanceof AgreementCallMessage) {
-            // Create a new global space
-            globalSpace = new HashMap<>();
-
             // Execute the function
             vm = new VirtualMachine(instructions, offset);
         } else {
-            // Load global space
-            globalSpace = loadGlobalSpace();
+            // Load global storage
+            HashMap<String, TraceChange> globalSpace = globalStorage.loadGlobalStorage();
 
             // Execute the function
             vm = new VirtualMachine(instructions, offset, globalSpace);
@@ -98,7 +96,7 @@ class Main {
         if (vm.getGlobalSpace().isEmpty()) {
             System.out.println("There is anything to save in the global space");
         } else {
-            storeGlobalSpace(globalSpace, vm.getGlobalSpace());
+            globalStorage.storeGlobalStorage(vm.getGlobalSpace());
             System.out.println("main: Global store updated");
         }
     }
@@ -228,34 +226,5 @@ class Main {
         System.out.println("loadBytecode: Function\n" + bytecode);
 
         return bytecode;
-    }
-
-    private static HashMap<String, TraceChange> loadGlobalSpace() {
-        HashMap<String, TraceChange> globalSpace = new HashMap<>();
-        // globalSpace.put("use_code", new TraceChange(new IntType(), true));
-        return globalSpace;
-    }
-
-    private static void storeGlobalSpace(HashMap<String, TraceChange> globalSpace, HashMap<String, TraceChange> newGlobalSpace) {
-        if (globalSpace.isEmpty()) {
-
-        } else {
-            for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
-                TraceChange value = entry.getValue();
-                System.out.println("storeGlobalSpace (globalSpace): " + entry.getKey() + ": " +
-                        value.getValue().getValue() +
-                        " (isChanged = " + value.isChanged() + ")");
-            }
-
-            // Hypothesis: length(keys(globalSpace)) < length(keys(newGlobalSpace))
-            Set<String> difference = new HashSet<String>(newGlobalSpace.keySet());
-            difference.removeAll(globalSpace.keySet());
-            for (String missingKey : difference) {
-                TraceChange value = newGlobalSpace.get(missingKey); //entry.getValue();
-                System.out.println("storeGlobalSpace (newGlobalSpace): " + missingKey + ": " +
-                        value.getValue().getValue() +
-                        " (isChanged = " + value.isChanged() + ")");
-            }
-        }
     }
 }
