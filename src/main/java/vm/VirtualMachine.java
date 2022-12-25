@@ -1,6 +1,6 @@
 package vm;
 
-import datastructures.Stack;
+import lib.datastructures.Stack;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import exceptions.trap.TrapException;

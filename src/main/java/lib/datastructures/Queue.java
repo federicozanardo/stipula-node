@@ -1,4 +1,4 @@
-package datastructures;
+package lib.datastructures;
 
 import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;

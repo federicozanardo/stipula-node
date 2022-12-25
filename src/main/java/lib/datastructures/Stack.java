@@ -1,4 +1,4 @@
-package datastructures;
+package lib.datastructures;
 
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
