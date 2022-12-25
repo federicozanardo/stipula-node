@@ -1,4 +1,4 @@
-package types;
+package vm.types;
 
 public class IntType extends Type {
     final private String type = "int";

@@ -1,7 +1,7 @@
-package instructions;
+package vm.instructions;
 
 import exceptions.trap.TrapException;
-import types.Type;
+import vm.types.Type;
 
 public abstract class Instruction {
     final private String name;

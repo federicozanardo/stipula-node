@@ -2,7 +2,7 @@ package datastructures;
 
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
-import types.Type;
+import vm.types.Type;
 
 import java.util.ArrayList;
 

@@ -1,4 +1,4 @@
-package trap;
+package vm.trap;
 
 public enum TrapErrorCodes {
     ERROR_CODE_DOES_NOT_EXISTS {

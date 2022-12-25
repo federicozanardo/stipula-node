@@ -1,17 +1,19 @@
+package vm;
+
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import exceptions.trap.TrapException;
-import instructions.Instruction;
-import instructions.math.Add;
-import instructions.math.Div;
-import instructions.math.Mul;
-import instructions.math.Sub;
-import trap.Trap;
-import trap.TrapErrorCodes;
-import types.*;
-import types.address.AddrType;
-import types.address.Address;
+import vm.instructions.Instruction;
+import vm.instructions.math.Add;
+import vm.instructions.math.Div;
+import vm.instructions.math.Mul;
+import vm.instructions.math.Sub;
+import vm.trap.Trap;
+import vm.trap.TrapErrorCodes;
+import vm.types.*;
+import vm.types.address.AddrType;
+import vm.types.address.Address;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;

@@ -1,6 +1,6 @@
-package types.address;
+package vm.types.address;
 
-import types.Type;
+import vm.types.Type;
 
 public class AddrType extends Type {
     final private String type = "addr";

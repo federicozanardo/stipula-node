@@ -1,4 +1,4 @@
-package types;
+package vm.types;
 
 public class StrType extends Type {
     final private String type = "str";

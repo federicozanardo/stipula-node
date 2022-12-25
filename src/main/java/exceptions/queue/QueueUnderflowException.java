@@ -1,7 +1,7 @@
 package exceptions.queue;
 
 
-import trap.TrapErrorCodes;
+import vm.trap.TrapErrorCodes;
 
 public class QueueUnderflowException extends QueueException {
 

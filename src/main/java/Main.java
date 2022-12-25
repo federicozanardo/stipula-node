@@ -1,8 +1,9 @@
 import messages.AgreementCallMessage;
 import messages.Message;
 import messages.SignedMessage;
-import types.TraceChange;
-import types.address.Address;
+import vm.types.TraceChange;
+import vm.types.address.Address;
+import vm.VirtualMachine;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -174,7 +175,7 @@ class Main {
             if (instruction[0].equals("fn") && instruction[1].equals("agreement")) {
                 isFunctionStarted = true;
                 offset = i + 1;
-                // bytecodeFunction += instructions[i].trim() + "\n";
+                // bytecodeFunction += vm.instructions[i].trim() + "\n";
             }
 
             if (instruction[0].equals("HALT")) {

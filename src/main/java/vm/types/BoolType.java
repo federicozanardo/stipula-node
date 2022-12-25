@@ -1,4 +1,4 @@
-package types;
+package vm.types;
 
 public class BoolType extends Type {
     final private String type = "bool";

@@ -2,7 +2,7 @@ package exceptions.stack;
 
 
 import exceptions.trap.TrapException;
-import trap.TrapErrorCodes;
+import vm.trap.TrapErrorCodes;
 
 public class StackOverflowException extends TrapException {
 

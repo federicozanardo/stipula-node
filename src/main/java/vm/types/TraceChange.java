@@ -1,4 +1,4 @@
-package types;
+package vm.types;
 
 public class TraceChange {
     private final Type value;

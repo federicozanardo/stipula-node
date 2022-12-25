@@ -1,6 +1,6 @@
 package exceptions.trap;
 
-import trap.TrapErrorCodes;
+import vm.trap.TrapErrorCodes;
 
 public class TrapException extends Exception {
     private final TrapErrorCodes code;

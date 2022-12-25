@@ -1,4 +1,4 @@
-package types.address;
+package vm.types.address;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

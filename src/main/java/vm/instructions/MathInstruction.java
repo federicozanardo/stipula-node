@@ -1,4 +1,4 @@
-package instructions;
+package vm.instructions;
 
 public abstract class MathInstruction extends Instruction {
     public MathInstruction(String name) {

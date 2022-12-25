@@ -1,8 +1,8 @@
-package trap;
+package vm.trap;
 
 import datastructures.Stack;
 import exceptions.stack.StackOverflowException;
-import types.StrType;
+import vm.types.StrType;
 
 import java.util.HashMap;
 
