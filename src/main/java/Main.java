@@ -1,9 +1,10 @@
+import constants.Constants;
 import messages.AgreementCallMessage;
 import messages.Message;
 import messages.SignedMessage;
 import vm.VirtualMachine;
+import vm.contract.ContractInstance;
 import vm.storage.GlobalStorage;
-import vm.types.TraceChange;
 import vm.types.address.Address;
 
 import java.io.File;
@@ -11,31 +12,36 @@ import java.io.FileNotFoundException;
 import java.security.*;
 import java.util.*;
 
-import static lib.crypto.Crypto.generateKeyPair;
-import static lib.crypto.Crypto.sign;
+import static lib.crypto.Crypto.*;
 
 class Main {
     private static int offset = 0;
 
-    public static void main(String[] args) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        File currentDirectory = new File(new File(".").getAbsolutePath());
-        String path = currentDirectory + "/examples/";
+    public static void main(String[] args) throws Exception {
+        String path = String.valueOf(Constants.EXAMPLES_PATH);
 
         // Start example of signed message
         Base64.Encoder encoder = Base64.getEncoder();
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
         // Generate keys
-        KeyPair lenderKeys = generateKeyPair();
-        KeyPair borrowerKeys = generateKeyPair();
+        // KeyPair lenderKeys = generateKeyPair();
+        // KeyPair borrowerKeys = generateKeyPair();
+
+        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
+        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
+
+        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
 
         // Get public key as String
-        String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
-        String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
+        // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
+        String lenderPubKey = encoder.encodeToString(lenderPublicKey.getEncoded());
+        // String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
+        String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
 
         // Set up the addresses
-        Address lenderAddress = new Address(lenderPubKey);
-        Address borrowerAddress = new Address(borrowerPubKey);
+        Address lenderAddress = new Address(lenderPubKey); // ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=
+        Address borrowerAddress = new Address(borrowerPubKey); // f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=
 
         // Load the parties' addresses
         HashMap<String, Address> parties = new HashMap<>();
@@ -49,8 +55,10 @@ class Main {
         AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
         Message message = agreementCallMessage;
 
-        String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
-        String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
+        // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
+        String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
+        // String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
+        String borrowerSign = sign(agreementCallMessage.toString(), borrowerPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         signatures.put("Lender", lenderSign);
         signatures.put("Borrower", borrowerSign);
@@ -77,11 +85,13 @@ class Main {
             // Execute the function
             vm = new VirtualMachine(instructions, offset);
         } else {
+            String contractInstanceId = "bb69e66e-6e8e-4791-b1f9-75d76d1638ff";
+
             // Load global storage
-            HashMap<String, TraceChange> globalSpace = globalStorage.loadGlobalStorage();
+            globalStorage.loadGlobalStorage(contractInstanceId);
 
             // Execute the function
-            vm = new VirtualMachine(instructions, offset, globalSpace);
+            vm = new VirtualMachine(instructions, offset, globalStorage.getStorage());
         }
 
         // Execute the code
@@ -96,8 +106,9 @@ class Main {
         if (vm.getGlobalSpace().isEmpty()) {
             System.out.println("There is anything to save in the global space");
         } else {
-            globalStorage.storeGlobalStorage(vm.getGlobalSpace());
+            ContractInstance instance = globalStorage.storeGlobalStorage(vm.getGlobalSpace());
             System.out.println("main: Global store updated");
+            System.out.println("main: Contract instance id: " + instance.getId());
         }
     }
 
