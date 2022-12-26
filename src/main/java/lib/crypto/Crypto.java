@@ -4,8 +4,12 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.File;
 import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Scanner;
 
 public class Crypto {
 
@@ -29,6 +33,42 @@ public class Crypto {
                         Base64.getDecoder().decode(result)
                 )
         );
+    }
+
+    public static PrivateKey getPrivateKeyFromFile(String filename) throws Exception {
+        File file = new File(filename);
+        Scanner fileReader = new Scanner(file);
+        String key = "";
+
+        while (fileReader.hasNextLine()) {
+            String data = fileReader.nextLine().trim();
+            key += data;
+        }
+        fileReader.close();
+
+        byte[] bytes = Base64.getDecoder().decode(key);
+
+
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePrivate(spec);
+    }
+    public static PublicKey getPublicKeyFromFile(String filename) throws Exception {
+        File file = new File(filename);
+        Scanner fileReader = new Scanner(file);
+        String key = "";
+
+        while (fileReader.hasNextLine()) {
+            String data = fileReader.nextLine().trim();
+            key += data;
+        }
+        fileReader.close();
+
+        byte[] bytes = Base64.getDecoder().decode(key);
+
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePublic(spec);
     }
 
     public static String sign(String plainText, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
