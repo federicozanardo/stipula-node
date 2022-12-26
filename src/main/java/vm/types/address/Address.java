@@ -1,11 +1,12 @@
 package vm.types.address;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class Address {
+public class Address implements Serializable {
     private final String address;
     private final String publicKey;
 
