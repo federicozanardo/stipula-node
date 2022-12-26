@@ -1,3 +1,7 @@
+# Project
+examples/*-keys/*
+storage/*
+
 # Java
 *.class
 
