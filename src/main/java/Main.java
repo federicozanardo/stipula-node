@@ -9,8 +9,11 @@ import vm.types.address.Address;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.security.*;
-import java.util.*;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Scanner;
 
 import static lib.crypto.Crypto.*;
 
@@ -20,51 +23,9 @@ class Main {
     public static void main(String[] args) throws Exception {
         String path = String.valueOf(Constants.EXAMPLES_PATH);
 
-        // Start example of signed message
-        Base64.Encoder encoder = Base64.getEncoder();
-
-        // Generate keys
-        // KeyPair lenderKeys = generateKeyPair();
-        // KeyPair borrowerKeys = generateKeyPair();
-
-        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
-        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
-
-        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
-        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
-
-        // Get public key as String
-        // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
-        String lenderPubKey = encoder.encodeToString(lenderPublicKey.getEncoded());
-        // String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
-        String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
-
-        // Set up the addresses
-        Address lenderAddress = new Address(lenderPubKey); // ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=
-        Address borrowerAddress = new Address(borrowerPubKey); // f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=
-
-        // Load the parties' addresses
-        HashMap<String, Address> parties = new HashMap<>();
-        parties.put("Lender", lenderAddress);
-        parties.put("Borrower", borrowerAddress);
-
-        HashMap<String, String> argumentsMessage = new HashMap<>();
-        argumentsMessage.put("cost", "12");
-        argumentsMessage.put("rent_time", "1");
-
-        AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
-        Message message = agreementCallMessage;
-
-        // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
-        String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
-        // String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
-        String borrowerSign = sign(agreementCallMessage.toString(), borrowerPrivateKey);
-        HashMap<String, String> signatures = new HashMap<>();
-        signatures.put("Lender", lenderSign);
-        signatures.put("Borrower", borrowerSign);
-
-        SignedMessage signedMessage = new SignedMessage(agreementCallMessage, signatures);
-        // End example of signed message
+        SignedMessage signedMessage = generateAgreementCallMessage(path);
+        // SignedMessage signedMessage = generateFunctionCallMessage(path);
+        Message message = signedMessage.getMessage();
 
         // Load the function
         String rawBytecode = loadFunction(path + "contract1.sb");
@@ -81,16 +42,17 @@ class Main {
         // Prepare the virtual machine
         VirtualMachine vm;
 
-        if (message instanceof AgreementCallMessage) {
-            // Execute the function
+        if (!(message instanceof AgreementCallMessage)) {
             vm = new VirtualMachine(instructions, offset);
         } else {
-            String contractInstanceId = "bb69e66e-6e8e-4791-b1f9-75d76d1638ff";
+            // String contractInstanceId = "bb69e66e-6e8e-4791-b1f9-75d76d1638ff";
+            String contractInstanceId = "04e8e716-44d8-4e47-ad6a-4c28e97c1e3d";
 
             // Load global storage
+            System.out.println("main: Loading the contract instance...");
             globalStorage.loadGlobalStorage(contractInstanceId);
+            System.out.println("main: Contract instance loaded");
 
-            // Execute the function
             vm = new VirtualMachine(instructions, offset, globalStorage.getStorage());
         }
 
@@ -106,9 +68,10 @@ class Main {
         if (vm.getGlobalSpace().isEmpty()) {
             System.out.println("There is anything to save in the global space");
         } else {
-            ContractInstance instance = globalStorage.storeGlobalStorage(vm.getGlobalSpace());
+            String contractId = "asd123";
+            ContractInstance instance = globalStorage.storeGlobalStorage(contractId, vm.getGlobalSpace());
             System.out.println("main: Global store updated");
-            System.out.println("main: Contract instance id: " + instance.getId());
+            System.out.println("main: Contract instance id: " + instance.getInstanceId());
         }
     }
 
@@ -237,5 +200,97 @@ class Main {
         System.out.println("loadBytecode: Function\n" + bytecode);
 
         return bytecode;
+    }
+
+    private static SignedMessage generateAgreementCallMessage(String path) throws Exception {
+        // Start example of signed message
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        // Generate keys
+        // KeyPair lenderKeys = generateKeyPair();
+        // KeyPair borrowerKeys = generateKeyPair();
+
+        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
+        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
+
+        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+
+        // Get public key as String
+        // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
+        String lenderPubKey = encoder.encodeToString(lenderPublicKey.getEncoded());
+        // String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
+        String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
+
+        // Set up the addresses
+        Address lenderAddress = new Address(lenderPubKey); // ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=
+        Address borrowerAddress = new Address(borrowerPubKey); // f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=
+
+        // Load the parties' addresses
+        HashMap<String, Address> parties = new HashMap<>();
+        parties.put("Lender", lenderAddress);
+        parties.put("Borrower", borrowerAddress);
+
+        HashMap<String, String> argumentsMessage = new HashMap<>();
+        argumentsMessage.put("cost", "12");
+        argumentsMessage.put("rent_time", "1");
+
+        AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
+
+        // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
+        String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
+        // String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
+        String borrowerSign = sign(agreementCallMessage.toString(), borrowerPrivateKey);
+        HashMap<String, String> signatures = new HashMap<>();
+        signatures.put("Lender", lenderSign);
+        signatures.put("Borrower", borrowerSign);
+
+        return new SignedMessage(agreementCallMessage, signatures);
+    }
+
+    private static SignedMessage generateFunctionCallMessage(String path) throws Exception {
+        // Start example of signed message
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        // Generate keys
+        // KeyPair lenderKeys = generateKeyPair();
+        // KeyPair borrowerKeys = generateKeyPair();
+
+        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
+        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
+
+        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+
+        // Get public key as String
+        // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
+        String lenderPubKey = encoder.encodeToString(lenderPublicKey.getEncoded());
+        // String borrowerPubKey = encoder.encodeToString(borrowerKeys.getPublic().getEncoded());
+        String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
+
+        // Set up the addresses
+        Address lenderAddress = new Address(lenderPubKey); // ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=
+        Address borrowerAddress = new Address(borrowerPubKey); // f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=
+
+        // Load the parties' addresses
+        HashMap<String, Address> parties = new HashMap<>();
+        parties.put("Lender", lenderAddress);
+        parties.put("Borrower", borrowerAddress);
+
+        HashMap<String, String> argumentsMessage = new HashMap<>();
+        argumentsMessage.put("cost", "12");
+        argumentsMessage.put("rent_time", "1");
+
+        AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
+
+        // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
+        String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
+        // String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
+        String borrowerSign = sign(agreementCallMessage.toString(), borrowerPrivateKey);
+        HashMap<String, String> signatures = new HashMap<>();
+        signatures.put("Lender", lenderSign);
+        signatures.put("Borrower", borrowerSign);
+
+        return new SignedMessage(agreementCallMessage, signatures);
     }
 }
