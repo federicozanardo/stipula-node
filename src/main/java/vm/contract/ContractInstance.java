@@ -7,18 +7,24 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class ContractInstance implements Serializable {
-    private final String id;
+    private final String contractId;
+    private final String instanceId;
     private String currentState;
     private HashMap<String, Type> globalVariables;
 
-    public ContractInstance(String initialState) {
-        this.id = UUID.randomUUID().toString();
+    public ContractInstance(String contractId, String initialState) {
+        this.instanceId = UUID.randomUUID().toString();
+        this.contractId = contractId;
         this.currentState = initialState;
         this.globalVariables = new HashMap<>();
     }
 
-    public String getId() {
-        return id;
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public String getContractId() {
+        return contractId;
     }
 
     public String getCurrentState() {

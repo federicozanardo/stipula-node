@@ -42,9 +42,9 @@ public class GlobalStorage {
         }
     }
 
-    public ContractInstance storeGlobalStorage(HashMap<String, TraceChange> updates) throws IOException {
+    public ContractInstance storeGlobalStorage(String contractId, HashMap<String, TraceChange> updates) throws IOException {
         // Create an instance of the current contract
-        ContractInstance instance = new ContractInstance("Inactive");
+        ContractInstance instance = new ContractInstance(contractId, "Inactive");
 
         for (HashMap.Entry<String, TraceChange> entry : updates.entrySet()) {
             Type value = entry.getValue().getValue();
@@ -52,7 +52,7 @@ public class GlobalStorage {
         }
 
         // Store the instance
-        levelDBStore.put(bytes(instance.getId()), this.serialize(instance));
+        levelDBStore.put(bytes(instance.getInstanceId()), this.serialize(instance));
         levelDBStore.close();
 
         return instance;
