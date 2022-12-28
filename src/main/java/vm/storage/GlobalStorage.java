@@ -29,6 +29,14 @@ public class GlobalStorage {
         return storage;
     }
 
+    public ContractInstance getContractInstance(String contractInstanceId) {
+        ContractInstance instance = this.deserialize(levelDBStore.get(bytes(contractInstanceId)));
+        if (instance == null) {
+            // Error: this contractInstanceId does not exist
+            return null;
+        }
+        return instance;
+    }
     public void loadGlobalStorage(String contractInstanceId) {
         ContractInstance instance = this.deserialize(levelDBStore.get(bytes(contractInstanceId)));
         if (instance == null) {
