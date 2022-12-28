@@ -5,9 +5,9 @@ import vm.types.address.Address;
 import java.util.HashMap;
 
 public class AgreementCallMessage extends Message {
-    public String contractId;
-    public HashMap<String, String> arguments;
-    public HashMap<String, Address> parties;
+    private final String contractId;
+    private final HashMap<String, String> arguments;
+    private final HashMap<String, Address> parties;
 
     public AgreementCallMessage(String contractId, HashMap<String, String> arguments, HashMap<String, Address> parties) {
         this.contractId = contractId;
