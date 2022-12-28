@@ -1,6 +1,5 @@
 contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e
 fn agreement
-// define global variables
 global:
 GINST addr Lender
 GINST addr Borrower
@@ -8,7 +7,6 @@ GINST addr Borrower
 GINST int cost
 GINST int rent_time
 GINST int use_code
-// define arguments of this function
 args:
 PUSH addr :Lender
 GSTORE Lender
@@ -18,10 +16,9 @@ PUSH int :cost
 GSTORE cost
 PUSH int :rent_time
 GSTORE rent_time
-// define the body of the function
 start:
 HALT
-fn Proposal Lender offer
+fn offer Proposal Lender
 args:
 PUSH int :z
 AINST int z
@@ -30,7 +27,6 @@ start:
 ALOAD z
 GSTORE use_code
 HALT
-fn Using Borrower end
+fn end Using Borrower
 start:
-// body of the function
 HALT
