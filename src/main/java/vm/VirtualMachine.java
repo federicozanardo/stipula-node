@@ -1,14 +1,8 @@
 package vm;
 
-import lib.datastructures.Stack;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
-import exceptions.trap.TrapException;
-import vm.instructions.Instruction;
-import vm.instructions.math.Add;
-import vm.instructions.math.Div;
-import vm.instructions.math.Mul;
-import vm.instructions.math.Sub;
+import lib.datastructures.Stack;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
@@ -17,6 +11,7 @@ import vm.types.address.Address;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class VirtualMachine {
     private final String[] instructions;
@@ -107,15 +102,6 @@ public class VirtualMachine {
                         case "ISLT":
                             this.isltOperation(instruction);
                             break;
-                        case "HALT":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
-                                break;
-                            }
-
-                            // Terminate the program
-                            this.haltProgramExecution();
-                            break;
                         case "AINST":
                             this.ainstOperation(instruction);
                             break;
@@ -133,6 +119,15 @@ public class VirtualMachine {
                             break;
                         case "GLOAD":
                             this.gloadOperation(instruction);
+                            break;
+                        case "HALT":
+                            if ((instruction.length - 1) > 0) {
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+                                break;
+                            }
+
+                            // Terminate the program
+                            this.haltProgramExecution();
                             break;
                         default:
                             System.out.println("offset: " + offset);
@@ -223,13 +218,22 @@ public class VirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if (instruction.length - 1 > 3) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
         }
 
         String type = instruction[1];
         String value = instruction[2];
+        String decimals = "";
+        if (type.equals("float")) {
+            decimals = instruction[3];
+        }
 
         switch (type) {
             case "int":
@@ -244,6 +248,9 @@ public class VirtualMachine {
             case "addr":
                 stack.push(new AddrType(new Address(value)));
                 break;
+            case "float":
+                stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
         }
@@ -257,13 +264,21 @@ public class VirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
-        Instruction addInstruction = new Add(first, second);
-        try {
-            IntType result = (IntType) addInstruction.execute();
-            stack.push(result);
-        } catch (TrapException error) {
-            trap.raiseError(error.getCode(), (i + 1), (i + 1 + offset), addInstruction.getName());
+        Type result;
+
+        if (first.getType().equals("int") && second.getType().equals("int")) {
+            IntType firstVal = (IntType) first;
+            IntType secondVal = (IntType) second;
+            result = new IntType(firstVal.getValue() + secondVal.getValue());
+        } else if (first.getType().equals("float") && second.getType().equals("float")) {
+            FloatType firstVal = (FloatType) first;
+            FloatType secondVal = (FloatType) second;
+            result = new FloatType(firstVal.getInteger() + secondVal.getInteger(), firstVal.getDecimals());
+        } else {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset), "ADD");
+            return;
         }
+        stack.push(result);
     }
 
     private void subOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -274,13 +289,21 @@ public class VirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
-        Instruction subInstruction = new Sub(first, second);
-        try {
-            IntType result = (IntType) subInstruction.execute();
-            stack.push(result);
-        } catch (TrapException error) {
-            trap.raiseError(error.getCode(), (i + 1), (i + 1 + offset), subInstruction.getName());
+        Type result;
+
+        if (first.getType().equals("int") && second.getType().equals("int")) {
+            IntType firstVal = (IntType) first;
+            IntType secondVal = (IntType) second;
+            result = new IntType(firstVal.getValue() - secondVal.getValue());
+        } else if (first.getType().equals("float") && second.getType().equals("float")) {
+            FloatType firstVal = (FloatType) first;
+            FloatType secondVal = (FloatType) second;
+            result = new FloatType(firstVal.getInteger() - secondVal.getInteger(), firstVal.getDecimals());
+        } else {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset), "ADD");
+            return;
         }
+        stack.push(result);
     }
 
     private void mulOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -291,13 +314,21 @@ public class VirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
-        Instruction mulInstruction = new Mul(first, second);
-        try {
-            IntType result = (IntType) mulInstruction.execute();
-            stack.push(result);
-        } catch (TrapException error) {
-            trap.raiseError(error.getCode(), (i + 1), (i + 1 + offset), mulInstruction.getName());
+        Type result;
+
+        if (first.getType().equals("int") && second.getType().equals("int")) {
+            IntType firstVal = (IntType) first;
+            IntType secondVal = (IntType) second;
+            result = new IntType(firstVal.getValue() * secondVal.getValue());
+        } else if (first.getType().equals("float") && second.getType().equals("float")) {
+            FloatType firstVal = (FloatType) first;
+            FloatType secondVal = (FloatType) second;
+            result = new FloatType(firstVal.getInteger() * secondVal.getInteger(), firstVal.getDecimals());
+        } else {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset), "ADD");
+            return;
         }
+        stack.push(result);
     }
 
     private void divOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -308,13 +339,21 @@ public class VirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
-        Instruction divInstruction = new Div(first, second);
-        try {
-            IntType result = (IntType) divInstruction.execute();
-            stack.push(result);
-        } catch (TrapException error) {
-            trap.raiseError(error.getCode(), (i + 1), (i + 1 + offset), divInstruction.getName());
+        Type result;
+
+        if (first.getType().equals("int") && second.getType().equals("int")) {
+            IntType firstVal = (IntType) first;
+            IntType secondVal = (IntType) second;
+            result = new FloatType(firstVal.getValue() / secondVal.getValue(), 2);
+        } else if (first.getType().equals("float") && second.getType().equals("float")) {
+            FloatType firstVal = (FloatType) first;
+            FloatType secondVal = (FloatType) second;
+            result = new FloatType(firstVal.getInteger() / secondVal.getInteger(), firstVal.getDecimals());
+        } else {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset), "ADD");
+            return;
         }
+        stack.push(result);
     }
 
     private void instOperation(String[] instruction) {
@@ -323,13 +362,22 @@ public class VirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if (instruction.length - 1 > 3) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
         }
 
         String type = instruction[1];
         String variableName = instruction[2];
+        String decimals = "";
+        if (type.equals("float")) {
+            decimals = instruction[3];
+        }
 
         if (dataSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1), (i + 1 + offset));
@@ -347,6 +395,9 @@ public class VirtualMachine {
                 break;
             case "addr":
                 dataSpace.put(variableName, new AddrType());
+                break;
+            case "float":
+                dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
@@ -484,6 +535,11 @@ public class VirtualMachine {
                 AddrType secondAddr = new AddrType((Address) second.getValue());
                 stack.push(new BoolType(firstAddr.getValue().equals(secondAddr.getValue())));
                 break;
+            case "float":
+                FloatType firstFloat = (FloatType) first;
+                FloatType secondFloat = (FloatType) second;
+                stack.push(new BoolType(Objects.equals(firstFloat.getValue(), secondFloat.getValue())));
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
         }
@@ -498,14 +554,30 @@ public class VirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") || !second.getType().equals("int")) {
+        if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
             return;
         }
 
-        IntType firstVal = new IntType((Integer) first.getValue());
-        IntType secondVal = new IntType((Integer) second.getValue());
-        stack.push(new BoolType(firstVal.getValue() > secondVal.getValue()));
+        if (!first.getType().equals("int") && !first.getType().equals("float")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+            return;
+        }
+
+        switch (first.getType()) {
+            case "int":
+                IntType firstVal = new IntType((Integer) first.getValue());
+                IntType secondVal = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstVal.getValue() > secondVal.getValue()));
+                break;
+            case "float":
+                FloatType firstFloat = (FloatType) first;
+                FloatType secondFloat = (FloatType) second;
+                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) > 0));
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+        }
     }
 
     private void isgeOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -517,14 +589,30 @@ public class VirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") || !second.getType().equals("int")) {
+        if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
             return;
         }
 
-        IntType firstVal = new IntType((Integer) first.getValue());
-        IntType secondVal = new IntType((Integer) second.getValue());
-        stack.push(new BoolType(firstVal.getValue() >= secondVal.getValue()));
+        if (!first.getType().equals("int") && !first.getType().equals("float")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+            return;
+        }
+
+        switch (first.getType()) {
+            case "int":
+                IntType firstVal = new IntType((Integer) first.getValue());
+                IntType secondVal = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstVal.getValue() >= secondVal.getValue()));
+                break;
+            case "float":
+                FloatType firstFloat = (FloatType) first;
+                FloatType secondFloat = (FloatType) second;
+                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) >= 0));
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+        }
     }
 
     private void isltOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -536,14 +624,30 @@ public class VirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") || !second.getType().equals("int")) {
+        if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
             return;
         }
 
-        IntType firstVal = new IntType((Integer) first.getValue());
-        IntType secondVal = new IntType((Integer) second.getValue());
-        stack.push(new BoolType(firstVal.getValue() < secondVal.getValue()));
+        if (!first.getType().equals("int") && !first.getType().equals("float")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+            return;
+        }
+
+        switch (first.getType()) {
+            case "int":
+                IntType firstVal = new IntType((Integer) first.getValue());
+                IntType secondVal = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstVal.getValue() < secondVal.getValue()));
+                break;
+            case "float":
+                FloatType firstFloat = (FloatType) first;
+                FloatType secondFloat = (FloatType) second;
+                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) < 0));
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+        }
     }
 
     private void isleOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
@@ -555,14 +659,30 @@ public class VirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") || !second.getType().equals("int")) {
+        if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
             return;
         }
 
-        IntType firstVal = new IntType((Integer) first.getValue());
-        IntType secondVal = new IntType((Integer) second.getValue());
-        stack.push(new BoolType(firstVal.getValue() <= secondVal.getValue()));
+        if (!first.getType().equals("int") && !first.getType().equals("float")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+            return;
+        }
+
+        switch (first.getType()) {
+            case "int":
+                IntType firstVal = new IntType((Integer) first.getValue());
+                IntType secondVal = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstVal.getValue() <= secondVal.getValue()));
+                break;
+            case "float":
+                FloatType firstFloat = (FloatType) first;
+                FloatType secondFloat = (FloatType) second;
+                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) <= 0));
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, (i + 1), (i + 1 + offset));
+        }
     }
 
     private void ainstOperation(String[] instruction) {
@@ -571,13 +691,22 @@ public class VirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if (instruction.length - 1 > 3) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
         }
 
         String type = instruction[1];
         String variableName = instruction[2];
+        String decimals = "";
+        if (type.equals("float")) {
+            decimals = instruction[3];
+        }
 
         if (argumentsSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1), (i + 1 + offset));
@@ -596,9 +725,31 @@ public class VirtualMachine {
             case "addr":
                 argumentsSpace.put(variableName, new AddrType());
                 break;
+            case "float":
+                argumentsSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
         }
+    }
+
+    private void aloadOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!argumentsSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
+        }
+        stack.push(argumentsSpace.get(variableName));
     }
 
     private void astoreOperation(String[] instruction) throws StackUnderflowException {
@@ -621,38 +772,28 @@ public class VirtualMachine {
         argumentsSpace.put(variableName, value);
     }
 
-    private void aloadOperation(String[] instruction) throws StackOverflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
-            return;
-        }
-
-        String variableName = instruction[1];
-
-        if (!argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
-        }
-        stack.push(argumentsSpace.get(variableName));
-    }
-
     private void ginstOperation(String[] instruction) {
         if ((instruction.length - 1) < 2) {
             trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
         }
 
-        if ((instruction.length - 1) > 2) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if (instruction.length - 1 > 3) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
             return;
         }
 
         String type = instruction[1];
         String variableName = instruction[2];
+        String decimals = "";
+        if (type.equals("float")) {
+            decimals = instruction[3];
+        }
 
         if (globalSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, (i + 1), (i + 1 + offset));
@@ -672,9 +813,31 @@ public class VirtualMachine {
             case "addr":
                 globalSpace.put(variableName, new TraceChange(new AddrType(), true));
                 break;
+            case "float":
+                globalSpace.put(variableName, new TraceChange(new FloatType(0, Integer.parseInt(decimals)), true));
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
         }
+    }
+
+    private void gloadOperation(String[] instruction) throws StackOverflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
+        }
+        stack.push(globalSpace.get(variableName).getValue());
     }
 
     private void gstoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
@@ -702,24 +865,5 @@ public class VirtualMachine {
             globalSpace.put(variableName, new TraceChange(value, true));
         }
 
-    }
-
-    private void gloadOperation(String[] instruction) throws StackOverflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, (i + 1), (i + 1 + offset), instruction[0]);
-            return;
-        }
-
-        String variableName = instruction[1];
-
-        if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, (i + 1), (i + 1 + offset));
-        }
-        stack.push(globalSpace.get(variableName).getValue());
     }
 }
