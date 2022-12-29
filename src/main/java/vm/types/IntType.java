@@ -1,7 +1,6 @@
 package vm.types;
 
 public class IntType extends Type {
-    final private String type = "int";
     private final Integer value;
 
     public IntType() {
@@ -14,7 +13,7 @@ public class IntType extends Type {
 
     @Override
     public String getType() {
-        return type;
+        return "int";
     }
 
     @Override

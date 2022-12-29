@@ -1,7 +1,6 @@
 package vm.types;
 
 public class StrType extends Type {
-    final private String type = "str";
     private final String value;
 
     public StrType() {
@@ -14,7 +13,7 @@ public class StrType extends Type {
 
     @Override
     public String getType() {
-        return type;
+        return "str";
     }
 
     @Override

@@ -1,7 +1,6 @@
 package vm.types;
 
 public class BoolType extends Type {
-    final private String type = "bool";
     private final Boolean value;
 
     public BoolType() {
@@ -14,7 +13,7 @@ public class BoolType extends Type {
 
     @Override
     public String getType() {
-        return type;
+        return "bool";
     }
 
     @Override

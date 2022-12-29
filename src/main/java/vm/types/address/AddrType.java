@@ -3,7 +3,6 @@ package vm.types.address;
 import vm.types.Type;
 
 public class AddrType extends Type {
-    final private String type = "addr";
     private final Address value;
 
     public AddrType() {
@@ -16,7 +15,7 @@ public class AddrType extends Type {
 
     @Override
     public String getType() {
-        return type;
+        return "addr";
     }
 
     @Override
