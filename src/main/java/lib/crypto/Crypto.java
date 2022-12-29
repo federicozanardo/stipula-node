@@ -53,6 +53,7 @@ public class Crypto {
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePrivate(spec);
     }
+
     public static PublicKey getPublicKeyFromFile(String filename) throws Exception {
         File file = new File(filename);
         Scanner fileReader = new Scanner(file);

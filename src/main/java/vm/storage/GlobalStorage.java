@@ -1,18 +1,16 @@
 package vm.storage;
 
 import constants.Constants;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
 import vm.contract.ContractInstance;
 import vm.types.TraceChange;
+import vm.types.Type;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.iq80.leveldb.DB;
-
-import org.iq80.leveldb.Options;
-import vm.types.Type;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.*;
 
@@ -37,6 +35,7 @@ public class GlobalStorage {
         }
         return instance;
     }
+
     public void loadGlobalStorage(String contractInstanceId) {
         ContractInstance instance = this.deserialize(levelDBStore.get(bytes(contractInstanceId)));
         if (instance == null) {
@@ -65,6 +64,7 @@ public class GlobalStorage {
 
         return instance;
     }
+
     public void storeGlobalStorage(HashMap<String, TraceChange> updates, ContractInstance instance) throws IOException {
         for (HashMap.Entry<String, TraceChange> entry : this.storage.entrySet()) {
             TraceChange value = entry.getValue();
@@ -101,7 +101,8 @@ public class GlobalStorage {
             } catch (IOException ex) {
                 // ignore close exception
             }
-        } return null;
+        }
+        return null;
     }
 
     private ContractInstance deserialize(byte[] bytes) {
@@ -122,6 +123,7 @@ public class GlobalStorage {
             } catch (IOException ex) {
                 // ignore close exception
             }
-        } return null;
+        }
+        return null;
     }
 }

@@ -1,7 +1,7 @@
 package vm.trap;
 
-import lib.datastructures.Stack;
 import exceptions.stack.StackOverflowException;
+import lib.datastructures.Stack;
 import vm.types.StrType;
 
 import java.util.HashMap;
