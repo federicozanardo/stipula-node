@@ -36,6 +36,7 @@ public class FloatType extends Type {
     public Integer getInteger() {
         return value;
     }
+
     public Integer getDecimals() {
         return decimals;
     }

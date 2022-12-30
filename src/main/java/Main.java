@@ -4,19 +4,15 @@ import messages.FunctionCallMessage;
 import messages.Message;
 import messages.SignedMessage;
 import vm.VirtualMachine;
-import vm.contract.ContractInstance;
-import vm.dfa.ContractCallByParty;
-import vm.dfa.DeterministicFiniteAutomata;
-import lib.datastructures.Pair;
-import vm.dfa.State;
-import vm.storage.GlobalStorage;
 import vm.types.address.Address;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Scanner;
 
 import static lib.crypto.Crypto.*;
 
@@ -26,21 +22,29 @@ class Main {
     public static void main(String[] args) throws Exception {
         String path = String.valueOf(Constants.EXAMPLES_PATH);
 
-        //SignedMessage signedMessage = generateAgreementCallMessage(path);
-        SignedMessage signedMessage = generateFunctionCallMessage(path);
+        SignedMessage signedMessage = generateAgreementCallMessage(path);
+        // SignedMessage signedMessage = generateFunctionCallMessage(path);
         Message message = signedMessage.getMessage();
 
         // Load the function
-        String rawBytecode = loadFunction(path + "contract1.sb", "offer");
+        String rawBytecode;
+        rawBytecode = loadFunction(path + "contract2.sb", "agreement");
+        /*if (message instanceof AgreementCallMessage) {
+            rawBytecode = loadFunction(path + "contract1.sb", "agreement");
+        } else {
+            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
+            rawBytecode = loadFunction(path + "contract1.sb", functionCallMessage.getFunction());
+        }*/
 
         // Load arguments
-        HashMap<String, String> arguments = loadArguments(message);
+        // HashMap<String, String> arguments = loadArguments(message);
+        HashMap<String, String> arguments = new HashMap<>();
 
         // Load the bytecode
         String bytecode = loadBytecode(rawBytecode, arguments);
         String[] instructions = bytecode.split("\n");
 
-        GlobalStorage globalStorage = new GlobalStorage();
+        /*GlobalStorage globalStorage = new GlobalStorage();
 
         // Load the DFA
         Address lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
@@ -60,7 +64,7 @@ class Main {
         if (!dfa.isNextState("Proposal", lenderAddr)) {
             // Error
             System.out.println("main: Error in the state machine");
-        }
+        }*/
 
         // Prepare the virtual machine
         VirtualMachine vm;
@@ -74,10 +78,11 @@ class Main {
         } else {
             // Load global storage
             System.out.println("main: Loading the contract instance...");
-            globalStorage.loadGlobalStorage(contractInstanceId);
+            // globalStorage.loadGlobalStorage(contractInstanceId);
             System.out.println("main: Contract instance loaded");
 
-            vm = new VirtualMachine(instructions, offset, globalStorage.getStorage());
+            // vm = new VirtualMachine(instructions, offset, globalStorage.getStorage());
+            vm = new VirtualMachine(instructions, offset);
         }
 
         // Execute the code
@@ -89,7 +94,7 @@ class Main {
         }
 
         // Go to the next state
-        dfa.nextState("Proposal", lenderAddr);
+        /*dfa.nextState("Proposal", lenderAddr);
 
         System.out.println("main: current state = " + dfa.getCurrentState());
 
@@ -105,14 +110,14 @@ class Main {
                 ContractInstance instance = globalStorage.getContractInstance(contractInstanceId);
                 globalStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
 
-                /*for (HashMap.Entry<String, TraceChange> entry : globalStorage.getStorage().entrySet()) {
+                *//*for (HashMap.Entry<String, TraceChange> entry : globalStorage.getStorage().entrySet()) {
                     System.out.println(asString(bytes(entry.getKey())) + ": " + entry.getValue().getValue());
                     this.storage.put(entry.getKey(), new TraceChange(entry.getValue()));
-                }*/
+                }*//*
             }
 
             System.out.println("main: Global store updated");
-        }
+        }*/
     }
 
     private static String readProgram(String pathname) {

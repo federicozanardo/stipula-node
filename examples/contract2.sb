@@ -1,0 +1,22 @@
+contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e
+fn agreement
+INST float a 2
+PUSH float 3602 2
+PUSH float 3630 2
+MUL
+PUSH float 500 2
+DIV
+STORE a
+INST float b 2
+LOAD a
+LOAD a
+ADD
+STORE b
+LOAD a
+LOAD b
+ISLT
+GINST float c 2
+LOAD a
+GSTORE c
+INST asset d bb69e66e-6e8e-4791-b1f9-75d76d1638ff
+HALT
