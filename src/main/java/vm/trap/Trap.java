@@ -7,10 +7,12 @@ import vm.types.StrType;
 import java.util.HashMap;
 
 public class Trap {
+    private final int offset;
     private final Stack<StrType> stack = new Stack<StrType>(100);
     private final HashMap<TrapErrorCodes, String> map = new HashMap<TrapErrorCodes, String>() {
         {
             this.put(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, "This error code does not exist");
+            this.put(TrapErrorCodes.ELEMENTS_ARE_NOT_EQUAL, "The two elements are not equal");
             this.put(TrapErrorCodes.INCORRECT_TYPE, "Wrong type for this instruction");
             this.put(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, "This instruction does not exist");
             this.put(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, "This label does not exist in the code");
@@ -27,37 +29,39 @@ public class Trap {
         }
     };
 
-    public void raiseError(TrapErrorCodes errorCode, int line, int lineWithOffset) {
-        if (!map.containsKey(errorCode)) {
-            this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line, lineWithOffset);
-        }
-        this.pushTrapError(errorCode, map.get(errorCode), line, lineWithOffset);
+    public Trap(int offset) {
+        this.offset = offset;
     }
 
-    public void raiseError(TrapErrorCodes errorCode, int line, int lineWithOffset, String instruction) {
+    public void raiseError(TrapErrorCodes errorCode, int line) {
         if (!map.containsKey(errorCode)) {
-            this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line, lineWithOffset, instruction);
+            this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line);
         }
-        this.pushTrapError(errorCode, map.get(errorCode), line, lineWithOffset, instruction);
+        this.pushTrapError(errorCode, map.get(errorCode), line);
     }
 
-    private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, int lineWithOffset) {
+    public void raiseError(TrapErrorCodes errorCode, int line, String instruction) {
+        if (!map.containsKey(errorCode)) {
+            this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line, instruction);
+        }
+        this.pushTrapError(errorCode, map.get(errorCode), line, instruction);
+    }
+
+    private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line) {
         try {
             this.stack
                     .push(new StrType(errorCode.toString() +
-                            " at line " + line +
-                            " (with offset, at line " + lineWithOffset + ")" +
+                            " at line " + (line + this.offset) +
                             ": " + errorMessage));
         } catch (StackOverflowException error) {
             System.exit(-1);
         }
     }
 
-    private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, int lineWithOffset, String instruction) {
+    private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, String instruction) {
         try {
             this.stack.push(new StrType(errorCode.toString() +
-                    " at line " + line +
-                    " (with offset, at line " + lineWithOffset + ")" +
+                    " at line " + (line + this.offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
         } catch (StackOverflowException error) {
