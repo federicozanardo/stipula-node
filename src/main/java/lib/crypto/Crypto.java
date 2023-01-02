@@ -72,6 +72,14 @@ public class Crypto {
         return kf.generatePublic(spec);
     }
 
+    public static PublicKey getPublicKeyFromString(String publicKey) throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(publicKey);
+
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePublic(spec);
+    }
+
     public static String sign(String plainText, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature privateSignature = Signature.getInstance("SHA256withRSA");
         privateSignature.initSign(privateKey);
