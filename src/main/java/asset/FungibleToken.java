@@ -1,4 +1,4 @@
-package vm.types.asset;
+package asset;
 
 public class FungibleToken extends AssetConfig {
     public FungibleToken(String assetId, String assetName, String unitName, int supply, int decimals) {

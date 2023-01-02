@@ -1,4 +1,4 @@
-package vm.types.asset;
+package asset;
 
 public abstract class AssetConfig {
     private final String assetId;

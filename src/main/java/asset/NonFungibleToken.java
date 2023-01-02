@@ -1,4 +1,4 @@
-package vm.types.asset;
+package asset;
 
 public class NonFungibleToken extends AssetConfig {
     public NonFungibleToken(String assetId, String assetName, String unitName) {
