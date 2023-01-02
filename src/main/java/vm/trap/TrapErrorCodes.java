@@ -6,6 +6,11 @@ public enum TrapErrorCodes {
             return "ERROR_CODE_DOES_NOT_EXISTS";
         }
     },
+    ELEMENTS_ARE_NOT_EQUAL {
+        public String toString() {
+            return "ELEMENTS_ARE_NOT_EQUAL";
+        }
+    },
     INCORRECT_TYPE {
         public String toString() {
             return "INCORRECT_TYPE";
