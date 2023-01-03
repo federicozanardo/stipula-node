@@ -14,7 +14,7 @@ public class FunctionCallMessage extends Message {
         this.contractInstanceId = contractInstanceId;
         this.function = function;
         this.arguments = arguments;
-        this.assetArguments = null;
+        this.assetArguments = new HashMap<>();
     }
 
     public FunctionCallMessage(String contractId, String contractInstanceId, String function, HashMap<String, String> arguments, HashMap<String, PayToContract> assetArguments) {
