@@ -3,9 +3,11 @@ package vm.types;
 import java.math.BigDecimal;
 
 public class AssetType extends Type {
+    private final String assetId;
     private final FloatType amount;
 
-    public AssetType(FloatType amount) {
+    public AssetType(String assetId, FloatType amount) {
+        this.assetId = assetId;
         this.amount = amount;
     }
 
@@ -19,7 +21,11 @@ public class AssetType extends Type {
     }
 
     @Override
-    public BigDecimal getValue() {
-        return this.amount.getValue();
+    public FloatType getValue() {
+        return this.amount;
+    }
+
+    public String getAssetId() {
+        return this.assetId;
     }
 }
