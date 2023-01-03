@@ -51,7 +51,7 @@ public class Trap {
         try {
             this.stack
                     .push(new StrType(errorCode.toString() +
-                            " at line " + (line + this.offset) +
+                            " at line " + (line + 1 + this.offset) +
                             ": " + errorMessage));
         } catch (StackOverflowException error) {
             System.exit(-1);
@@ -61,7 +61,7 @@ public class Trap {
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, String instruction) {
         try {
             this.stack.push(new StrType(errorCode.toString() +
-                    " at line " + (line + this.offset) +
+                    " at line " + (line + 1 + this.offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
         } catch (StackOverflowException error) {
