@@ -3,32 +3,32 @@ package vm.contract;
 import asset.AssetConfig;
 import vm.types.FloatType;
 
-public class SingleUseSeal<T extends AssetConfig> {
+public class SingleUseSeal {
     private final String id;
-    private final T assetConfig;
+    private final String assetId;
     private final FloatType amount;
-    private final String lockingScript;
+    private final String lockScript;
 
-    public SingleUseSeal(String id, T assetConfig, FloatType amount, String publicKeyHash) {
+    public SingleUseSeal(String id, String assetId, FloatType amount, String publicKeyHash) {
         this.id = id;
-        this.assetConfig = assetConfig;
+        this.assetId = assetId;
         this.amount = amount;
-        this.lockingScript = "DUP\n SHA256\n PUSH str " + publicKeyHash + "\n EQUAL\n CHECKSIG\n";
+        this.lockScript = "DUP\nSHA256\nPUSH str " + publicKeyHash + "\nEQUAL\nCHECKSIG\n";
     }
 
     public String getId() {
         return id;
     }
 
-    public T getAssetConfig() {
-        return assetConfig;
+    public String getAssetId() {
+        return assetId;
     }
 
     public FloatType getAmount() {
         return amount;
     }
 
-    public String getLockingScript() {
-        return lockingScript;
+    public String getLockScript() {
+        return lockScript;
     }
 }
