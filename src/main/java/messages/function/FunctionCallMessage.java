@@ -1,4 +1,6 @@
-package messages;
+package messages.function;
+
+import messages.Message;
 
 import java.util.HashMap;
 

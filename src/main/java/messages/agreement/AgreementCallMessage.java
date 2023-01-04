@@ -1,5 +1,6 @@
-package messages;
+package messages.agreement;
 
+import messages.Message;
 import vm.types.address.Address;
 
 import java.util.HashMap;

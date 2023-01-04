@@ -1,4 +1,4 @@
-package messages;
+package messages.function;
 
 import vm.contract.SingleUseSeal;
 
