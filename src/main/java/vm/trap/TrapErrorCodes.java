@@ -16,6 +16,11 @@ public enum TrapErrorCodes {
             return "INCORRECT_TYPE";
         }
     },
+    INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST {
+        public String toString() {
+            return "INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST";
+        }
+    },
     INSTRUCTION_DOES_NOT_EXISTS {
         public String toString() {
             return "INSTRUCTION_DOES_NOT_EXISTS";

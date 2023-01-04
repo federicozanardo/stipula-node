@@ -14,6 +14,7 @@ public class Trap {
             this.put(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, "This error code does not exist");
             this.put(TrapErrorCodes.ELEMENTS_ARE_NOT_EQUAL, "The two elements are not equal");
             this.put(TrapErrorCodes.INCORRECT_TYPE, "Wrong type for this instruction");
+            this.put(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, "Wrong type for this instruction or this type does not exist");
             this.put(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, "This instruction does not exist");
             this.put(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, "This label does not exist in the code");
             this.put(TrapErrorCodes.MISS_HALT_INSTRUCTION, "Last instruction must be HALT");
