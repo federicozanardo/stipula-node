@@ -3,8 +3,8 @@ fn agreement
 global:
 GINST addr Lender
 GINST addr Borrower
-// GINST asset wallet
-GINST int cost
+GINST asset wallet iop890
+GINST float cost
 GINST int rent_time
 GINST int use_code
 args:
@@ -12,7 +12,7 @@ PUSH addr :Lender
 GSTORE Lender
 PUSH addr :Borrower
 GSTORE Borrower
-PUSH int :cost
+PUSH float :cost
 GSTORE cost
 PUSH int :rent_time
 GSTORE rent_time
@@ -26,6 +26,24 @@ ASTORE z
 start:
 ALOAD z
 GSTORE use_code
+HALT
+fn accept Borrower
+args:
+PUSH float :y
+AINST asset y iop890
+ASTORE y
+start:
+ALOAD y
+GLOAD cost
+ISEQ
+JMPIF if_branch
+JMP end
+if_branch:
+ALOAD y
+GLOAD wallet
+ADD
+GSTORE wallet
+end:
 HALT
 fn end Using Borrower
 start:
