@@ -1,9 +1,6 @@
 package messages;
 
-import asset.AssetConfig;
 import vm.contract.SingleUseSeal;
-
-import java.math.BigDecimal;
 
 public class PayToContract {
     private final SingleUseSeal singleUseSeal;

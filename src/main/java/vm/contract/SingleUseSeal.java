@@ -1,6 +1,5 @@
 package vm.contract;
 
-import asset.AssetConfig;
 import vm.types.FloatType;
 
 public class SingleUseSeal {
