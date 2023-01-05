@@ -4,6 +4,7 @@ import asset.FungibleAsset;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
+import vm.contract.SingleUseSeal;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
@@ -13,9 +14,7 @@ import vm.types.address.Address;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 import static lib.crypto.Crypto.getPublicKeyFromString;
 import static lib.crypto.Crypto.verify;
@@ -29,6 +28,7 @@ public class SmartContractVirtualMachine {
     private final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
+    private final ArrayList<SingleUseSeal> singleUseSealsToSend = new ArrayList<>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
     // private int programCounter; // or instructionPointer
@@ -302,9 +302,6 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
         Type result;
-
-        System.out.println(first.getType());
-        System.out.println(second.getType());
 
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
@@ -658,9 +655,6 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        System.out.println("ISEQ: " + first.getType());
-        System.out.println("ISEQ: " + second.getType());
-
         if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
@@ -893,7 +887,6 @@ public class SmartContractVirtualMachine {
                 FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
                 if (assetId.equals(bitcoin.getAssetId())) {
                     AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
-                    System.out.println("AINST: " + variableName + ": " + value.getType());
                     argumentsSpace.put(variableName, value);
                 } else {
                     // Error
@@ -920,7 +913,6 @@ public class SmartContractVirtualMachine {
         if (!argumentsSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer);
         }
-        System.out.println("ALOAD: " + variableName + ": " + argumentsSpace.get(variableName));
         stack.push(argumentsSpace.get(variableName));
     }
 
@@ -941,7 +933,6 @@ public class SmartContractVirtualMachine {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
         }
 
-        System.out.println("ASTORE: " + variableName + ": " + argumentsSpace.get(variableName));
         Type currentValue = argumentsSpace.get(variableName);
 
         if (currentValue.getType().equals("asset")) {
@@ -1175,16 +1166,24 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        Type second = stack.pop();  // Float
+        Type second = stack.pop();  // Asset
         Type first = stack.pop();   // Address
 
         if (!first.getType().equals("addr") || !second.getType().equals("float")) {
-            // Error
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
+        AddrType firstAddr = (AddrType) first;
+        AssetType secondAsset = (AssetType) second;
 
-
-        stack.push(first);
+        // Set up the single-use seal
+        SingleUseSeal singleUseSeal = new SingleUseSeal(
+                UUID.randomUUID().toString(),
+                secondAsset.getAssetId(),
+                secondAsset.getValue(),
+                firstAddr.getAddress()
+        );
+        singleUseSealsToSend.add(singleUseSeal);
     }
 }
