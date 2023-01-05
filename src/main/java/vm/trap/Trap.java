@@ -11,6 +11,9 @@ public class Trap {
     private final Stack<StrType> stack = new Stack<StrType>(100);
     private final HashMap<TrapErrorCodes, String> map = new HashMap<TrapErrorCodes, String>() {
         {
+            this.put(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, "Asset ids do not match");
+            this.put(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, "The decimals of the two variables do not match");
+            this.put(TrapErrorCodes.DIVISION_BY_ZERO, "Division by zero");
             this.put(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, "This error code does not exist");
             this.put(TrapErrorCodes.ELEMENTS_ARE_NOT_EQUAL, "The two elements are not equal");
             this.put(TrapErrorCodes.INCORRECT_TYPE, "Wrong type for this instruction");

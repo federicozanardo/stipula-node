@@ -1,6 +1,21 @@
 package vm.trap;
 
 public enum TrapErrorCodes {
+    ASSET_IDS_DOES_NOT_MATCH {
+        public String toString() {
+            return "ASSET_IDS_DOES_NOT_MATCH";
+        }
+    },
+    DECIMALS_DOES_NOT_MATCH {
+        public String toString() {
+            return "DECIMALS_DOES_NOT_MATCH";
+        }
+    },
+    DIVISION_BY_ZERO {
+        public String toString() {
+            return "DIVISION_BY_ZERO";
+        }
+    },
     ERROR_CODE_DOES_NOT_EXISTS {
         public String toString() {
             return "ERROR_CODE_DOES_NOT_EXISTS";
