@@ -40,4 +40,12 @@ public class FloatType extends Type {
     public Integer getDecimals() {
         return decimals;
     }
+
+    @Override
+    public String toString() {
+        return "FloatType{" +
+                "value=" + value +
+                ", decimals=" + decimals +
+                '}';
+    }
 }

@@ -30,4 +30,14 @@ public class SingleUseSeal {
     public String getLockScript() {
         return lockScript;
     }
+
+    @Override
+    public String toString() {
+        return "SingleUseSeal{" +
+                "id='" + id + '\'' +
+                ", assetId='" + assetId + '\'' +
+                ", amount=" + amount +
+                ", lockScript='" + lockScript + '\'' +
+                '}';
+    }
 }
