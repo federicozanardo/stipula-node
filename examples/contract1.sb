@@ -18,7 +18,7 @@ PUSH int :rent_time
 GSTORE rent_time
 start:
 HALT
-fn offer Proposal Lender
+fn offer Inactive Lender
 args:
 PUSH int :z
 AINST int z
@@ -27,7 +27,7 @@ start:
 ALOAD z
 GSTORE use_code
 HALT
-fn accept Borrower
+fn accept Proposal Borrower
 args:
 PUSH float :y
 AINST asset y iop890
@@ -39,12 +39,23 @@ ISEQ
 JMPIF if_branch
 JMP end
 if_branch:
+// start deposit
 ALOAD y
 GLOAD wallet
-ADD
-GSTORE wallet
+DEPOSIT wallet
+// end deposit
 end:
 HALT
 fn end Using Borrower
 start:
+// start withdraw
+// start expression
+PUSH float 100 2
+GLOAD wallet
+MUL
+// end expression
+GLOAD wallet
+GLOAD Lender
+WITHDRAW wallet
+// end withdraw
 HALT
