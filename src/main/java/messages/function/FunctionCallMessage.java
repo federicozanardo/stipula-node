@@ -8,23 +8,15 @@ public class FunctionCallMessage extends Message {
     private final String contractId;
     private final String contractInstanceId;
     private final String function;
-    private final HashMap<String, String> arguments;
-    private final HashMap<String, PayToContract> assetArguments;
+    private HashMap<String, String> arguments;
+    private HashMap<String, PayToContract> assetArguments;
 
-    public FunctionCallMessage(String contractId, String contractInstanceId, String function, HashMap<String, String> arguments) {
+    public FunctionCallMessage(String contractId, String contractInstanceId, String function) {
         this.contractId = contractId;
         this.contractInstanceId = contractInstanceId;
         this.function = function;
-        this.arguments = arguments;
+        this.arguments = new HashMap<>();
         this.assetArguments = new HashMap<>();
-    }
-
-    public FunctionCallMessage(String contractId, String contractInstanceId, String function, HashMap<String, String> arguments, HashMap<String, PayToContract> assetArguments) {
-        this.contractId = contractId;
-        this.contractInstanceId = contractInstanceId;
-        this.function = function;
-        this.arguments = arguments;
-        this.assetArguments = assetArguments;
     }
 
     public String getContractId() {
@@ -45,5 +37,13 @@ public class FunctionCallMessage extends Message {
 
     public HashMap<String, PayToContract> getAssetArguments() {
         return assetArguments;
+    }
+
+    public void setArguments(HashMap<String, String> arguments) {
+        this.arguments = arguments;
+    }
+
+    public void setAssetArguments(HashMap<String, PayToContract> assetArguments) {
+        this.assetArguments = assetArguments;
     }
 }
