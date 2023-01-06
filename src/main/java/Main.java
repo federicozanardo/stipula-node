@@ -1,9 +1,17 @@
+import asset.FungibleAsset;
 import constants.Constants;
-import messages.AgreementCallMessage;
-import messages.FunctionCallMessage;
 import messages.Message;
 import messages.SignedMessage;
-import vm.VirtualMachine;
+import messages.agreement.AgreementCallMessage;
+import messages.function.FunctionCallMessage;
+import messages.function.PayToContract;
+import vm.SmartContractVirtualMachine;
+import vm.contract.SingleUseSeal;
+import vm.storage.GlobalStorage;
+import vm.types.AssetType;
+import vm.types.FloatType;
+import vm.types.TraceChange;
+import vm.types.address.AddrType;
 import vm.types.address.Address;
 
 import java.io.File;
@@ -22,30 +30,42 @@ class Main {
     public static void main(String[] args) throws Exception {
         String path = String.valueOf(Constants.EXAMPLES_PATH);
 
-        SignedMessage signedMessage = generateAgreementCallMessage(path);
+        // SignedMessage signedMessage = generateAgreementCallMessage(path);
         // SignedMessage signedMessage = generateFunctionCallMessage(path);
+        // SignedMessage signedMessage = generatePayToContractMessage(path);
+        SignedMessage signedMessage = callEndFunction(path);
         Message message = signedMessage.getMessage();
 
         // Load the function
         String rawBytecode;
-        rawBytecode = loadFunction(path + "contract2.sb", "agreement");
-        /*if (message instanceof AgreementCallMessage) {
+        // rawBytecode = loadFunction(path + "contract1.sb", "agreement");
+        if (message instanceof AgreementCallMessage) {
             rawBytecode = loadFunction(path + "contract1.sb", "agreement");
         } else {
             FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
             rawBytecode = loadFunction(path + "contract1.sb", functionCallMessage.getFunction());
-        }*/
+        }
 
         // Load arguments
-        // HashMap<String, String> arguments = loadArguments(message);
-        HashMap<String, String> arguments = new HashMap<>();
+        // HashMap<String, String> arguments = new HashMap<>();
+        HashMap<String, String> arguments = loadArguments(message);
+
+        HashMap<String, AssetType> assetArguments = new HashMap<>();
+        if (message instanceof FunctionCallMessage) {
+            assetArguments = loadAssetArguments(message);
+        }
 
         // Load the bytecode
-        String bytecode = loadBytecode(rawBytecode, arguments);
+        String bytecode;
+        if (message instanceof AgreementCallMessage) {
+            bytecode = loadBytecode(rawBytecode, arguments);
+        } else {
+            bytecode = loadBytecode(rawBytecode, arguments, assetArguments);
+        }
         String[] instructions = bytecode.split("\n");
 
-        /*GlobalStorage globalStorage = new GlobalStorage();
-
+        GlobalStorage globalStorage = new GlobalStorage();
+        /*
         // Load the DFA
         Address lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
         Address borrowerAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB");
@@ -67,22 +87,37 @@ class Main {
         }*/
 
         // Prepare the virtual machine
-        VirtualMachine vm;
+        SmartContractVirtualMachine vm;
 
         String contractId = "asd123";
         // String contractInstanceId = "bb69e66e-6e8e-4791-b1f9-75d76d1638ff";
         String contractInstanceId = "04e8e716-44d8-4e47-ad6a-4c28e97c1e3d";
 
         if (message instanceof AgreementCallMessage) {
-            vm = new VirtualMachine(instructions, offset);
+            vm = new SmartContractVirtualMachine(instructions, offset);
         } else {
             // Load global storage
             System.out.println("main: Loading the contract instance...");
             // globalStorage.loadGlobalStorage(contractInstanceId);
+            HashMap<String, TraceChange> global = new HashMap<>();
+            global.put("cost", new TraceChange(new FloatType(300, 2), false));
+            // global.put("wallet", new TraceChange(new AssetType("iop890", new FloatType(0, 2)), false));
+            global.put("wallet", new TraceChange(new AssetType("iop890", new FloatType(300, 2)), false));
+            Base64.Encoder encoder = Base64.getEncoder();
+            global.put("Lender", new TraceChange(
+                    new AddrType(
+                            new Address(
+                                    encoder.encodeToString(getPublicKeyFromFile(path + "lender-keys/publicKey").getEncoded())
+                            )
+                    ),
+                    false)
+            );
+            // System.out.println(global);
             System.out.println("main: Contract instance loaded");
 
+            vm = new SmartContractVirtualMachine(instructions, offset, global);
             // vm = new VirtualMachine(instructions, offset, globalStorage.getStorage());
-            vm = new VirtualMachine(instructions, offset);
+            // vm = new VirtualMachine(instructions, offset);
         }
 
         // Execute the code
@@ -208,18 +243,72 @@ class Main {
         HashMap<String, String> arguments = new HashMap<>();
 
         if (message instanceof AgreementCallMessage) {
-            for (HashMap.Entry<String, String> entry : ((AgreementCallMessage) message).getArguments().entrySet()) {
-                arguments.put(entry.getKey(), entry.getValue());
-            }
-            for (HashMap.Entry<String, Address> entry : ((AgreementCallMessage) message).getParties().entrySet()) {
+            AgreementCallMessage agreementCallMessage = (AgreementCallMessage) message;
+            arguments.putAll(agreementCallMessage.getArguments());
+
+            for (HashMap.Entry<String, Address> entry : agreementCallMessage.getParties().entrySet()) {
                 arguments.put(entry.getKey(), entry.getValue().getPublicKey());
             }
-            return arguments;
         } else {
-            for (HashMap.Entry<String, String> entry : ((FunctionCallMessage) message).getArguments().entrySet()) {
-                arguments.put(entry.getKey(), entry.getValue());
+            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
+            arguments.putAll(functionCallMessage.getArguments());
+        }
+
+        return arguments;
+    }
+
+    private static HashMap<String, AssetType> loadAssetArguments(Message message) {
+        HashMap<String, AssetType> assetArguments = new HashMap<>();
+
+        if (message instanceof FunctionCallMessage) {
+            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
+
+            if (!functionCallMessage.getAssetArguments().isEmpty()) {
+                for (HashMap.Entry<String, PayToContract> entry : functionCallMessage.getAssetArguments().entrySet()) {
+                    // Set up the asset
+                    FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
+
+                    PayToContract payToContract = entry.getValue();
+                    SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
+
+                    // Check if the single-use seal exists
+                    // singleUseSeal.getId() // TODO
+
+                    // Check if the asset id matches
+                    if (!singleUseSeal.getAssetId().equals(bitcoin.getAssetId())) {
+                        // Error
+                    }
+
+                    // Check if the decimals matches
+                    if (!(singleUseSeal.getAmount().getDecimals() == bitcoin.getDecimals())) {
+                        // Error
+                    }
+
+                    // Check if the amount <= asset supply
+                    if (!(singleUseSeal.getAmount().getInteger() <= bitcoin.getSupply())) {
+                        // Error
+                    }
+
+                    // Check if it is possible to unlock the script
+                    // TODO
+
+                    AssetType value = new AssetType(
+                            bitcoin.getAssetId(),
+                            new FloatType(
+                                    singleUseSeal.getAmount().getInteger(),
+                                    singleUseSeal.getAmount().getDecimals()
+                            )
+                    );
+
+                    // All the checks are true, so add the argument
+                    assetArguments.put(entry.getKey(), value);
+                }
             }
-            return arguments;
+
+            return assetArguments;
+        } else {
+            // Error
+            return null;
         }
     }
 
@@ -247,6 +336,34 @@ class Main {
         System.out.println("loadBytecode: Function\n" + bytecode);
 
         return bytecode;
+    }
+
+    private static String loadBytecode(String rawBytecode, HashMap<String, String> arguments, HashMap<String, AssetType> assetArguments) {
+        String bytecode = loadBytecode(rawBytecode, arguments);
+        String finalBytecode = "";
+        String substitution = "";
+        String[] instructions = bytecode.split("\n");
+
+        System.out.println("loadBytecode: Loading the function...");
+        for (int i = 0; i < instructions.length; i++) {
+            String[] instruction = instructions[i].trim().split(" ");
+
+            if (assetArguments.containsKey(instruction[instruction.length - 1].substring(1))) {
+                for (int j = 0; j < instruction.length - 1; j++) {
+                    substitution += instruction[j] + " ";
+                }
+                AssetType value = assetArguments.get(instruction[instruction.length - 1].substring(1));
+                substitution += value.getValue().getInteger() + " " + value.getValue().getDecimals();
+                finalBytecode += substitution + "\n";
+                substitution = "";
+            } else {
+                finalBytecode += instructions[i].trim() + "\n";
+            }
+        }
+        System.out.println("loadBytecode: Function loaded");
+        System.out.println("loadBytecode: Function\n" + finalBytecode);
+
+        return finalBytecode;
     }
 
     private static SignedMessage generateAgreementCallMessage(String path) throws Exception {
@@ -278,11 +395,15 @@ class Main {
         parties.put("Lender", lenderAddress);
         parties.put("Borrower", borrowerAddress);
 
-        HashMap<String, String> argumentsMessage = new HashMap<>();
-        argumentsMessage.put("cost", "12");
-        argumentsMessage.put("rent_time", "1");
+        HashMap<String, String> arguments = new HashMap<>();
+        // arguments.put("cost", "12");
+        arguments.put("cost", "1200 2");
+        arguments.put("rent_time", "1");
 
-        AgreementCallMessage agreementCallMessage = new AgreementCallMessage("asd123", argumentsMessage, parties);
+        AgreementCallMessage agreementCallMessage = new AgreementCallMessage(
+                "asd123",
+                arguments,
+                parties);
 
         // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
         String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
@@ -296,39 +417,83 @@ class Main {
     }
 
     private static SignedMessage generateFunctionCallMessage(String path) throws Exception {
-        // Start example of signed message
-        Base64.Encoder encoder = Base64.getEncoder();
-
-        // Generate keys
-        // KeyPair lenderKeys = generateKeyPair();
-
-        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
         PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
 
-        // Get public key as String
-        // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
-        String lenderPubKey = encoder.encodeToString(lenderPublicKey.getEncoded());
-
-        // Set up the addresses
-        Address lenderAddress = new Address(lenderPubKey); // ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=
-
-        // Load the parties' addresses
-        HashMap<String, Address> parties = new HashMap<>();
-        parties.put("Lender", lenderAddress);
-
-        HashMap<String, String> argumentsMessage = new HashMap<>();
-        argumentsMessage.put("z", "1");
+        HashMap<String, String> arguments = new HashMap<>();
+        arguments.put("z", "1");
 
         FunctionCallMessage functionCallMessage = new FunctionCallMessage(
                 "asd123",
                 "04e8e716-44d8-4e47-ad6a-4c28e97c1e3d",
-                "offer",
-                argumentsMessage);
+                "offer");
+        functionCallMessage.setArguments(arguments);
 
-        // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
         String lenderSign = sign(functionCallMessage.toString(), lenderPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         signatures.put("Lender", lenderSign);
+
+        return new SignedMessage(functionCallMessage, signatures);
+    }
+
+    private static SignedMessage generatePayToContractMessage(String path) throws Exception {
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+
+        // Get public key as String
+        String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
+
+        // Set up the address
+        Address borrowerAddress = new Address(borrowerPubKey);
+
+        HashMap<String, String> arguments = new HashMap<>();
+
+        // Set up the asset
+        FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
+
+        // Set up the single-use seal
+        FloatType amount = new FloatType(300, 2);
+        SingleUseSeal singleUseSeal = new SingleUseSeal("aaa111", bitcoin.getAssetId(), amount, borrowerAddress.getAddress());
+
+        // Set up the unlock script
+        String signature = sign("aaa111", borrowerPrivateKey);
+        String unlockScript = "PUSH str " + signature + "\nPUSH str " + borrowerPubKey + "\n";
+
+        PayToContract payToContract = new PayToContract(
+                /*"04e8e716-44d8-4e47-ad6a-4c28e97c1e3d",*/
+                singleUseSeal,
+                unlockScript
+        );
+
+        HashMap<String, PayToContract> assetArguments = new HashMap<>();
+        assetArguments.put("y", payToContract);
+
+        FunctionCallMessage functionCallMessage = new FunctionCallMessage(
+                "asd123",
+                "dsa321",
+                "accept");
+        functionCallMessage.setArguments(arguments);
+        functionCallMessage.setAssetArguments(assetArguments);
+
+        String borrowerSign = sign(functionCallMessage.toString(), borrowerPrivateKey);
+        HashMap<String, String> signatures = new HashMap<>();
+        signatures.put("Borrower", borrowerSign);
+
+        return new SignedMessage(functionCallMessage, signatures);
+    }
+
+    private static SignedMessage callEndFunction(String path) throws Exception {
+        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+
+        FunctionCallMessage functionCallMessage = new FunctionCallMessage(
+                "asd123",
+                "04e8e716-44d8-4e47-ad6a-4c28e97c1e3d",
+                "end");
+
+        String borrowerSign = sign(functionCallMessage.toString(), borrowerPrivateKey);
+        HashMap<String, String> signatures = new HashMap<>();
+        signatures.put("Borrower", borrowerSign);
 
         return new SignedMessage(functionCallMessage, signatures);
     }

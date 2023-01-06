@@ -150,8 +150,11 @@ public class SmartContractVirtualMachine {
                         case "CHECKSIG":
                             this.checksigOperation(instruction);
                             break;
-                        case "SENDASSET":
-                            this.sendassetOperation(instruction);
+                        case "DEPOSIT":
+                            this.depositOperation(instruction);
+                            break;
+                        case "WITHDRAW":
+                            this.withdrawOperation(instruction);
                             break;
                         case "HALT":
                             if ((instruction.length - 1) > 0) {
@@ -316,22 +319,47 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
-                // Error
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
             }
 
             if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
-                // Error
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
             }
 
-            result = new AssetType(
-                    firstVal.getAssetId(),
-                    new FloatType(
-                            firstVal.getValue().getInteger() + secondVal.getValue().getInteger(),
-                            firstVal.getValue().getDecimals()
-                    )
+            result = new FloatType(
+                    firstVal.getValue().getInteger() + secondVal.getValue().getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstVal = (AssetType) first;
+            FloatType secondVal = (FloatType) second;
+
+            if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() + secondVal.getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstVal = (FloatType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getInteger() + secondVal.getValue().getInteger(),
+                    firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -355,8 +383,52 @@ public class SmartContractVirtualMachine {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
             result = new FloatType(firstVal.getInteger() - secondVal.getInteger(), firstVal.getDecimals());
+        } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
+            AssetType firstVal = (AssetType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() - secondVal.getValue().getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstVal = (AssetType) first;
+            FloatType secondVal = (FloatType) second;
+
+            if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() - secondVal.getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstVal = (FloatType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getInteger() - secondVal.getValue().getInteger(),
+                    firstVal.getDecimals()
+            );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -380,8 +452,52 @@ public class SmartContractVirtualMachine {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
             result = new FloatType(firstVal.getInteger() * secondVal.getInteger(), firstVal.getDecimals());
+        } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
+            AssetType firstVal = (AssetType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() * secondVal.getValue().getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstVal = (AssetType) first;
+            FloatType secondVal = (FloatType) second;
+
+            if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() * secondVal.getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstVal = (FloatType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    (new Double((firstVal.getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getDecimals()))).intValue(),
+                    firstVal.getDecimals()
+            );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -400,13 +516,84 @@ public class SmartContractVirtualMachine {
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
+
+            if (secondVal.getValue() == 0) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
             result = new FloatType(firstVal.getValue() / secondVal.getValue(), 2);
         } else if (first.getType().equals("float") && second.getType().equals("float")) {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
+
+            if (secondVal.getInteger() == 0) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
             result = new FloatType(firstVal.getInteger() / secondVal.getInteger(), firstVal.getDecimals());
+        } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
+            AssetType firstVal = (AssetType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (secondVal.getValue().getInteger() == 0) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() / secondVal.getValue().getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstVal = (AssetType) first;
+            FloatType secondVal = (FloatType) second;
+
+            if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (secondVal.getInteger() == 0) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getValue().getInteger() / secondVal.getInteger(),
+                    firstVal.getValue().getDecimals()
+            );
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstVal = (FloatType) first;
+            AssetType secondVal = (AssetType) second;
+
+            if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            if (secondVal.getValue().getInteger() == 0) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
+            result = new FloatType(
+                    firstVal.getInteger() / secondVal.getValue().getInteger(),
+                    firstVal.getDecimals()
+            );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -864,7 +1051,8 @@ public class SmartContractVirtualMachine {
         }
 
         if (argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            return;
         }
 
         switch (type) {
@@ -930,7 +1118,8 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
         }
 
         Type currentValue = argumentsSpace.get(variableName);
@@ -1048,7 +1237,8 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
         }
         stack.push(globalSpace.get(variableName).getValue());
     }
@@ -1068,9 +1258,16 @@ public class SmartContractVirtualMachine {
 
         if (!globalSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST,executionPointer);
+            return;
         }
 
         Type value = stack.pop();
+
+        if (value.getType().equals("asset")) {
+            // Error
+            return;
+        }
+
         if (value.getType().equals("addr")) {
             AddrType address = (AddrType) value;
             globalSpace.put(variableName, new TraceChange(new AddrType(new Address(address.getPublicKey())), true));
@@ -1160,29 +1357,106 @@ public class SmartContractVirtualMachine {
         stack.push(result);
     }
 
-    private void sendassetOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
+    private void depositOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
             return;
         }
 
-        Type second = stack.pop();  // Asset
-        Type first = stack.pop();   // Address
+        String variableName = instruction[1];
 
-        if (!first.getType().equals("addr") || !second.getType().equals("float")) {
+        if (!globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
+        }
+
+        Type second = stack.pop();  // Asset
+        Type first = stack.pop();   // Asset
+        AssetType result;
+
+        if (!first.getType().equals("asset") || !second.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
-        AddrType firstAddr = (AddrType) first;
-        AssetType secondAsset = (AssetType) second;
+        AssetType assetToDeposit = (AssetType) first;
+        AssetType assetContract = (AssetType) second;
+
+        if (assetContract.getValue().getDecimals() != assetToDeposit.getValue().getDecimals()) {
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            return;
+        }
+
+        result = new AssetType(
+                assetContract.getAssetId(),
+                new FloatType(
+                        assetContract.getValue().getInteger() + assetToDeposit.getValue().getInteger(),
+                        assetToDeposit.getValue().getDecimals()
+                )
+        );
+
+        globalSpace.put(variableName, new TraceChange(result, true));
+    }
+
+    private void withdrawOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            return;
+        }
+
+        String variableName = instruction[1];
+
+        if (!globalSpace.containsKey(variableName)) {
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST,executionPointer);
+            return;
+        }
+
+        Type third = stack.pop();  // Address
+        Type second = stack.pop();  // Asset
+        Type first = stack.pop();   // Float
+        AssetType result;
+
+        if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("addr")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
+        }
+
+        FloatType floatVal = (FloatType) first;
+        AssetType assetVal = (AssetType) second;
+        AddrType addressVal = (AddrType) third;
+
+        if (assetVal.getValue().getDecimals() != floatVal.getDecimals()) {
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            return;
+        }
+
+        // Update the asset variable
+        result = new AssetType(
+                assetVal.getAssetId(),
+                new FloatType(
+                        assetVal.getValue().getInteger() - floatVal.getInteger(),
+                        floatVal.getDecimals()
+                )
+        );
+
+        globalSpace.put(variableName, new TraceChange(result, true));
 
         // Set up the single-use seal
         SingleUseSeal singleUseSeal = new SingleUseSeal(
                 UUID.randomUUID().toString(),
-                secondAsset.getAssetId(),
-                secondAsset.getValue(),
-                firstAddr.getAddress()
+                assetVal.getAssetId(),
+                floatVal,
+                addressVal.getAddress()
         );
         singleUseSealsToSend.add(singleUseSeal);
     }
