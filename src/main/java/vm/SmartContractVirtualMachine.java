@@ -169,7 +169,7 @@ public class SmartContractVirtualMachine {
                     }
                 }
             } catch (StackOverflowException | StackUnderflowException error) {
-                trap.raiseError(error.getCode(), executionPointer);
+                trap.raiseError(error.getCode(), executionPointer, instruction[0]);
             } catch (NoSuchAlgorithmException error) {
                 System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
                 throw new RuntimeException(error);
@@ -292,7 +292,7 @@ public class SmartContractVirtualMachine {
                 stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
         }
     }
 
@@ -359,7 +359,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -428,7 +428,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -497,7 +497,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -517,8 +517,9 @@ public class SmartContractVirtualMachine {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
 
+            // Check if the denominator is zero
             if (secondVal.getValue() == 0) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
@@ -527,8 +528,9 @@ public class SmartContractVirtualMachine {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
 
+            // Check if the denominator is zero
             if (secondVal.getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
@@ -547,8 +549,9 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
+            // Check if the denominator is zero
             if (secondVal.getValue().getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
@@ -565,8 +568,9 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
+            // Check if the denominator is zero
             if (secondVal.getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
@@ -583,8 +587,9 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
+            // Check if the denominator is zero
             if (secondVal.getValue().getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
@@ -593,7 +598,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
         stack.push(result);
@@ -623,7 +628,8 @@ public class SmartContractVirtualMachine {
         }
 
         if (dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            return;
         }
 
         switch (type) {
@@ -643,7 +649,7 @@ public class SmartContractVirtualMachine {
                 dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
         }
     }
 
@@ -661,7 +667,8 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
         }
         stack.push(dataSpace.get(variableName));
     }
@@ -680,7 +687,8 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
         }
 
         Type value = stack.pop();
@@ -703,7 +711,7 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
@@ -729,7 +737,7 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
@@ -790,7 +798,7 @@ public class SmartContractVirtualMachine {
         if (found) {
             executionPointer = j - 1;
         } else {
-            trap.raiseError(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, executionPointer);
+            trap.raiseError(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, executionPointer, instruction[0]);
         }
     }
 
@@ -808,7 +816,7 @@ public class SmartContractVirtualMachine {
         Type resultOfEvaluation = stack.pop();
 
         if (!resultOfEvaluation.getType().equals("bool")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -843,7 +851,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
@@ -893,12 +901,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
         if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -914,7 +922,7 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) > 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
         }
     }
 
@@ -928,12 +936,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
         if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -949,7 +957,7 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) >= 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
         }
     }
 
@@ -963,12 +971,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
         if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -984,7 +992,7 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) < 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
         }
     }
 
@@ -998,12 +1006,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
         if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -1019,7 +1027,7 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) <= 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
         }
     }
 
@@ -1073,15 +1081,17 @@ public class SmartContractVirtualMachine {
                 break;
             case "asset":
                 FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
+
                 if (assetId.equals(bitcoin.getAssetId())) {
                     AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
                     argumentsSpace.put(variableName, value);
                 } else {
-                    // Error
+                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                    return;
                 }
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
         }
     }
 
@@ -1099,8 +1109,10 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            return;
         }
+
         stack.push(argumentsSpace.get(variableName));
     }
 
@@ -1131,14 +1143,16 @@ public class SmartContractVirtualMachine {
 
             // Check that the element popped from the stack is a float value
             if (!value.getType().equals("float")) {
-                // Error
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+                return;
             }
 
             FloatType floatValue = (FloatType) value;
 
             // Check that the element popped from the stack has the same decimals of the asset
             if (floatValue.getDecimals() != currentAssetValue.getValue().getDecimals()) {
-                // Error
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
             }
 
             AssetType newValue = new AssetType(
@@ -1189,7 +1203,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
             return;
         }
 
@@ -1211,15 +1225,17 @@ public class SmartContractVirtualMachine {
                 break;
             case "asset":
                 FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
+
                 if (assetId.equals(bitcoin.getAssetId())) {
                     AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
                     globalSpace.put(variableName, new TraceChange(value, true));
                 } else {
-                    // Error
+                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                    return;
                 }
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
         }
     }
 
@@ -1240,6 +1256,7 @@ public class SmartContractVirtualMachine {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
+
         stack.push(globalSpace.get(variableName).getValue());
     }
 
@@ -1257,14 +1274,14 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST,executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
             return;
         }
 
         Type value = stack.pop();
 
         if (value.getType().equals("asset")) {
-            // Error
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -1329,7 +1346,7 @@ public class SmartContractVirtualMachine {
         StrType secondStr = (StrType) second;
 
         if (!firstStr.getValue().equals(secondStr.getValue())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
     }
@@ -1392,6 +1409,12 @@ public class SmartContractVirtualMachine {
             return;
         }
 
+        // Check that the value of the asset to deposit is not negative
+        if (assetToDeposit.getValue().getInteger() < 0) {
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            return;
+        }
+
         result = new AssetType(
                 assetContract.getAssetId(),
                 new FloatType(
@@ -1417,17 +1440,17 @@ public class SmartContractVirtualMachine {
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST,executionPointer);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
-        Type third = stack.pop();  // Address
+        Type third = stack.pop();   // Address
         Type second = stack.pop();  // Asset
         Type first = stack.pop();   // Float
         AssetType result;
 
         if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("addr")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -1437,6 +1460,12 @@ public class SmartContractVirtualMachine {
 
         if (assetVal.getValue().getDecimals() != floatVal.getDecimals()) {
             trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            return;
+        }
+
+        // Check that the value to withdraw is not negative
+        if (floatVal.getInteger() < 0) {
+            trap.raiseError(TrapErrorCodes.NEGATIVE_VALUE, executionPointer, instruction[0]);
             return;
         }
 
