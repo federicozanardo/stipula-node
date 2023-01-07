@@ -114,12 +114,6 @@ public class SmartContractVirtualMachine {
                         case "ISEQ":
                             this.iseqOperation(instruction);
                             break;
-                        case "ISGE":
-                            this.isgeOperation(instruction);
-                            break;
-                        case "ISGT":
-                            this.isgtOperation(instruction);
-                            break;
                         case "ISLE":
                             this.isleOperation(instruction);
                             break;
@@ -921,76 +915,6 @@ public class SmartContractVirtualMachine {
                 AssetType firstAsset = (AssetType) first;
                 AssetType secondAsset = (AssetType) second;
                 stack.push(new BoolType(Objects.equals(firstAsset.getValue().getValue(), secondAsset.getValue().getValue())));
-                break;
-            default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-        }
-    }
-
-    private void isgtOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type second = stack.pop();
-        Type first = stack.pop();
-
-        if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
-            return;
-        }
-
-        if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
-        switch (first.getType()) {
-            case "int":
-                IntType firstVal = new IntType((Integer) first.getValue());
-                IntType secondVal = new IntType((Integer) second.getValue());
-                stack.push(new BoolType(firstVal.getValue() > secondVal.getValue()));
-                break;
-            case "float":
-                FloatType firstFloat = (FloatType) first;
-                FloatType secondFloat = (FloatType) second;
-                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) > 0));
-                break;
-            default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-        }
-    }
-
-    private void isgeOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type second = stack.pop();
-        Type first = stack.pop();
-
-        if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
-            return;
-        }
-
-        if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
-        switch (first.getType()) {
-            case "int":
-                IntType firstVal = new IntType((Integer) first.getValue());
-                IntType secondVal = new IntType((Integer) second.getValue());
-                stack.push(new BoolType(firstVal.getValue() >= secondVal.getValue()));
-                break;
-            case "float":
-                FloatType firstFloat = (FloatType) first;
-                FloatType secondFloat = (FloatType) second;
-                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) >= 0));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
