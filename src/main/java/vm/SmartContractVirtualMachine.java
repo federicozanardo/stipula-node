@@ -11,6 +11,8 @@ import vm.types.*;
 import vm.types.address.AddrType;
 import vm.types.address.Address;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -455,7 +457,12 @@ public class SmartContractVirtualMachine {
         } else if (first.getType().equals("float") && second.getType().equals("float")) {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
-            result = new FloatType(firstVal.getInteger() * secondVal.getInteger(), firstVal.getDecimals());
+            result = new FloatType(
+                    (new Double(
+                            (firstVal.getInteger() * secondVal.getInteger()) / Math.pow(10, firstVal.getDecimals()))
+                    ).intValue(),
+                    firstVal.getDecimals()
+            );
         } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
             AssetType firstVal = (AssetType) first;
             AssetType secondVal = (AssetType) second;
@@ -471,7 +478,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    firstVal.getValue().getInteger() * secondVal.getValue().getInteger(),
+                    (new Double(
+                            (firstVal.getValue().getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getValue().getDecimals()))
+                    ).intValue(),
                     firstVal.getValue().getDecimals()
             );
         } else if (first.getType().equals("asset") && second.getType().equals("float")) {
@@ -484,7 +493,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    firstVal.getValue().getInteger() * secondVal.getInteger(),
+                    (new Double(
+                            (firstVal.getValue().getInteger() * secondVal.getInteger()) / Math.pow(10, secondVal.getDecimals()))
+                    ).intValue(),
                     firstVal.getValue().getDecimals()
             );
         } else if (first.getType().equals("float") && second.getType().equals("asset")) {
@@ -497,7 +508,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    (new Double((firstVal.getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getDecimals()))).intValue(),
+                    (new Double(
+                            (firstVal.getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getDecimals()))
+                    ).intValue(),
                     firstVal.getDecimals()
             );
         } else {
@@ -532,13 +545,26 @@ public class SmartContractVirtualMachine {
             FloatType firstVal = (FloatType) first;
             FloatType secondVal = (FloatType) second;
 
+            System.out.println(firstVal);
+            System.out.println(secondVal);
+
+            if (firstVal.getDecimals() != secondVal.getDecimals()) {
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                return;
+            }
+
             // Check if the denominator is zero
             if (secondVal.getInteger() == 0) {
                 trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
                 return;
             }
 
-            result = new FloatType(firstVal.getInteger() / secondVal.getInteger(), firstVal.getDecimals());
+            result = new FloatType(
+                    (firstVal.getValue().divide(secondVal.getValue(), RoundingMode.CEILING))
+                            .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getDecimals())))
+                            .intValue(),
+                    firstVal.getDecimals()
+            );
         } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
             AssetType firstVal = (AssetType) first;
             AssetType secondVal = (AssetType) second;
@@ -560,7 +586,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    firstVal.getValue().getInteger() / secondVal.getValue().getInteger(),
+                    (firstVal.getValue().getValue().divide(secondVal.getValue().getValue(), RoundingMode.CEILING))
+                            .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getValue().getDecimals())))
+                            .intValue(),
                     firstVal.getValue().getDecimals()
             );
         } else if (first.getType().equals("asset") && second.getType().equals("float")) {
@@ -579,7 +607,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    firstVal.getValue().getInteger() / secondVal.getInteger(),
+                    (firstVal.getValue().getValue().divide(secondVal.getValue(), RoundingMode.CEILING))
+                            .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getValue().getDecimals())))
+                            .intValue(),
                     firstVal.getValue().getDecimals()
             );
         } else if (first.getType().equals("float") && second.getType().equals("asset")) {
@@ -598,7 +628,9 @@ public class SmartContractVirtualMachine {
             }
 
             result = new FloatType(
-                    firstVal.getInteger() / secondVal.getValue().getInteger(),
+                    (firstVal.getValue().divide(secondVal.getValue().getValue(), RoundingMode.CEILING))
+                            .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getDecimals())))
+                            .intValue(),
                     firstVal.getDecimals()
             );
         } else {
