@@ -52,6 +52,10 @@ public class SmartContractVirtualMachine {
         return globalSpace;
     }
 
+    public ArrayList<SingleUseSeal> getSingleUseSealsToSend() {
+        return singleUseSealsToSend;
+    }
+
     public boolean execute() throws Exception {
         while (isRunning) {
             if (!trap.isStackEmpty()) {
@@ -169,7 +173,7 @@ public class SmartContractVirtualMachine {
                     }
                 }
             } catch (StackOverflowException | StackUnderflowException error) {
-                trap.raiseError(error.getCode(), executionPointer, instruction[0]);
+                trap.raiseError(error.getCode(), executionPointer);
             } catch (NoSuchAlgorithmException error) {
                 System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
                 throw new RuntimeException(error);

@@ -132,7 +132,7 @@ public class ScriptVirtualMachine {
         String value = instruction[2];
 
         if (!type.equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
@@ -192,7 +192,7 @@ public class ScriptVirtualMachine {
         StrType secondStr = (StrType) second;
 
         if (!firstStr.getValue().equals(secondStr.getValue())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
     }
