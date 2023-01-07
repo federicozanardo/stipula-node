@@ -46,9 +46,19 @@ public enum TrapErrorCodes {
             return "LABEL_DOES_NOT_EXISTS";
         }
     },
+    LESS_THAN_ZERO {
+        public String toString() {
+            return "LESS_THAN_ZERO";
+        }
+    },
     MISS_HALT_INSTRUCTION {
         public String toString() {
             return "MISS_HALT_INSTRUCTION";
+        }
+    },
+    NEGATIVE_VALUE {
+        public String toString() {
+            return "NEGATIVE_VALUE";
         }
     },
     NOT_ENOUGH_ARGUMENTS {
@@ -94,6 +104,11 @@ public enum TrapErrorCodes {
     VARIABLE_DOES_NOT_EXIST {
         public String toString() {
             return "VARIABLE_DOES_NOT_EXIST";
+        }
+    },
+    ZERO_VALUE {
+        public String toString() {
+            return "ZERO_VALUE";
         }
     }
 }

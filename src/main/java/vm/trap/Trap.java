@@ -20,7 +20,9 @@ public class Trap {
             this.put(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, "Wrong type for this instruction or this type does not exist");
             this.put(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, "This instruction does not exist");
             this.put(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, "This label does not exist in the code");
+            this.put(TrapErrorCodes.LESS_THAN_ZERO, "The current value is less than zero");
             this.put(TrapErrorCodes.MISS_HALT_INSTRUCTION, "Last instruction must be HALT");
+            this.put(TrapErrorCodes.NEGATIVE_VALUE, "The current value is negative");
             this.put(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, "There are not enough arguments for the current instruction");
             this.put(TrapErrorCodes.QUEUE_OVERFLOW, "Queue overflow");
             this.put(TrapErrorCodes.QUEUE_UNDERFLOW, "Queue underflow");
@@ -30,6 +32,7 @@ public class Trap {
             this.put(TrapErrorCodes.TYPE_DOES_NOT_EXIST, "This type does not exist");
             this.put(TrapErrorCodes.VARIABLE_ALREADY_EXIST, "This variable already exist in the stack");
             this.put(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, "This variable does not exist in the stack");
+            this.put(TrapErrorCodes.ZERO_VALUE, "The current value is zero");
         }
     };
 
