@@ -173,10 +173,7 @@ public class SmartContractVirtualMachine {
             } catch (NoSuchAlgorithmException error) {
                 System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
                 throw new RuntimeException(error);
-            } /*catch (Exception error) {
-                System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
-                throw new Exception(error);
-            }*/
+            }
         }
 
         if (!trap.isStackEmpty()) {
@@ -930,26 +927,48 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
+        if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            return;
+        }
+
+        if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            return;
+        }
+
+        if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstAsset = (AssetType) first;
+            FloatType secondFloat = (FloatType) second;
+            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondFloat.getValue()) < 0));
+            return;
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstFloat = (FloatType) first;
+            AssetType secondAsset = (AssetType) second;
+            stack.push(new BoolType(firstFloat.getValue().compareTo(secondAsset.getValue().getValue()) < 0));
+            return;
+        }
+
         if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 
-        if (!first.getType().equals("int") && !first.getType().equals("float")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
         switch (first.getType()) {
             case "int":
-                IntType firstVal = new IntType((Integer) first.getValue());
-                IntType secondVal = new IntType((Integer) second.getValue());
-                stack.push(new BoolType(firstVal.getValue() < secondVal.getValue()));
+                IntType firstInt = new IntType((Integer) first.getValue());
+                IntType secondInt = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstInt.getValue() < secondInt.getValue()));
                 break;
             case "float":
                 FloatType firstFloat = (FloatType) first;
                 FloatType secondFloat = (FloatType) second;
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) < 0));
+                break;
+            case "asset":
+                AssetType firstAsset = (AssetType) first;
+                AssetType secondAsset = (AssetType) second;
+                stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondAsset.getValue().getValue()) < 0));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
@@ -965,13 +984,30 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+        if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
             return;
         }
 
-        if (!first.getType().equals("int") && !first.getType().equals("float")) {
+        if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            return;
+        }
+
+        if (first.getType().equals("asset") && second.getType().equals("float")) {
+            AssetType firstAsset = (AssetType) first;
+            FloatType secondFloat = (FloatType) second;
+            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondFloat.getValue()) <= 0));
+            return;
+        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
+            FloatType firstFloat = (FloatType) first;
+            AssetType secondAsset = (AssetType) second;
+            stack.push(new BoolType(firstFloat.getValue().compareTo(secondAsset.getValue().getValue()) <= 0));
+            return;
+        }
+
+        if (!first.getType().equals(second.getType())) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
             return;
         }
 

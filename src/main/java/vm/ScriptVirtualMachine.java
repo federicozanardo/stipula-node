@@ -76,10 +76,7 @@ public class ScriptVirtualMachine {
             } catch (NoSuchAlgorithmException error) {
                 System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
                 throw new RuntimeException(error);
-            } /*catch (Exception error) {
-                System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
-                throw new Exception(error);
-            }*/
+            }
         }
 
         if (!trap.isStackEmpty()) {
