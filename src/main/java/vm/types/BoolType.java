@@ -20,4 +20,11 @@ public class BoolType extends Type {
     public Boolean getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "BoolType{" +
+                "value=" + value +
+                '}';
+    }
 }

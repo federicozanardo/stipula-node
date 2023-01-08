@@ -27,4 +27,12 @@ public class Address implements Serializable {
     public String getPublicKey() {
         return publicKey;
     }
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "address='" + address + '\'' +
+                ", publicKey='" + publicKey + '\'' +
+                '}';
+    }
 }

@@ -20,4 +20,11 @@ public class StrType extends Type {
     public String getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "StrType{" +
+                "value='" + value + '\'' +
+                '}';
+    }
 }

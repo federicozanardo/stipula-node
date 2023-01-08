@@ -21,4 +21,12 @@ public class TraceChange {
     public boolean isChanged() {
         return isChanged;
     }
+
+    @Override
+    public String toString() {
+        return "TraceChange{" +
+                "value=" + value +
+                ", isChanged=" + isChanged +
+                '}';
+    }
 }

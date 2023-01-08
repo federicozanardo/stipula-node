@@ -22,4 +22,12 @@ public class AssetType extends Type {
     public String getAssetId() {
         return this.assetId;
     }
+
+    @Override
+    public String toString() {
+        return "AssetType{" +
+                "assetId='" + assetId + '\'' +
+                ", amount=" + amount +
+                '}';
+    }
 }

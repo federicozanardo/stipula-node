@@ -20,4 +20,11 @@ public class IntType extends Type {
     public Integer getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "IntType{" +
+                "value=" + value +
+                '}';
+    }
 }

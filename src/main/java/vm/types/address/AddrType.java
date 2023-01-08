@@ -20,14 +20,24 @@ public class AddrType extends Type {
 
     @Override
     public String getValue() {
+        assert value != null;
         return value.getAddress() + " " + value.getPublicKey();
     }
 
     public String getAddress() {
+        assert value != null;
         return value.getAddress();
     }
 
     public String getPublicKey() {
+        assert value != null;
         return value.getPublicKey();
+    }
+
+    @Override
+    public String toString() {
+        return "AddrType{" +
+                "value=" + value +
+                '}';
     }
 }
