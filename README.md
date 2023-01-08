@@ -27,12 +27,12 @@ The node is able to:
 
 Build the image:
 ```
-docker run stipula-node:<version>
+docker build -t stipula-node:<version> .
 ```
 
 Example:
 ```bash
-docker run stipula-node:v0.1.5
+docker build -t stipula-node:v0.1.5 .
 ```
 
 Run the image:
