@@ -5,9 +5,10 @@ import messages.SignedMessage;
 import messages.agreement.AgreementCallMessage;
 import messages.function.FunctionCallMessage;
 import messages.function.PayToContract;
+import vm.ScriptVirtualMachine;
 import vm.SmartContractVirtualMachine;
 import vm.contract.SingleUseSeal;
-import vm.storage.GlobalStorage;
+import vm.storage.ContractInstancesStorage;
 import vm.types.AssetType;
 import vm.types.FloatType;
 import vm.types.TraceChange;
@@ -30,10 +31,10 @@ class Main {
     public static void main(String[] args) throws Exception {
         String path = String.valueOf(Constants.EXAMPLES_PATH);
 
-        // SignedMessage signedMessage = generateAgreementCallMessage(path);
-        // SignedMessage signedMessage = generateFunctionCallMessage(path);
-        // SignedMessage signedMessage = generatePayToContractMessage(path);
-        SignedMessage signedMessage = callEndFunction(path);
+        // SignedMessage signedMessage = callAgreementFunction(path);
+        // SignedMessage signedMessage = callOfferFunction(path);
+        SignedMessage signedMessage = callAcceptFunction(path);
+        // SignedMessage signedMessage = callEndFunction(path);
         Message message = signedMessage.getMessage();
 
         // Load the function
@@ -64,7 +65,7 @@ class Main {
         }
         String[] instructions = bytecode.split("\n");
 
-        GlobalStorage globalStorage = new GlobalStorage();
+        ContractInstancesStorage globalStorage = new ContractInstancesStorage();
         /*
         // Load the DFA
         Address lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
@@ -257,7 +258,7 @@ class Main {
         return arguments;
     }
 
-    private static HashMap<String, AssetType> loadAssetArguments(Message message) {
+    private static HashMap<String, AssetType> loadAssetArguments(Message message) throws Exception {
         HashMap<String, AssetType> assetArguments = new HashMap<>();
 
         if (message instanceof FunctionCallMessage) {
@@ -271,8 +272,8 @@ class Main {
                     PayToContract payToContract = entry.getValue();
                     SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
 
-                    // Check if the single-use seal exists
-                    // singleUseSeal.getId() // TODO
+                    // TODO: Check if the single-use seal exists
+                    // singleUseSeal.getId()
 
                     // Check if the asset id matches
                     if (!singleUseSeal.getAssetId().equals(bitcoin.getAssetId())) {
@@ -290,7 +291,22 @@ class Main {
                     }
 
                     // Check if it is possible to unlock the script
-                    // TODO
+                    String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
+                    System.out.println("loadAssetArguments: Script to validate\n" + script);
+                    String[] instructions = script.split("\n");
+
+                    System.out.println("loadAssetArguments: Start validating the script...");
+                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions);
+
+                    // Execute the code
+                    boolean result = vm.execute();
+
+                    if (!result) {
+                        System.out.println("loadAssetArguments: Error while executing the function");
+                        return null;
+                    }
+
+                    System.out.println("loadAssetArguments: Script validated");
 
                     AssetType value = new AssetType(
                             bitcoin.getAssetId(),
@@ -366,7 +382,7 @@ class Main {
         return finalBytecode;
     }
 
-    private static SignedMessage generateAgreementCallMessage(String path) throws Exception {
+    private static SignedMessage callAgreementFunction(String path) throws Exception {
         // Start example of signed message
         Base64.Encoder encoder = Base64.getEncoder();
 
@@ -416,7 +432,7 @@ class Main {
         return new SignedMessage(agreementCallMessage, signatures);
     }
 
-    private static SignedMessage generateFunctionCallMessage(String path) throws Exception {
+    private static SignedMessage callOfferFunction(String path) throws Exception {
         PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
 
         HashMap<String, String> arguments = new HashMap<>();
@@ -435,7 +451,7 @@ class Main {
         return new SignedMessage(functionCallMessage, signatures);
     }
 
-    private static SignedMessage generatePayToContractMessage(String path) throws Exception {
+    private static SignedMessage callAcceptFunction(String path) throws Exception {
         Base64.Encoder encoder = Base64.getEncoder();
 
         PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
