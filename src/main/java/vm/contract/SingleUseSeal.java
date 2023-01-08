@@ -12,7 +12,7 @@ public class SingleUseSeal {
         this.id = id;
         this.assetId = assetId;
         this.amount = amount;
-        this.lockScript = "DUP\nSHA256\nPUSH str " + publicKeyHash + "\nEQUAL\nCHECKSIG\n";
+        this.lockScript = "DUP\nSHA256\nPUSH str " + publicKeyHash + "\nEQUAL\nCHECKSIG\nHALT\n";
     }
 
     public String getId() {
