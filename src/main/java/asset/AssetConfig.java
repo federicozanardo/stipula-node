@@ -34,4 +34,15 @@ public abstract class AssetConfig {
     public int getDecimals() {
         return decimals;
     }
+
+    @Override
+    public String toString() {
+        return "AssetConfig{" +
+                "assetId='" + assetId + '\'' +
+                ", assetName='" + assetName + '\'' +
+                ", unitName='" + unitName + '\'' +
+                ", supply=" + supply +
+                ", decimals=" + decimals +
+                '}';
+    }
 }
