@@ -5,9 +5,9 @@ What does it include?
   - [ ] Handle the socket 
   - [ ] Handle the messages
 - [ ] Execution layer
-  - [ ] Stipula Virtual Machine (SVM)
-    - [ ] Smart Contract Virtual Machine
-    - [ ] Script Virtual Machine
+  - [x] Stipula Virtual Machine (SVM)
+    - [x] Smart Contract Virtual Machine
+    - [x] Script Virtual Machine
   - [ ] Handle triggers
 - [ ] Deploy a contract
   - [ ] Stipula compiler 
@@ -17,9 +17,9 @@ What does it include?
 ## Status of the project
 
 The node is able to:
-- [ ] Call functions
+- [x] Call functions
 - [ ] Keep the state of the contract
-- [ ] Manage addresses
+- [x] Manage addresses
 - [ ] Manage assets
 - [ ] Create and manage a contract instances
 
