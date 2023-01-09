@@ -3,12 +3,7 @@ package constants;
 import java.io.File;
 
 public enum Constants {
-    DEFAULT_PATH {
-        public String toString() {
-            File currentDirectory = new File(new File(".").getAbsolutePath());
-            return currentDirectory.getPath();
-        }
-    },
+    // TODO: remove it
     EXAMPLES_PATH {
         public String toString() {
             File currentDirectory = new File(new File(".").getAbsolutePath());
@@ -16,10 +11,24 @@ public enum Constants {
         }
     },
 
-    STORAGE_PATH {
+    ASSET_TRANSFERS_PATH {
         public String toString() {
             File currentDirectory = new File(new File(".").getAbsolutePath());
-            return currentDirectory + "/storage/";
+            return currentDirectory + "/storage/asset-transfers/";
         }
     },
+
+    CONTRACTS_PATH {
+        public String toString() {
+            File currentDirectory = new File(new File(".").getAbsolutePath());
+            return currentDirectory + "/storage/contracts/";
+        }
+    },
+
+    CONTRACT_INSTANCES_PATH {
+        public String toString() {
+            File currentDirectory = new File(new File(".").getAbsolutePath());
+            return currentDirectory + "/storage/contract-instances/";
+        }
+    }
 }
