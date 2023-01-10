@@ -3,9 +3,10 @@ package vm.dfa;
 import lib.datastructures.Pair;
 import vm.types.address.Address;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class DeterministicFiniteAutomata {
+public class DeterministicFiniteAutomata implements Serializable {
     private final String endState; // acceptanceState
     private String currentState;
     private final ArrayList<Pair<String, State>> transitions;

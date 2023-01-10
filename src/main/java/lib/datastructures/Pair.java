@@ -1,6 +1,8 @@
 package lib.datastructures;
 
-public class Pair<T, V> {
+import java.io.Serializable;
+
+public class Pair<T, V> implements Serializable {
     private final T first;
     private final V second;
 
