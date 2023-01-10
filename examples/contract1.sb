@@ -4,7 +4,7 @@ global:
 GINST addr Lender
 GINST addr Borrower
 GINST asset wallet iop890
-GINST float cost
+GINST float cost 2
 GINST int rent_time
 GINST int use_code
 args:
@@ -12,7 +12,7 @@ PUSH addr :Lender
 GSTORE Lender
 PUSH addr :Borrower
 GSTORE Borrower
-PUSH float :cost
+PUSH float :cost 2
 GSTORE cost
 PUSH int :rent_time
 GSTORE rent_time
