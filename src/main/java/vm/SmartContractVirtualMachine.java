@@ -53,9 +53,9 @@ public class SmartContractVirtualMachine {
         return singleUseSealsToSend;
     }
 
-    public boolean execute() throws Exception {
+    public boolean execute() {
         while (isRunning) {
-            if (!trap.isStackEmpty()) {
+            if (trap.isEmptyStack()) {
                 haltProgramExecution();
                 break;
             }
@@ -139,6 +139,9 @@ public class SmartContractVirtualMachine {
                         case "WITHDRAW":
                             this.withdrawOperation(instruction);
                             break;
+                        case "RAISE":
+                            this.raiseOperation(instruction);
+                            break;
                         case "HALT":
                             if ((instruction.length - 1) > 0) {
                                 trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
@@ -159,7 +162,7 @@ public class SmartContractVirtualMachine {
             }
         }
 
-        if (!trap.isStackEmpty()) {
+        if (trap.isEmptyStack()) {
             System.out.println("\nErrors in the stack");
             System.out.println(trap.printStack());
             return false;
@@ -1386,5 +1389,32 @@ public class SmartContractVirtualMachine {
                 addressVal.getAddress()
         );
         singleUseSealsToSend.add(singleUseSeal);
+    }
+
+    private void raiseOperation(String[] instruction) {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        String errorCode = instruction[1];
+
+        switch (errorCode) {
+            case "AMOUNT_NOT_EQUAL":
+                trap.pushTrapError(
+                        errorCode,
+                        "The amount received in input is not equal to the amount required",
+                        executionPointer,
+                        Arrays.toString(instruction)
+                );
+                break;
+            default:
+                trap.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
+        }
     }
 }

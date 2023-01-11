@@ -32,7 +32,7 @@ public class ScriptVirtualMachine {
 
     public boolean execute() throws Exception {
         while (isRunning) {
-            if (!trap.isStackEmpty()) {
+            if (trap.isEmptyStack()) {
                 haltProgramExecution();
                 break;
             }
@@ -103,7 +103,7 @@ public class ScriptVirtualMachine {
             return false;
         }
 
-        if (!trap.isStackEmpty()) {
+        if (trap.isEmptyStack()) {
             System.out.println("\nErrors in the stack");
             System.out.println(trap.printStack());
             return false;

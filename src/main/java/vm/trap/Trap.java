@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class Trap {
     private final int offset;
     private final Stack<StrType> stack = new Stack<StrType>(100);
-    private final HashMap<TrapErrorCodes, String> map = new HashMap<TrapErrorCodes, String>() {
+    private final HashMap<TrapErrorCodes, String> errors = new HashMap<TrapErrorCodes, String>() {
         {
             this.put(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, "Asset ids do not match");
             this.put(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, "The decimals of the two variables do not match");
@@ -41,23 +41,34 @@ public class Trap {
     }
 
     public void raiseError(TrapErrorCodes errorCode, int line) {
-        if (!map.containsKey(errorCode)) {
+        if (!errors.containsKey(errorCode)) {
             this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line);
         }
-        this.pushTrapError(errorCode, map.get(errorCode), line);
+        this.pushTrapError(errorCode, errors.get(errorCode), line);
     }
 
     public void raiseError(TrapErrorCodes errorCode, int line, String instruction) {
-        if (!map.containsKey(errorCode)) {
+        if (!errors.containsKey(errorCode)) {
             this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line, instruction);
         }
-        this.pushTrapError(errorCode, map.get(errorCode), line, instruction);
+        this.pushTrapError(errorCode, errors.get(errorCode), line, instruction);
     }
 
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line) {
         try {
             this.stack
                     .push(new StrType(errorCode.toString() +
+                            " at line " + (line + 1 + this.offset) +
+                            ": " + errorMessage));
+        } catch (StackOverflowException error) {
+            System.exit(-1);
+        }
+    }
+
+    public void pushTrapError(String errorCode, String errorMessage, int line) {
+        try {
+            this.stack
+                    .push(new StrType(errorCode +
                             " at line " + (line + 1 + this.offset) +
                             ": " + errorMessage));
         } catch (StackOverflowException error) {
@@ -76,8 +87,19 @@ public class Trap {
         }
     }
 
-    public boolean isStackEmpty() {
-        return this.stack.isEmpty();
+    public void pushTrapError(String errorCode, String errorMessage, int line, String instruction) {
+        try {
+            this.stack.push(new StrType(errorCode +
+                    " at line " + (line + 1 + this.offset) +
+                    ": " + errorMessage
+                    + "\nInstruction: " + instruction));
+        } catch (StackOverflowException error) {
+            System.exit(-1);
+        }
+    }
+
+    public boolean isEmptyStack() {
+        return !this.stack.isEmpty();
     }
 
     public String printStack() {

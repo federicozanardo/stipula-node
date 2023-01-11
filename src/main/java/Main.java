@@ -6,7 +6,6 @@ import messages.SignedMessage;
 import messages.agreement.AgreementCallMessage;
 import messages.function.FunctionCallMessage;
 import messages.function.PayToContract;
-import org.iq80.leveldb.DBIterator;
 import vm.ScriptVirtualMachine;
 import vm.SmartContractVirtualMachine;
 import vm.contract.Contract;
@@ -21,7 +20,6 @@ import vm.types.AssetType;
 import vm.types.FloatType;
 import vm.types.TraceChange;
 import vm.types.Type;
-import vm.types.address.AddrType;
 import vm.types.address.Address;
 
 import java.io.File;
@@ -33,8 +31,6 @@ import java.security.PublicKey;
 import java.util.*;
 
 import static lib.crypto.Crypto.*;
-import static org.iq80.leveldb.impl.Iq80DBFactory.asString;
-import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
 
 class Main {
     private static int offset = 0;
@@ -46,8 +42,8 @@ class Main {
         contractsStorage = new ContractsStorage();
         ContractInstancesStorage contractInstancesStorage = new ContractInstancesStorage();
 
-//         setupContract();
-//         System.exit(0);
+        // setupContract();
+        // System.exit(0);
 
         // SignedMessage signedMessage = callAgreementFunction(path);
         // SignedMessage signedMessage = callOfferFunction(path);
@@ -164,7 +160,7 @@ class Main {
             return;
         }
 
-        // TODO: Go to the next state
+        // Go to the next state
         instance.getStateMachine().nextState(nextState, address);
         System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
 
@@ -490,7 +486,7 @@ class Main {
         arguments.put("rent_time", "1");
 
         AgreementCallMessage agreementCallMessage = new AgreementCallMessage(
-                "ad01c9f1-b255-495c-9801-a56fb651bb53",
+                "1dc563ca-066b-4bd1-9af3-399af8879a1d",
                 arguments,
                 parties);
 
@@ -512,8 +508,8 @@ class Main {
         arguments.put("z", "1");
 
         FunctionCallMessage functionCallMessage = new FunctionCallMessage(
-                "ad01c9f1-b255-495c-9801-a56fb651bb53",
-                "5d28d2b4-cc25-40c8-861e-3b174308ece3",
+                "1dc563ca-066b-4bd1-9af3-399af8879a1d",
+                "f017c131-8f66-4769-bcd2-1865c30e8510",
                 "offer");
         functionCallMessage.setArguments(arguments);
 
@@ -561,8 +557,8 @@ class Main {
         assetArguments.put("y", payToContract);
 
         FunctionCallMessage functionCallMessage = new FunctionCallMessage(
-                "ad01c9f1-b255-495c-9801-a56fb651bb53",
-                "5d28d2b4-cc25-40c8-861e-3b174308ece3",
+                "1dc563ca-066b-4bd1-9af3-399af8879a1d",
+                "f017c131-8f66-4769-bcd2-1865c30e8510",
                 "accept");
         functionCallMessage.setArguments(arguments);
         functionCallMessage.setAssetArguments(assetArguments);
@@ -580,8 +576,8 @@ class Main {
         PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
 
         FunctionCallMessage functionCallMessage = new FunctionCallMessage(
-                "ad01c9f1-b255-495c-9801-a56fb651bb53",
-                "5d28d2b4-cc25-40c8-861e-3b174308ece3",
+                "1dc563ca-066b-4bd1-9af3-399af8879a1d",
+                "f017c131-8f66-4769-bcd2-1865c30e8510",
                 "end");
 
         String borrowerSign = sign(functionCallMessage.toString(), borrowerPrivateKey);
