@@ -13,13 +13,8 @@ import vm.types.address.Address;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-
-import static lib.crypto.Crypto.getPublicKeyFromString;
-import static lib.crypto.Crypto.verify;
 
 public class SmartContractVirtualMachine {
     private final String[] instructions;
@@ -138,18 +133,6 @@ public class SmartContractVirtualMachine {
                         case "GLOAD":
                             this.gloadOperation(instruction);
                             break;
-                        case "DUP":
-                            this.dupOperation(instruction);
-                            break;
-                        case "SHA256":
-                            this.sha256Operation(instruction);
-                            break;
-                        case "EQUAL":
-                            this.equalOperation(instruction);
-                            break;
-                        case "CHECKSIG":
-                            this.checksigOperation(instruction);
-                            break;
                         case "DEPOSIT":
                             this.depositOperation(instruction);
                             break;
@@ -158,14 +141,14 @@ public class SmartContractVirtualMachine {
                             break;
                         case "HALT":
                             if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
                                 break;
                             }
                             // Terminate the execution
                             this.haltProgramExecution();
                             break;
                         default:
-                            trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, instruction[0]);
+                            trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
             } catch (StackOverflowException | StackUnderflowException error) {
@@ -205,12 +188,12 @@ public class SmartContractVirtualMachine {
                 TraceChange value = entry.getValue();
                 if (value.getValue().getType().equals("addr")) {
                     AddrType address = (AddrType) value.getValue();
-                    System.out.println(entry.getKey() + ": " + address.getAddress() + " " + address.getPublicKey());
+                    System.out.println(entry.getKey() + ": " + address.getAddress() + " " + address.getPublicKey() + ", changed: " + value.isChanged());
                 } else if (value.getValue().getType().equals("asset")) {
                     AssetType asset = (AssetType) value.getValue();
-                    System.out.println(entry.getKey() + ": " + asset.getValue().getValue() + " " + asset.getAssetId());
+                    System.out.println(entry.getKey() + ": " + asset.getValue().getValue() + " " + asset.getAssetId() + ", changed: " + value.isChanged());
                 } else {
-                    System.out.println(entry.getKey() + ": " + value.getValue().getValue());
+                    System.out.println(entry.getKey() + ": " + value.getValue().getValue() + ", changed: " + value.isChanged());
                 }
             }
         }
@@ -251,17 +234,17 @@ public class SmartContractVirtualMachine {
 
     private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (instruction.length - 1 > 3) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -289,13 +272,13 @@ public class SmartContractVirtualMachine {
                 stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void addOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -316,12 +299,12 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -334,7 +317,7 @@ public class SmartContractVirtualMachine {
             FloatType secondVal = (FloatType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -347,7 +330,7 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -356,7 +339,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
         stack.push(result);
@@ -364,7 +347,7 @@ public class SmartContractVirtualMachine {
 
     private void subOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -385,12 +368,12 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -403,7 +386,7 @@ public class SmartContractVirtualMachine {
             FloatType secondVal = (FloatType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -416,7 +399,7 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -425,7 +408,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
         stack.push(result);
@@ -433,7 +416,7 @@ public class SmartContractVirtualMachine {
 
     private void mulOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -459,12 +442,12 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -479,7 +462,7 @@ public class SmartContractVirtualMachine {
             FloatType secondVal = (FloatType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -494,7 +477,7 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -505,7 +488,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
         stack.push(result);
@@ -513,7 +496,7 @@ public class SmartContractVirtualMachine {
 
     private void divOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -527,7 +510,7 @@ public class SmartContractVirtualMachine {
 
             // Check if the denominator is zero
             if (secondVal.getValue() == 0) {
-                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -540,13 +523,13 @@ public class SmartContractVirtualMachine {
             System.out.println(secondVal);
 
             if (firstVal.getDecimals() != secondVal.getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             // Check if the denominator is zero
             if (secondVal.getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -561,18 +544,18 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (!firstVal.getAssetId().equals(secondVal.getAssetId())) {
-                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             if (firstVal.getValue().getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             // Check if the denominator is zero
             if (secondVal.getValue().getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -587,13 +570,13 @@ public class SmartContractVirtualMachine {
             FloatType secondVal = (FloatType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             // Check if the denominator is zero
             if (secondVal.getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -608,13 +591,13 @@ public class SmartContractVirtualMachine {
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
             // Check if the denominator is zero
             if (secondVal.getValue().getInteger() == 0) {
-                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DIVISION_BY_ZERO, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -625,7 +608,7 @@ public class SmartContractVirtualMachine {
                     firstVal.getDecimals()
             );
         } else {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
         stack.push(result);
@@ -633,17 +616,17 @@ public class SmartContractVirtualMachine {
 
     private void instOperation(String[] instruction) {
         if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (instruction.length - 1 > 3) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -655,7 +638,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -676,25 +659,25 @@ public class SmartContractVirtualMachine {
                 dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void loadOperation(String[] instruction) throws StackOverflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
         stack.push(dataSpace.get(variableName));
@@ -702,19 +685,19 @@ public class SmartContractVirtualMachine {
 
     private void storeOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!dataSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -730,7 +713,7 @@ public class SmartContractVirtualMachine {
 
     private void andOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -738,12 +721,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (!first.getType().equals("bool")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -756,7 +739,7 @@ public class SmartContractVirtualMachine {
 
     private void orOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -764,12 +747,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (!first.getType().equals("bool")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -782,14 +765,14 @@ public class SmartContractVirtualMachine {
 
     private void notOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         Type first = stack.pop();
 
         if (!first.getType().equals("bool")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -801,12 +784,12 @@ public class SmartContractVirtualMachine {
 
     private void jmpOperation(String[] instruction) {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -825,25 +808,25 @@ public class SmartContractVirtualMachine {
         if (found) {
             executionPointer = j - 1;
         } else {
-            trap.raiseError(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void jmpifOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         Type resultOfEvaluation = stack.pop();
 
         if (!resultOfEvaluation.getType().equals("bool")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -858,7 +841,7 @@ public class SmartContractVirtualMachine {
 
     private void iseqOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -878,7 +861,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -914,13 +897,13 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(Objects.equals(firstAsset.getValue().getValue(), secondAsset.getValue().getValue())));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void isltOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -928,12 +911,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -950,7 +933,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -971,13 +954,13 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondAsset.getValue().getValue()) < 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void isleOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -985,12 +968,12 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1007,7 +990,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (!first.getType().equals(second.getType())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1023,23 +1006,23 @@ public class SmartContractVirtualMachine {
                 stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) <= 0));
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void ainstOperation(String[] instruction) {
         if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (instruction.length - 1 > 3) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1055,7 +1038,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1082,30 +1065,30 @@ public class SmartContractVirtualMachine {
                     AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
                     argumentsSpace.put(variableName, value);
                 } else {
-                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                     return;
                 }
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void aloadOperation(String[] instruction) throws StackOverflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1114,19 +1097,19 @@ public class SmartContractVirtualMachine {
 
     private void astoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!argumentsSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1139,7 +1122,7 @@ public class SmartContractVirtualMachine {
 
             // Check that the element popped from the stack is a float value
             if (!value.getType().equals("float")) {
-                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -1147,7 +1130,7 @@ public class SmartContractVirtualMachine {
 
             // Check that the element popped from the stack has the same decimals of the asset
             if (floatValue.getDecimals() != currentAssetValue.getValue().getDecimals()) {
-                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
@@ -1173,17 +1156,17 @@ public class SmartContractVirtualMachine {
 
     private void ginstOperation(String[] instruction) {
         if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if (instruction.length - 1 > 3) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1199,7 +1182,7 @@ public class SmartContractVirtualMachine {
         }
 
         if (globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1226,30 +1209,30 @@ public class SmartContractVirtualMachine {
                     AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
                     globalSpace.put(variableName, new TraceChange(value, true));
                 } else {
-                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                     return;
                 }
                 break;
             default:
-                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+                trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
     }
 
     private void gloadOperation(String[] instruction) throws StackOverflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1258,26 +1241,26 @@ public class SmartContractVirtualMachine {
 
     private void gstoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         Type value = stack.pop();
 
         if (value.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1289,102 +1272,21 @@ public class SmartContractVirtualMachine {
         }
     }
 
-    private void dupOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type first = stack.pop();
-        stack.push(first);
-        stack.push(first);
-    }
-
-    private void sha256Operation(String[] instruction) throws StackUnderflowException, StackOverflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type first = stack.pop();
-
-        if (!first.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
-        StrType firstStr = (StrType) first;
-
-        // Compute the SHA256 hash
-        Base64.Encoder encoder = Base64.getEncoder();
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-        StrType result = new StrType(encoder.encodeToString(digest.digest(firstStr.getValue().getBytes(StandardCharsets.UTF_8))));
-
-        stack.push(result);
-    }
-
-    private void equalOperation(String[] instruction) throws StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type second = stack.pop();
-        Type first = stack.pop();
-
-        if (!first.getType().equals("str") && !second.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
-        StrType firstStr = (StrType) first;
-        StrType secondStr = (StrType) second;
-
-        if (!firstStr.getValue().equals(secondStr.getValue())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
-            return;
-        }
-    }
-
-    private void checksigOperation(String[] instruction) throws Exception {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
-            return;
-        }
-
-        Type second = stack.pop();  // Public key
-        Type first = stack.pop();   // Signature
-
-        if (!first.getType().equals("str") && !second.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
-            return;
-        }
-
-        StrType signature = (StrType) first;
-        StrType publicKey = (StrType) second;
-
-        // Verify the signature
-        BoolType result = new BoolType(verify("aaa111", signature.getValue(), getPublicKeyFromString(publicKey.getValue())));
-
-        stack.push(result);
-    }
-
     private void depositOperation(String[] instruction) throws StackUnderflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1393,7 +1295,7 @@ public class SmartContractVirtualMachine {
         AssetType result;
 
         if (!first.getType().equals("asset") || !second.getType().equals("asset")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1401,13 +1303,13 @@ public class SmartContractVirtualMachine {
         AssetType assetContract = (AssetType) second;
 
         if (assetContract.getValue().getDecimals() != assetToDeposit.getValue().getDecimals()) {
-            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         // Check that the value of the asset to deposit is not negative
         if (assetToDeposit.getValue().getInteger() < 0) {
-            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1424,19 +1326,19 @@ public class SmartContractVirtualMachine {
 
     private void withdrawOperation(String[] instruction) throws StackUnderflowException {
         if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         String variableName = instruction[1];
 
         if (!globalSpace.containsKey(variableName)) {
-            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1446,7 +1348,7 @@ public class SmartContractVirtualMachine {
         AssetType result;
 
         if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("addr")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -1455,13 +1357,13 @@ public class SmartContractVirtualMachine {
         AddrType addressVal = (AddrType) third;
 
         if (assetVal.getValue().getDecimals() != floatVal.getDecimals()) {
-            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         // Check that the value to withdraw is not negative
         if (floatVal.getInteger() < 0) {
-            trap.raiseError(TrapErrorCodes.NEGATIVE_VALUE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NEGATIVE_VALUE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
