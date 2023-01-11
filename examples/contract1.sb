@@ -12,13 +12,13 @@ PUSH addr :Lender
 GSTORE Lender
 PUSH addr :Borrower
 GSTORE Borrower
-PUSH float :cost 2
+PUSH float :cost
 GSTORE cost
 PUSH int :rent_time
 GSTORE rent_time
 start:
 HALT
-fn offer Inactive Lender
+fn offer Lender Proposal
 args:
 PUSH int :z
 AINST int z
@@ -27,7 +27,7 @@ start:
 ALOAD z
 GSTORE use_code
 HALT
-fn accept Proposal Borrower
+fn accept Borrower Using
 args:
 PUSH float :y
 AINST asset y iop890
@@ -46,7 +46,7 @@ DEPOSIT wallet
 // end deposit
 end:
 HALT
-fn end Using Borrower
+fn end Borrower End
 start:
 // start withdraw
 // start expression
