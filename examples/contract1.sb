@@ -37,6 +37,7 @@ ALOAD y
 GLOAD cost
 ISEQ
 JMPIF if_branch
+RAISE AMOUNT_NOT_EQUAL
 JMP end
 if_branch:
 // start deposit
