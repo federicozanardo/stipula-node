@@ -18,10 +18,10 @@ What does it include?
 
 The node is able to:
 - [x] Call functions
-- [ ] Keep the state of the contract
+- [x] Keep the state of the contract
 - [x] Manage addresses
 - [ ] Manage assets
-- [ ] Create and manage a contract instances
+- [x] Create and manage a contract instances
 
 ## How to run a node?
 
