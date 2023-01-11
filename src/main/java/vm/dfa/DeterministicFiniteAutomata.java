@@ -35,8 +35,10 @@ public class DeterministicFiniteAutomata implements Serializable {
                         ContractCallByParty callByParty = (ContractCallByParty) state.getSecond();
 
                         // Check if the request has been made by an authorized party
-                        if (callByParty.getAuthorizedParties().contains(party)) {
-                            found = true;
+                        for (Address authorizedParty : callByParty.getAuthorizedParties()) {
+                            if (authorizedParty.getAddress().equals(party.getAddress())) {
+                                found = true;
+                            }
                         }
                     }
                 }
@@ -100,5 +102,14 @@ public class DeterministicFiniteAutomata implements Serializable {
 
     public String getCurrentState() {
         return currentState;
+    }
+
+    @Override
+    public String toString() {
+        return "DeterministicFiniteAutomata{" +
+                "endState='" + endState + '\'' +
+                ", currentState='" + currentState + '\'' +
+                ", transitions=" + transitions +
+                '}';
     }
 }
