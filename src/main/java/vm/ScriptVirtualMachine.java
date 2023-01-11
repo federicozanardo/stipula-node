@@ -5,15 +5,15 @@ import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
-import vm.types.*;
-import vm.types.address.AddrType;
-import vm.types.address.Address;
+import vm.types.BoolType;
+import vm.types.StrType;
+import vm.types.Type;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
 
 import static lib.crypto.Crypto.getPublicKeyFromString;
 import static lib.crypto.Crypto.verify;
@@ -61,14 +61,14 @@ public class ScriptVirtualMachine {
                             break;
                         case "HALT":
                             if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
                                 break;
                             }
                             // Terminate the execution
                             this.haltProgramExecution();
                             break;
                         default:
-                            trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, instruction[0]);
+                            trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
             } catch (StackOverflowException | StackUnderflowException error) {
@@ -127,12 +127,12 @@ public class ScriptVirtualMachine {
 
     private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         if ((instruction.length - 1) > 2) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -140,7 +140,7 @@ public class ScriptVirtualMachine {
         String value = instruction[2];
 
         if (!type.equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -149,7 +149,7 @@ public class ScriptVirtualMachine {
 
     private void dupOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -160,14 +160,14 @@ public class ScriptVirtualMachine {
 
     private void sha256Operation(String[] instruction) throws StackUnderflowException, StackOverflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         Type first = stack.pop();
 
         if (!first.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -184,7 +184,7 @@ public class ScriptVirtualMachine {
 
     private void equalOperation(String[] instruction) throws StackUnderflowException {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -192,7 +192,7 @@ public class ScriptVirtualMachine {
         Type first = stack.pop();
 
         if (!first.getType().equals("str") && !second.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -200,14 +200,14 @@ public class ScriptVirtualMachine {
         StrType secondStr = (StrType) second;
 
         if (!firstStr.getValue().equals(secondStr.getValue())) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
     }
 
     private void checksigOperation(String[] instruction) throws Exception {
         if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
@@ -215,7 +215,7 @@ public class ScriptVirtualMachine {
         Type first = stack.pop();   // Signature
 
         if (!first.getType().equals("str") && !second.getType().equals("str")) {
-            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, instruction[0]);
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
