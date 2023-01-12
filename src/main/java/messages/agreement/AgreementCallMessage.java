@@ -32,7 +32,7 @@ public class AgreementCallMessage extends Message {
     public String toString() {
         String str = "";
 
-        str += contractId;
+        str += contractId + "\n";
 
         for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
             str += entry.getKey() + ": " + entry.getValue() + "\n";
