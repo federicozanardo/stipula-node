@@ -6,7 +6,7 @@ import vm.types.Type;
 
 import java.util.ArrayList;
 
-public class Queue<T extends Type> {
+public class Queue<T> {
     /**
      * Data structure used to represent the stack.
      */
@@ -29,6 +29,7 @@ public class Queue<T extends Type> {
 
     public Queue(int length) {
         this.length = length;
+        this.Q = new ArrayList<T>(length);
     }
 
     /**
@@ -66,17 +67,21 @@ public class Queue<T extends Type> {
 
     // Other methods
 
-    /**
-     * @return
-     */
     public boolean isFull() {
+        return head == (tail + 1) || (head == 1 && tail == length);
+    }
+
+    public boolean isEmpty() {
         return head == tail;
     }
 
-    /**
-     * @return
-     */
-    public boolean isEmpty() {
-        return head == (tail + 1) || (head == 1 && tail == length);
+    @Override
+    public String toString() {
+        return "Queue{" +
+                "Q=" + Q +
+                ", length=" + length +
+                ", head=" + head +
+                ", tail=" + tail +
+                '}';
     }
 }
