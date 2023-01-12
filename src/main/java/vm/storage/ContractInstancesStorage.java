@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.*;
 

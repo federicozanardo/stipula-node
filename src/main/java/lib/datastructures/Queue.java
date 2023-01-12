@@ -2,7 +2,6 @@ package lib.datastructures;
 
 import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
-import vm.types.Type;
 
 import java.util.ArrayList;
 
