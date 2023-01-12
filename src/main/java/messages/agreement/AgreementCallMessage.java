@@ -35,11 +35,11 @@ public class AgreementCallMessage extends Message {
         str += contractId;
 
         for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
-            str += entry.getKey() + ": " + entry.getValue();
+            str += entry.getKey() + ": " + entry.getValue() + "\n";
         }
 
         for (HashMap.Entry<String, Address> entry : this.parties.entrySet()) {
-            str += entry.getKey() + ": " + entry.getValue().getPublicKey();
+            str += entry.getKey() + ": " + entry.getValue().getPublicKey() + "\n";
         }
 
         return str;
