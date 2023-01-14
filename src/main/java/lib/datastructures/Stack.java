@@ -2,11 +2,10 @@ package lib.datastructures;
 
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
-import vm.types.Type;
 
 import java.util.ArrayList;
 
-public class Stack<T extends Type> {
+public class Stack<T> {
 
     /**
      * Data structure used to represent the stack.
@@ -36,7 +35,6 @@ public class Stack<T extends Type> {
      */
     public void push(T value) throws StackOverflowException {
         // Check if the stack is full
-        // if (top + 1 == size) {
         if (this.isFull()) {
             throw new StackOverflowException();
         } else {
@@ -60,7 +58,6 @@ public class Stack<T extends Type> {
      */
     public T pop() throws StackUnderflowException {
         // Check if the stack is empty
-        // if (top == -1) {
         if (this.isEmpty()) {
             throw new StackUnderflowException();
         } else {
@@ -97,15 +94,12 @@ public class Stack<T extends Type> {
     /**
      * Print the stack.
      */
+    @Override
     public String toString() {
-        String line = "";
-
-        for (int i = 0; i < top; i++) {
-            line += S.get(i).getValue() + "->";
-        }
-
-        line += String.valueOf(S.get(top).getValue());
-
-        return line;
+        return "Stack{" +
+                "S=" + S +
+                ", top=" + top +
+                ", size=" + size +
+                '}';
     }
 }
