@@ -1,7 +1,7 @@
 package vm.dfa;
 
 import lib.datastructures.Pair;
-import vm.types.address.Address;
+import models.address.Address;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -1,5 +1,6 @@
-package vm.types.address;
+package vm.types;
 
+import models.address.Address;
 import vm.types.Type;
 
 public class AddrType extends Type {

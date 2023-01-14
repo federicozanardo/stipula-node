@@ -1,4 +1,4 @@
-package vm.types.address;
+package models.address;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;

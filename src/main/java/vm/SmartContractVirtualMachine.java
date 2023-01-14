@@ -8,8 +8,8 @@ import models.contract.SingleUseSeal;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
-import vm.types.address.AddrType;
-import vm.types.address.Address;
+import vm.types.AddrType;
+import models.address.Address;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

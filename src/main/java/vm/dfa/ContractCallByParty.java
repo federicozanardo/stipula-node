@@ -1,6 +1,6 @@
 package vm.dfa;
 
-import vm.types.address.Address;
+import models.address.Address;
 
 import java.util.ArrayList;
 
