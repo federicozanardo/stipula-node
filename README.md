@@ -9,6 +9,8 @@ What does it include?
     - [x] Smart Contract Virtual Machine
     - [x] Script Virtual Machine
   - [ ] Handle triggers
+    - [ ] Thread management
+    - [ ] Develop code for virtual machine
 - [ ] Deploy a contract
   - [ ] Stipula compiler 
 - [ ] Consensus layer
