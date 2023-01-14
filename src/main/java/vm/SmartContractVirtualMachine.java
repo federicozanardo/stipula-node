@@ -1,10 +1,10 @@
 package vm;
 
-import asset.FungibleAsset;
+import models.assets.FungibleAsset;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
-import vm.contract.SingleUseSeal;
+import models.contract.SingleUseSeal;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;

@@ -1,4 +1,4 @@
-package vm.contract;
+package models.contract;
 
 import vm.types.FloatType;
 

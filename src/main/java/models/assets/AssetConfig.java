@@ -1,4 +1,4 @@
-package asset;
+package models.assets;
 
 public abstract class AssetConfig {
     private final String assetId;

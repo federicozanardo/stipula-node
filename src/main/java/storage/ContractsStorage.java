@@ -1,9 +1,9 @@
-package vm.storage;
+package storage;
 
 import constants.Constants;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
-import vm.contract.Contract;
+import models.contract.Contract;
 
 import java.io.File;
 import java.io.IOException;

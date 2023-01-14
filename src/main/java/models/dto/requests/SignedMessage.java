@@ -1,4 +1,4 @@
-package messages;
+package models.dto.requests;
 
 import java.util.HashMap;
 
@@ -17,5 +17,13 @@ public class SignedMessage {
 
     public HashMap<String, String> getSignatures() {
         return signatures;
+    }
+
+    @Override
+    public String toString() {
+        return "SignedMessage{" +
+                "message=" + message +
+                ", signatures=" + signatures +
+                '}';
     }
 }

@@ -1,4 +1,4 @@
-package vm.storage;
+package storage;
 
 import java.io.*;
 

@@ -1,6 +1,6 @@
-package messages.agreement;
+package models.dto.requests.contract.agreement;
 
-import messages.Message;
+import models.dto.requests.Message;
 import vm.types.address.Address;
 
 import java.util.HashMap;

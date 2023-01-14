@@ -1,4 +1,4 @@
-package vm.contract;
+package models.contract;
 
 import lib.datastructures.Pair;
 import vm.dfa.State;

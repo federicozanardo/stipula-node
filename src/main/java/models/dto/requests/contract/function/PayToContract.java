@@ -1,6 +1,6 @@
-package messages.function;
+package models.dto.requests.contract.function;
 
-import vm.contract.SingleUseSeal;
+import models.contract.SingleUseSeal;
 
 public class PayToContract {
     private final SingleUseSeal singleUseSeal;

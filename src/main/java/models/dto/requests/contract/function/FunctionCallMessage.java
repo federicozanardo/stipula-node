@@ -1,6 +1,6 @@
-package messages.function;
+package models.dto.requests.contract.function;
 
-import messages.Message;
+import models.dto.requests.Message;
 
 import java.util.HashMap;
 
