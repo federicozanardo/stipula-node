@@ -1,7 +1,7 @@
 package models.dto.requests.contract.agreement;
 
-import models.dto.requests.Message;
 import models.address.Address;
+import models.dto.requests.Message;
 
 import java.util.HashMap;
 
