@@ -41,17 +41,16 @@ public class RequestQueue {
     }
 
     /**
-     * @param threadName
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(String threadName, EventTriggerRequest value) throws QueueOverflowException {
+    public void enqueue(EventTriggerRequest value) throws QueueOverflowException {
         mutex.lock();
         if (this.triggerRequests.isFull()) {
             mutex.unlock();
             throw new QueueOverflowException();
         }
-        this.triggerRequests.enqueue(new Pair<>(threadName, value));
+        this.triggerRequests.enqueue(new Pair<>(null, value));
         mutex.unlock();
     }
 
