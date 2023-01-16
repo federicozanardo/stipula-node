@@ -3,12 +3,13 @@ package models.dto.requests;
 public class EventTriggerRequest extends Message {
     private final String contractId;
     private final String contractInstanceId;
-    private final String functionName;
+    private final String triggerName;
+
     public EventTriggerRequest(String contractId, String contractInstanceId, String triggerName) {
         super(EventTriggerRequest.class.getSimpleName());
         this.contractId = contractId;
         this.contractInstanceId = contractInstanceId;
-        this.functionName = triggerName;
+        this.triggerName = triggerName;
     }
 
     public String getContractId() {
@@ -19,7 +20,16 @@ public class EventTriggerRequest extends Message {
         return contractInstanceId;
     }
 
-    public String getFunctionName() {
-        return functionName;
+    public String getTriggerName() {
+        return triggerName;
+    }
+
+    @Override
+    public String toString() {
+        return "EventTriggerRequest{" +
+                "contractId='" + contractId + '\'' +
+                ", contractInstanceId='" + contractInstanceId + '\'' +
+                ", functionName='" + triggerName + '\'' +
+                '}';
     }
 }
