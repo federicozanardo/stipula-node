@@ -21,6 +21,7 @@ public class MessageServer implements Runnable {
         this.queueManager = queueManager;
         this.responsesToSend = new HashMap<>();
 
+        // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
         this.messageDeserializer.registerDataType(AgreementCall.class.getSimpleName(), AgreementCall.class);
         this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
