@@ -1,11 +1,11 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import exceptions.queue.QueueOverflowException;
-import lib.datastructures.QueueManager;
+import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
-import models.dto.responses.ResponseNoData;
+import models.dto.responses.Response;
 import models.dto.responses.SuccessResponse;
 
 import java.io.BufferedInputStream;
@@ -17,21 +17,21 @@ import java.util.HashMap;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
-    private final HashMap<String, ResponseNoData> responsesToSend;
-    private final QueueManager queueManager;
+    private final HashMap<String, Response> responsesToSend;
+    private final RequestQueue requestQueue;
     private final Gson gson;
 
     public ClientHandler(
             String name,
             Socket socket,
-            HashMap<String, ResponseNoData> responsesToSend,
-            QueueManager queueManager,
+            HashMap<String, Response> responsesToSend,
+            RequestQueue requestQueue,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
         this.socket = socket;
         this.responsesToSend = responsesToSend;
-        this.queueManager = queueManager;
+        this.requestQueue = requestQueue;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -72,7 +72,7 @@ public class ClientHandler extends Thread {
                     // TODO: Send a request to the queue manager
                     System.out.println("ClientHandler: Class of the message => " + signedMessage.getMessage().getClass());
 
-                    this.queueManager.enqueue(thread.getName(), signedMessage.getMessage());
+                    this.requestQueue.enqueue(thread.getName(), signedMessage.getMessage());
 
                     // Start the delegated thread
                     thread.start();
@@ -83,7 +83,7 @@ public class ClientHandler extends Thread {
                     }
 
                     System.out.println("ClientHandler: Prepare the response...");
-                    ResponseNoData response = this.responsesToSend.get(Thread.currentThread().getName());
+                    Response response = this.responsesToSend.get(Thread.currentThread().getName());
                     String jsonResponse = "";
                     if (response instanceof SuccessResponse) {
                         jsonResponse = gson.toJson(response, SuccessResponse.class);

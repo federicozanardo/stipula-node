@@ -1,8 +1,8 @@
-import lib.datastructures.QueueManager;
+import lib.datastructures.RequestQueue;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.responses.ResponseNoData;
+import models.dto.responses.Response;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,13 +12,13 @@ import java.util.UUID;
 
 public class MessageServer implements Runnable {
     private final int port;
-    private final HashMap<String, ResponseNoData> responsesToSend;
-    private final QueueManager queueManager;
+    private final HashMap<String, Response> responsesToSend;
+    private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
 
-    public MessageServer(int port, QueueManager queueManager) {
+    public MessageServer(int port, RequestQueue requestQueue) {
         this.port = port;
-        this.queueManager = queueManager;
+        this.requestQueue = requestQueue;
         this.responsesToSend = new HashMap<>();
 
         // Set up the deserializer of messages
@@ -68,7 +68,7 @@ public class MessageServer implements Runnable {
 
                         String threadName = this.generateThreadName();
                         this.responsesToSend.put(threadName, null);
-                        new ClientHandler(threadName, socket, responsesToSend, queueManager, messageDeserializer).start();
+                        new ClientHandler(threadName, socket, responsesToSend, requestQueue, messageDeserializer).start();
 
                         System.out.println("MessageServer: Client communication delegated");
                     }

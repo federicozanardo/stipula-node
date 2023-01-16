@@ -8,13 +8,13 @@ import models.dto.requests.contract.function.FunctionCall;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class QueueManager {
+public class RequestQueue {
     private final Queue<Pair<String, Message>> functionCallRequests;
     // private final Queue<Pair<String, TriggerRequest>> triggerRequests;
     private final Queue<Pair<String, Message>> triggerRequests;
     private final ReentrantLock mutex;
 
-    public QueueManager() {
+    public RequestQueue() {
         this.functionCallRequests = new Queue<>(100);
         this.triggerRequests = new Queue<>(100);
         this.mutex = new ReentrantLock();
