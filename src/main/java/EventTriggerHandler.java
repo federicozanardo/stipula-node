@@ -20,7 +20,7 @@ public class EventTriggerHandler {
     }
 
     public void addTask(EventTriggerSchedulingRequest schedulingRequest) {
-        EventTriggerTask task = new EventTriggerTask(schedulingRequest.getRequest(), this, requestQueue);
+        EventTriggerTask task = new EventTriggerTask(schedulingRequest, this, requestQueue);
         this.mutex.lock();
 
         this.timer.schedule(task, schedulingRequest.getSecondsBeforeCalling() * 1000L);
@@ -37,9 +37,11 @@ public class EventTriggerHandler {
 
         while (i < tasks.size() && !found) {
             EventTriggerTask task = tasks.get(i);
-            if (task.getRequest().getContractId().equals(request.getContractId()) &&
-                    task.getRequest().getContractInstanceId().equals(request.getContractInstanceId()) &&
-                    task.getRequest().getTriggerName().equals(request.getTriggerName())) {
+            EventTriggerRequest taskRequest = task.getSchedulingRequest().getRequest();
+
+            if (taskRequest.getContractId().equals(request.getContractId()) &&
+                    taskRequest.getContractInstanceId().equals(request.getContractInstanceId()) &&
+                    taskRequest.getTriggerName().equals(request.getTriggerName())) {
                 found = true;
             } else {
                 i++;

@@ -5,7 +5,7 @@ import exceptions.queue.QueueUnderflowException;
 import models.dto.requests.Message;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.event.EventTriggerRequest;
+import models.dto.requests.event.EventTriggerSchedulingRequest;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,7 +44,7 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(EventTriggerRequest value) throws QueueOverflowException {
+    public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
         if (this.triggerRequests.isFull()) {
             mutex.unlock();
