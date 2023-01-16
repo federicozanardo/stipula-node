@@ -33,7 +33,6 @@ public class RequestQueue {
                 throw new QueueOverflowException();
             }
             this.functionCallRequests.enqueue(new Pair<>(threadName, value));
-            System.out.println("QueueManager:enqueue => " + this.functionCallRequests);
             mutex.unlock();
         } else {
             throw new Error();
@@ -48,7 +47,6 @@ public class RequestQueue {
     public void enqueue(String threadName, TriggerRequest value) throws QueueOverflowException {
         mutex.lock();
         if (this.triggerRequests.isFull()) {
-            // System.out.println("enqueue: trigger queue is full");
             mutex.unlock();
             throw new QueueOverflowException();
         }
@@ -81,7 +79,7 @@ public class RequestQueue {
 
     @Override
     public String toString() {
-        return "QueueManager{" +
+        return "RequestQueue{" +
                 "functionCallRequests=" + functionCallRequests +
                 ", triggerRequests=" + triggerRequests +
                 ", mutex=" + mutex +
