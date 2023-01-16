@@ -4,14 +4,15 @@ import models.dto.requests.Message;
 
 import java.util.HashMap;
 
-public class FunctionCallMessage extends Message {
+public class FunctionCall extends Message {
     private final String contractId;
     private final String contractInstanceId;
     private final String function;
     private HashMap<String, String> arguments;
     private HashMap<String, PayToContract> assetArguments;
 
-    public FunctionCallMessage(String contractId, String contractInstanceId, String function) {
+    public FunctionCall(String contractId, String contractInstanceId, String function) {
+        super(FunctionCall.class.getSimpleName());
         this.contractId = contractId;
         this.contractInstanceId = contractInstanceId;
         this.function = function;

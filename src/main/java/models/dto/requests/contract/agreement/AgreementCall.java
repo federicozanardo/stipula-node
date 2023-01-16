@@ -5,12 +5,13 @@ import models.dto.requests.Message;
 
 import java.util.HashMap;
 
-public class AgreementCallMessage extends Message {
+public class AgreementCall extends Message {
     private final String contractId;
     private final HashMap<String, String> arguments;
     private final HashMap<String, Address> parties;
 
-    public AgreementCallMessage(String contractId, HashMap<String, String> arguments, HashMap<String, Address> parties) {
+    public AgreementCall(String contractId, HashMap<String, String> arguments, HashMap<String, Address> parties) {
+        super(AgreementCall.class.getSimpleName());
         this.contractId = contractId;
         this.arguments = arguments;
         this.parties = parties;
