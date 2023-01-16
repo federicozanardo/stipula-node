@@ -1,9 +1,9 @@
 # Stipula Node
 
 What does it include?
-- [ ] Message layer (API)
-  - [ ] Handle the socket 
-  - [ ] Handle the messages
+- [x] Message layer (API)
+  - [x] Handle the socket 
+  - [x] Handle the messages
 - [ ] Execution layer
   - [x] Stipula Virtual Machine (SVM)
     - [x] Smart Contract Virtual Machine
