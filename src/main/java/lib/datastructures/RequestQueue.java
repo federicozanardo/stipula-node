@@ -3,9 +3,9 @@ package lib.datastructures;
 import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
 import models.dto.requests.Message;
-import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
+import models.dto.requests.event.EventTriggerRequest;
 
 import java.util.concurrent.locks.ReentrantLock;
 

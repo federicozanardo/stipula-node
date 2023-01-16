@@ -1,14 +1,11 @@
 package models.dto.requests.event;
 
-import models.dto.requests.Message;
-
-public class EventTriggerRequest extends Message {
+public class EventTriggerRequest {
     private final String contractId;
     private final String contractInstanceId;
     private final String triggerName;
 
     public EventTriggerRequest(String contractId, String contractInstanceId, String triggerName) {
-        super(EventTriggerRequest.class.getSimpleName());
         this.contractId = contractId;
         this.contractInstanceId = contractInstanceId;
         this.triggerName = triggerName;

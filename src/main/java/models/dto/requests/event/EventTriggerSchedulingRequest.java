@@ -5,6 +5,7 @@ import models.dto.requests.Message;
 public class EventTriggerSchedulingRequest extends Message {
     private final EventTriggerRequest request;
     private final int secondsBeforeCalling;
+
     public EventTriggerSchedulingRequest(EventTriggerRequest request, int secondsBeforeCalling) {
         super(EventTriggerSchedulingRequest.class.getSimpleName());
         this.request = request;
