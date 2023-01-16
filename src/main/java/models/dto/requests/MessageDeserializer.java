@@ -1,7 +1,6 @@
 package models.dto.requests;
 
 import com.google.gson.*;
-import models.dto.requests.Message;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

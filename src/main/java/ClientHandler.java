@@ -3,8 +3,8 @@ import com.google.gson.GsonBuilder;
 import exceptions.queue.QueueOverflowException;
 import lib.datastructures.QueueManager;
 import models.dto.requests.Message;
-import models.dto.requests.SignedMessage;
 import models.dto.requests.MessageDeserializer;
+import models.dto.requests.SignedMessage;
 import models.dto.responses.ResponseNoData;
 import models.dto.responses.SuccessResponse;
 
