@@ -1,9 +1,9 @@
 package storage;
 
 import constants.Constants;
+import models.contract.ContractInstance;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
-import models.contract.ContractInstance;
 import vm.types.TraceChange;
 import vm.types.Type;
 

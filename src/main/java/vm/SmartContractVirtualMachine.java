@@ -1,15 +1,14 @@
 package vm;
 
-import models.assets.FungibleAsset;
 import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
+import models.address.Address;
+import models.assets.FungibleAsset;
 import models.contract.SingleUseSeal;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
-import vm.types.AddrType;
-import models.address.Address;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
