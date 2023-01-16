@@ -1,4 +1,6 @@
-package models.dto.requests;
+package models.dto.requests.event;
+
+import models.dto.requests.Message;
 
 public class EventTriggerSchedulingRequest extends Message {
     private final EventTriggerRequest request;

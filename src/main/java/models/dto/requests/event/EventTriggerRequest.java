@@ -1,4 +1,6 @@
-package models.dto.requests;
+package models.dto.requests.event;
+
+import models.dto.requests.Message;
 
 public class EventTriggerRequest extends Message {
     private final String contractId;
