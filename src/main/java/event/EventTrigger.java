@@ -1,3 +1,5 @@
+package event;
+
 import exceptions.queue.QueueOverflowException;
 import lib.datastructures.RequestQueue;
 import models.dto.requests.event.EventTriggerSchedulingRequest;

@@ -1,3 +1,5 @@
+package event;
+
 import lib.datastructures.RequestQueue;
 import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
