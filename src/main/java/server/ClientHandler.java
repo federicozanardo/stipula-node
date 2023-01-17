@@ -84,10 +84,13 @@ public class ClientHandler extends Thread {
                     // if (message instanceof AgreementCall) {
                         System.out.println("ClientHandler: DeployContract message");
 
+                        // Set up a compiler thread
                         Thread compilerThread = new Thread(new StipulaCompiler(this, this.eventTriggerHandler, responsesToSend));
 
+                        // Start the compiler thread
                         compilerThread.start();
 
+                        // Wait a notification from the virtual machine thread
                         synchronized (this) {
                             this.wait();
                         }
@@ -108,20 +111,15 @@ public class ClientHandler extends Thread {
                             System.out.println("ClientHandler: " + error);
                         }
                     } else {
-                        // Create the thread in order to delegate the job to do
-                        //Thread thread = new Thread(new WaiterThread(this, responsesToSend));
-
                         // Send a request to the queue manager
                         this.requestQueue.enqueue(this, signedMessage.getMessage());
 
+                        // Notify the virtual machine that a new request is ready to be fulfilled
                         synchronized (this.virtualMachine) {
                             this.virtualMachine.notify();
                         }
 
-                        // Start the delegated thread
-                        //thread.start();
-
-                        // Wait a notification from the delegated thread
+                        // Wait a notification from the virtual machine thread
                         synchronized (this) {
                             this.wait();
                         }
