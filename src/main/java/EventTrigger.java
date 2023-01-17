@@ -4,12 +4,12 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 
 import java.util.TimerTask;
 
-public class EventTriggerTask extends TimerTask {
+public class EventTrigger extends TimerTask {
     private final EventTriggerSchedulingRequest schedulingRequest;
     private final EventTriggerHandler handler;
     private final RequestQueue requestQueue;
 
-    public EventTriggerTask(EventTriggerSchedulingRequest schedulingRequest, EventTriggerHandler handler, RequestQueue requestQueue) {
+    public EventTrigger(EventTriggerSchedulingRequest schedulingRequest, EventTriggerHandler handler, RequestQueue requestQueue) {
         this.schedulingRequest = schedulingRequest;
         this.handler = handler;
         this.requestQueue = requestQueue;

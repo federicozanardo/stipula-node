@@ -7,7 +7,7 @@ import java.util.Timer;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class EventTriggerHandler {
-    private final ArrayList<EventTriggerTask> tasks;
+    private final ArrayList<EventTrigger> tasks;
     private final Timer timer;
     private final RequestQueue requestQueue;
     private final ReentrantLock mutex;
@@ -20,7 +20,7 @@ public class EventTriggerHandler {
     }
 
     public void addTask(EventTriggerSchedulingRequest schedulingRequest) {
-        EventTriggerTask task = new EventTriggerTask(schedulingRequest, this, requestQueue);
+        EventTrigger task = new EventTrigger(schedulingRequest, this, requestQueue);
         this.mutex.lock();
 
         this.timer.schedule(task, schedulingRequest.getSecondsBeforeCalling() * 1000L);
@@ -36,7 +36,7 @@ public class EventTriggerHandler {
         boolean found = false;
 
         while (i < tasks.size() && !found) {
-            EventTriggerTask task = tasks.get(i);
+            EventTrigger task = tasks.get(i);
             EventTriggerRequest taskRequest = task.getSchedulingRequest().getRequest();
 
             if (taskRequest.getContractId().equals(request.getContractId()) &&
@@ -56,7 +56,7 @@ public class EventTriggerHandler {
         this.mutex.unlock();
     }
 
-    public ArrayList<EventTriggerTask> getTasks() {
+    public ArrayList<EventTrigger> getTasks() {
         return tasks;
     }
 }
