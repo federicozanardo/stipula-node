@@ -2,11 +2,13 @@ package server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import compiler.StipulaCompiler;
 import exceptions.queue.QueueOverflowException;
 import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
+import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessResponse;
 
@@ -21,6 +23,7 @@ public class ClientHandler extends Thread {
     private final Socket socket;
     private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
+    private final StipulaCompiler compiler;
     private final Gson gson;
 
     public ClientHandler(
@@ -28,12 +31,14 @@ public class ClientHandler extends Thread {
             Socket socket,
             HashMap<String, Response> responsesToSend,
             RequestQueue requestQueue,
+            StipulaCompiler compiler,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
         this.socket = socket;
         this.responsesToSend = responsesToSend;
         this.requestQueue = requestQueue;
+        this.compiler = compiler;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -68,32 +73,40 @@ public class ClientHandler extends Thread {
                 if (signedMessage != null) {
                     System.out.println("ClientHandler: Delegate the request of the client to a dedicated thread. Waiting...");
 
-                    // Create the thread in order to delegate the job to do
-                    Thread thread = new Thread(new WaiterThread(this, responsesToSend));
+                    Message message = signedMessage.getMessage();
 
-                    // Send a request to the queue manager
-                    this.requestQueue.enqueue(thread.getName(), signedMessage.getMessage());
+                    if (message instanceof DeployContract) {
+                        System.out.println("ClientHandler: DeployContract message");
 
-                    // Start the delegated thread
-                    thread.start();
+                        this.compiler.compile();
+                    } else {
+                        // Create the thread in order to delegate the job to do
+                        Thread thread = new Thread(new WaiterThread(this, responsesToSend));
 
-                    // Wait a notification from the delegated thread
-                    synchronized (this) {
-                        this.wait();
-                    }
+                        // Send a request to the queue manager
+                        this.requestQueue.enqueue(thread.getName(), signedMessage.getMessage());
 
-                    System.out.println("ClientHandler: Prepare the response...");
-                    Response response = this.responsesToSend.get(Thread.currentThread().getName());
-                    String jsonResponse = "";
-                    if (response instanceof SuccessResponse) {
-                        jsonResponse = gson.toJson(response, SuccessResponse.class);
-                    }
+                        // Start the delegated thread
+                        thread.start();
 
-                    System.out.println("ClientHandler: Sending response...");
-                    try {
-                        outputServerStream.writeUTF(jsonResponse);
-                    } catch (IOException error) {
-                        System.out.println("ClientHandler: " + error);
+                        // Wait a notification from the delegated thread
+                        synchronized (this) {
+                            this.wait();
+                        }
+
+                        System.out.println("ClientHandler: Prepare the response...");
+                        Response response = this.responsesToSend.get(Thread.currentThread().getName());
+                        String jsonResponse = "";
+                        if (response instanceof SuccessResponse) {
+                            jsonResponse = gson.toJson(response, SuccessResponse.class);
+                        }
+
+                        System.out.println("ClientHandler: Sending response...");
+                        try {
+                            outputServerStream.writeUTF(jsonResponse);
+                        } catch (IOException error) {
+                            System.out.println("ClientHandler: " + error);
+                        }
                     }
                 } else {
                     // TODO: Send a response to notify that the thread received an wrong request
