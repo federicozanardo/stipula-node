@@ -1,3 +1,5 @@
+package server;
+
 import lib.datastructures.RequestQueue;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
