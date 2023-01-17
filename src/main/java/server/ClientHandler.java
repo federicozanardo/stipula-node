@@ -3,13 +3,15 @@ package server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
+import event.EventTriggerHandler;
 import exceptions.queue.QueueOverflowException;
 import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
-import models.dto.requests.contract.deploy.DeployContract;
+import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.responses.Response;
+import models.dto.responses.SuccessDataResponse;
 import models.dto.responses.SuccessResponse;
 
 import java.io.BufferedInputStream;
@@ -23,7 +25,7 @@ public class ClientHandler extends Thread {
     private final Socket socket;
     private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
-    private final StipulaCompiler compiler;
+    private final EventTriggerHandler eventTriggerHandler;
     private final Gson gson;
 
     public ClientHandler(
@@ -31,14 +33,13 @@ public class ClientHandler extends Thread {
             Socket socket,
             HashMap<String, Response> responsesToSend,
             RequestQueue requestQueue,
-            StipulaCompiler compiler,
-            MessageDeserializer messageDeserializer
+            EventTriggerHandler eventTriggerHandler, MessageDeserializer messageDeserializer
     ) {
         super(name);
         this.socket = socket;
         this.responsesToSend = responsesToSend;
         this.requestQueue = requestQueue;
-        this.compiler = compiler;
+        this.eventTriggerHandler = eventTriggerHandler;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -75,10 +76,33 @@ public class ClientHandler extends Thread {
 
                     Message message = signedMessage.getMessage();
 
-                    if (message instanceof DeployContract) {
+                    // if (message instanceof DeployContract) {
+                    if (message instanceof AgreementCall) {
                         System.out.println("ClientHandler: DeployContract message");
 
-                        this.compiler.compile();
+                        Thread compilerThread = new Thread(new StipulaCompiler(this, this.eventTriggerHandler, responsesToSend));
+
+                        compilerThread.start();
+
+                        synchronized (this) {
+                            this.wait();
+                        }
+
+                        System.out.println("ClientHandler: Notified from the compiler");
+
+                        System.out.println("ClientHandler: Prepare the response...");
+                        Response response = this.responsesToSend.get(Thread.currentThread().getName());
+                        String jsonResponse = "";
+                        if (response instanceof SuccessDataResponse) {
+                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
+                        }
+
+                        System.out.println("ClientHandler: Sending response...");
+                        try {
+                            outputServerStream.writeUTF(jsonResponse);
+                        } catch (IOException error) {
+                            System.out.println("ClientHandler: " + error);
+                        }
                     } else {
                         // Create the thread in order to delegate the job to do
                         Thread thread = new Thread(new WaiterThread(this, responsesToSend));
@@ -97,8 +121,8 @@ public class ClientHandler extends Thread {
                         System.out.println("ClientHandler: Prepare the response...");
                         Response response = this.responsesToSend.get(Thread.currentThread().getName());
                         String jsonResponse = "";
-                        if (response instanceof SuccessResponse) {
-                            jsonResponse = gson.toJson(response, SuccessResponse.class);
+                        if (response instanceof SuccessDataResponse) {
+                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
                         }
 
                         System.out.println("ClientHandler: Sending response...");

@@ -1,6 +1,6 @@
 package server;
 
-import compiler.StipulaCompiler;
+import event.EventTriggerHandler;
 import lib.datastructures.RequestQueue;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
@@ -18,12 +18,12 @@ public class MessageServer implements Runnable {
     private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
-    private final StipulaCompiler compiler;
+    private final EventTriggerHandler eventTriggerHandler;
 
-    public MessageServer(int port, RequestQueue requestQueue, StipulaCompiler compiler) {
+    public MessageServer(int port, RequestQueue requestQueue, EventTriggerHandler eventTriggerHandler) {
         this.port = port;
         this.requestQueue = requestQueue;
-        this.compiler = compiler;
+        this.eventTriggerHandler = eventTriggerHandler;
         this.responsesToSend = new HashMap<>();
 
         // Set up the deserializer of messages
@@ -73,7 +73,7 @@ public class MessageServer implements Runnable {
 
                         String threadName = this.generateThreadName();
                         this.responsesToSend.put(threadName, null);
-                        new ClientHandler(threadName, socket, responsesToSend, requestQueue, compiler, messageDeserializer).start();
+                        new ClientHandler(threadName, socket, responsesToSend, requestQueue, eventTriggerHandler, messageDeserializer).start();
 
                         System.out.println("MessageServer: Client communication delegated");
                     }
