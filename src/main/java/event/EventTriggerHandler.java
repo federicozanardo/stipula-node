@@ -43,7 +43,7 @@ public class EventTriggerHandler {
 
             if (taskRequest.getContractId().equals(request.getContractId()) &&
                     taskRequest.getContractInstanceId().equals(request.getContractInstanceId()) &&
-                    taskRequest.getTriggerName().equals(request.getTriggerName())) {
+                    taskRequest.getObligationName().equals(request.getObligationName())) {
                 found = true;
             } else {
                 i++;
