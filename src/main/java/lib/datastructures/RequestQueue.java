@@ -28,13 +28,13 @@ public class RequestQueue {
      */
     public void enqueue(String threadName, Message value) throws QueueOverflowException {
         if (value instanceof AgreementCall || value instanceof FunctionCall) {
-            mutex.lock();
+            this.mutex.lock();
             if (this.functionCallRequests.isFull()) {
-                mutex.unlock();
+                this.mutex.unlock();
                 throw new QueueOverflowException();
             }
             this.functionCallRequests.enqueue(new Pair<>(threadName, value));
-            mutex.unlock();
+            this.mutex.unlock();
         } else {
             throw new Error();
         }
@@ -45,13 +45,13 @@ public class RequestQueue {
      * @throws QueueOverflowException
      */
     public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
-        mutex.lock();
+        this.mutex.lock();
         if (this.triggerRequests.isFull()) {
-            mutex.unlock();
+            this.mutex.unlock();
             throw new QueueOverflowException();
         }
         this.triggerRequests.enqueue(new Pair<>(null, value));
-        mutex.unlock();
+        this.mutex.unlock();
     }
 
     /**
@@ -59,21 +59,21 @@ public class RequestQueue {
      * @throws QueueUnderflowException
      */
     public Pair<String, Message> dequeue() throws QueueUnderflowException {
-        Pair<String, Message> request = null;
+        Pair<String, Message> request;
 
-        mutex.lock();
+        this.mutex.lock();
         if (!this.triggerRequests.isEmpty()) {
             request = this.triggerRequests.dequeue();
-            mutex.unlock();
+            this.mutex.unlock();
             return request;
         }
 
         if (this.functionCallRequests.isEmpty()) {
-            mutex.unlock();
+            this.mutex.unlock();
             throw new QueueUnderflowException();
         }
         request = this.functionCallRequests.dequeue();
-        mutex.unlock();
+        this.mutex.unlock();
         return request;
     }
 

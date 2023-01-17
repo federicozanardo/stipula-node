@@ -69,9 +69,7 @@ public class ClientHandler extends Thread {
                     // Create the thread in order to delegate the job to do
                     Thread thread = new Thread(new WaiterThread(this, responsesToSend));
 
-                    // TODO: Send a request to the queue manager
-                    System.out.println("ClientHandler: Class of the message => " + signedMessage.getMessage().getClass());
-
+                    // Send a request to the queue manager
                     this.requestQueue.enqueue(thread.getName(), signedMessage.getMessage());
 
                     // Start the delegated thread
