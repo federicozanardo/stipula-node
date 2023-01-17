@@ -9,10 +9,10 @@ import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
-import models.dto.requests.contract.agreement.AgreementCall;
+import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
-import models.dto.responses.SuccessResponse;
+import vm.VirtualMachine;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -26,6 +26,7 @@ public class ClientHandler extends Thread {
     private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
     private final EventTriggerHandler eventTriggerHandler;
+    private final VirtualMachine virtualMachine;
     private final Gson gson;
 
     public ClientHandler(
@@ -33,13 +34,16 @@ public class ClientHandler extends Thread {
             Socket socket,
             HashMap<String, Response> responsesToSend,
             RequestQueue requestQueue,
-            EventTriggerHandler eventTriggerHandler, MessageDeserializer messageDeserializer
+            EventTriggerHandler eventTriggerHandler,
+            VirtualMachine virtualMachine,
+            MessageDeserializer messageDeserializer
     ) {
         super(name);
         this.socket = socket;
         this.responsesToSend = responsesToSend;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
+        this.virtualMachine = virtualMachine;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -76,8 +80,8 @@ public class ClientHandler extends Thread {
 
                     Message message = signedMessage.getMessage();
 
-                    // if (message instanceof DeployContract) {
-                    if (message instanceof AgreementCall) {
+                    if (message instanceof DeployContract) {
+                    // if (message instanceof AgreementCall) {
                         System.out.println("ClientHandler: DeployContract message");
 
                         Thread compilerThread = new Thread(new StipulaCompiler(this, this.eventTriggerHandler, responsesToSend));
@@ -105,13 +109,17 @@ public class ClientHandler extends Thread {
                         }
                     } else {
                         // Create the thread in order to delegate the job to do
-                        Thread thread = new Thread(new WaiterThread(this, responsesToSend));
+                        //Thread thread = new Thread(new WaiterThread(this, responsesToSend));
 
                         // Send a request to the queue manager
-                        this.requestQueue.enqueue(thread.getName(), signedMessage.getMessage());
+                        this.requestQueue.enqueue(this, signedMessage.getMessage());
+
+                        synchronized (this.virtualMachine) {
+                            this.virtualMachine.notify();
+                        }
 
                         // Start the delegated thread
-                        thread.start();
+                        //thread.start();
 
                         // Wait a notification from the delegated thread
                         synchronized (this) {

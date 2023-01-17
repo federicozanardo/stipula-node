@@ -10,9 +10,12 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
-    private final Queue<Pair<String, Message>> functionCallRequests;
+    // private final Queue<Pair<String, Message>> functionCallRequests;
+    private final Queue<Pair<Thread, Message>> functionCallRequests;
+
     // private final Queue<Pair<String, TriggerRequest>> triggerRequests;
-    private final Queue<Pair<String, Message>> triggerRequests;
+    // private final Queue<Pair<String, Message>> triggerRequests;
+    private final Queue<Pair<Thread, Message>> triggerRequests;
     private final ReentrantLock mutex;
 
     public RequestQueue() {
@@ -22,18 +25,18 @@ public class RequestQueue {
     }
 
     /**
-     * @param threadName
+     * @param thread
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(String threadName, Message value) throws QueueOverflowException {
+    public void enqueue(/*String threadName,*/ Thread thread, Message value) throws QueueOverflowException {
         if (value instanceof AgreementCall || value instanceof FunctionCall) {
             this.mutex.lock();
             if (this.functionCallRequests.isFull()) {
                 this.mutex.unlock();
                 throw new QueueOverflowException();
             }
-            this.functionCallRequests.enqueue(new Pair<>(threadName, value));
+            this.functionCallRequests.enqueue(new Pair<>(thread, value));
             this.mutex.unlock();
         } else {
             throw new Error();
@@ -58,10 +61,10 @@ public class RequestQueue {
      * @return
      * @throws QueueUnderflowException
      */
-    public Pair<String, Message> dequeue() throws QueueUnderflowException {
-        Pair<String, Message> request;
-
+    public Pair<Thread, Message> dequeue() throws QueueUnderflowException {
+        Pair<Thread, Message> request;
         this.mutex.lock();
+
         if (!this.triggerRequests.isEmpty()) {
             request = this.triggerRequests.dequeue();
             this.mutex.unlock();
@@ -72,6 +75,7 @@ public class RequestQueue {
             this.mutex.unlock();
             throw new QueueUnderflowException();
         }
+
         request = this.functionCallRequests.dequeue();
         this.mutex.unlock();
         return request;

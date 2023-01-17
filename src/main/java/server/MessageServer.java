@@ -6,6 +6,7 @@ import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
+import vm.VirtualMachine;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,12 +20,19 @@ public class MessageServer implements Runnable {
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
     private final EventTriggerHandler eventTriggerHandler;
+    private final VirtualMachine virtualMachine;
 
-    public MessageServer(int port, RequestQueue requestQueue, EventTriggerHandler eventTriggerHandler) {
+    public MessageServer(
+            int port,
+            HashMap<String, Response> responsesToSend,
+            RequestQueue requestQueue,
+            EventTriggerHandler eventTriggerHandler,
+            VirtualMachine virtualMachine) {
         this.port = port;
+        this.responsesToSend = responsesToSend;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
-        this.responsesToSend = new HashMap<>();
+        this.virtualMachine = virtualMachine;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -73,7 +81,15 @@ public class MessageServer implements Runnable {
 
                         String threadName = this.generateThreadName();
                         this.responsesToSend.put(threadName, null);
-                        new ClientHandler(threadName, socket, responsesToSend, requestQueue, eventTriggerHandler, messageDeserializer).start();
+                        new ClientHandler(
+                                threadName,
+                                socket,
+                                responsesToSend,
+                                requestQueue,
+                                eventTriggerHandler,
+                                virtualMachine,
+                                messageDeserializer
+                        ).start();
 
                         System.out.println("MessageServer: Client communication delegated");
                     }
