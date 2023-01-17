@@ -81,7 +81,6 @@ public class ClientHandler extends Thread {
                     Message message = signedMessage.getMessage();
 
                     if (message instanceof DeployContract) {
-                    // if (message instanceof AgreementCall) {
                         System.out.println("ClientHandler: DeployContract message");
 
                         // Set up a compiler thread
