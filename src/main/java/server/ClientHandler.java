@@ -84,7 +84,14 @@ public class ClientHandler extends Thread {
                         System.out.println("ClientHandler: DeployContract message");
 
                         // Set up a compiler thread
-                        Thread compilerThread = new Thread(new StipulaCompiler(this, this.eventTriggerHandler, responsesToSend));
+                        Thread compilerThread = new Thread(
+                                new StipulaCompiler(
+                                        this,
+                                        (DeployContract) message,
+                                        this.eventTriggerHandler,
+                                        this.responsesToSend
+                                )
+                        );
 
                         // Start the compiler thread
                         compilerThread.start();
