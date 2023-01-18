@@ -2,7 +2,6 @@ package vm;
 
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
-import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.responses.Response;

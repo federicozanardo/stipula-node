@@ -1,12 +1,12 @@
 package server;
 
 import event.EventTriggerHandler;
-import lib.datastructures.RequestQueue;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
+import vm.RequestQueue;
 import vm.VirtualMachine;
 
 import java.io.IOException;

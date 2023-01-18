@@ -1,8 +1,8 @@
 package event;
 
-import lib.datastructures.RequestQueue;
 import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
+import vm.RequestQueue;
 
 import java.util.ArrayList;
 import java.util.Timer;

@@ -15,7 +15,6 @@ import vm.dfa.State;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -5,13 +5,13 @@ import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
 import event.EventTriggerHandler;
 import exceptions.queue.QueueOverflowException;
-import lib.datastructures.RequestQueue;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import vm.RequestQueue;
 import vm.VirtualMachine;
 
 import java.io.BufferedInputStream;
