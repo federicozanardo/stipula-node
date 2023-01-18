@@ -4,6 +4,7 @@ import event.EventTriggerHandler;
 import lib.datastructures.RequestQueue;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.contract.agreement.AgreementCall;
+import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
 import vm.VirtualMachine;
@@ -38,6 +39,7 @@ public class MessageServer implements Runnable {
         this.messageDeserializer = new MessageDeserializer();
         this.messageDeserializer.registerDataType(AgreementCall.class.getSimpleName(), AgreementCall.class);
         this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
+        this.messageDeserializer.registerDataType(DeployContract.class.getSimpleName(), DeployContract.class);
     }
 
     @Override
