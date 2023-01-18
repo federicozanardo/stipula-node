@@ -15,12 +15,11 @@ import java.util.Set;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.*;
 
-public class ContractInstancesStorage extends Storage<ContractInstance> {
+public class ContractInstancesStorage extends StorageSerializer<ContractInstance> {
     public DB levelDb;
     private final HashMap<String, TraceChange> storage;
 
-    public ContractInstancesStorage() throws IOException {
-        // super(String.valueOf(Constants.CONTRACT_INSTANCES_PATH));
+    public ContractInstancesStorage() {
         this.storage = new HashMap<>();
     }
 

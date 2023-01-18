@@ -12,12 +12,8 @@ import java.util.UUID;
 import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
 import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
-public class ContractsStorage extends Storage<Contract> {
+public class ContractsStorage extends StorageSerializer<Contract> {
     private DB levelDb;
-
-    public ContractsStorage() throws IOException {
-        // super(String.valueOf(Constants.CONTRACTS_PATH));
-    }
 
     public Contract getContract(String contractId) throws IOException {
         this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());

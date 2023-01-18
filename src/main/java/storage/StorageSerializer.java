@@ -2,7 +2,7 @@ package storage;
 
 import java.io.*;
 
-public class Storage<T> {
+public class StorageSerializer<T> {
 
     public byte[] serialize(T myObject) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
