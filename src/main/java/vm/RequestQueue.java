@@ -12,11 +12,7 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
-    // private final Queue<Pair<String, Message>> functionCallRequests;
     private final Queue<Pair<Thread, Message>> functionCallRequests;
-
-    // private final Queue<Pair<String, TriggerRequest>> triggerRequests;
-    // private final Queue<Pair<String, Message>> triggerRequests;
     private final Queue<Pair<Thread, Message>> triggerRequests;
     private final ReentrantLock mutex;
 
@@ -31,7 +27,7 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(/*String threadName,*/ Thread thread, Message value) throws QueueOverflowException {
+    public void enqueue(Thread thread, Message value) throws QueueOverflowException {
         if (value instanceof AgreementCall || value instanceof FunctionCall) {
             this.mutex.lock();
             if (this.functionCallRequests.isFull()) {
