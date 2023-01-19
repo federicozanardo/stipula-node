@@ -1,7 +1,5 @@
 package shared;
 
-import models.dto.responses.Response;
-
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;

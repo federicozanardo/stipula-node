@@ -12,9 +12,6 @@ import storage.Storage;
 import storage.StorageRequest;
 import storage.StorageRequestQueue;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 public class VirtualMachine extends Thread {
     private final RequestQueue queue;
     private final StorageRequestQueue storageRequestQueue;

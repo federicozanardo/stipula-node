@@ -15,8 +15,6 @@ import vm.VirtualMachine;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.UUID;
 
 public class MessageServer implements Runnable {
     private final int port;
