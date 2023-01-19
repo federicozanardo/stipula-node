@@ -1,42 +1,83 @@
-import asset.FungibleAsset;
-import constants.Constants;
-import lib.datastructures.Pair;
-import messages.Message;
-import messages.SignedMessage;
-import messages.agreement.AgreementCallMessage;
-import messages.function.FunctionCallMessage;
-import messages.function.PayToContract;
+import event.EventTriggerHandler;
+import models.address.Address;
+import models.assets.FungibleAsset;
+import models.contract.Contract;
+import models.contract.SingleUseSeal;
+import models.dto.requests.Message;
+import models.dto.requests.contract.agreement.AgreementCall;
+import models.dto.requests.contract.function.FunctionCall;
+import models.dto.requests.contract.function.PayToContract;
+import models.dto.responses.Response;
+import server.MessageServer;
+import shared.SharedMemory;
+import storage.ContractsStorage;
+import storage.Storage;
+import storage.StorageRequestQueue;
+import vm.RequestQueue;
 import vm.ScriptVirtualMachine;
-import vm.SmartContractVirtualMachine;
-import vm.contract.Contract;
-import vm.contract.ContractInstance;
-import vm.contract.SingleUseSeal;
-import vm.dfa.ContractCallByParty;
-import vm.dfa.DeterministicFiniteAutomata;
-import vm.dfa.State;
-import vm.storage.ContractInstancesStorage;
-import vm.storage.ContractsStorage;
+import vm.VirtualMachine;
 import vm.types.AssetType;
 import vm.types.FloatType;
-import vm.types.TraceChange;
-import vm.types.Type;
-import vm.types.address.Address;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.*;
-
-import static lib.crypto.Crypto.*;
+import java.util.HashMap;
+import java.util.Scanner;
 
 class Main {
     private static int offset = 0;
     private static ContractsStorage contractsStorage;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        // Set up the requests queue
+        RequestQueue requestQueue = new RequestQueue();
+
+        //
+        StorageRequestQueue storageRequestQueue = new StorageRequestQueue();
+
+        // HashMap<String, Response> responsesToSend = new HashMap<>();
+        SharedMemory<Response> sharedMemory = new SharedMemory<>();
+
+        //
+        Storage storage = new Storage(storageRequestQueue, sharedMemory);
+
+        // Set up the virtual machine handler
+        VirtualMachine virtualMachine = new VirtualMachine(
+                requestQueue,
+                storageRequestQueue,
+                storage,
+                sharedMemory
+        );
+
+        // Set up the Event trigger handler
+        EventTriggerHandler eventTriggerHandler = new EventTriggerHandler(requestQueue, virtualMachine);
+
+        // Set up the server
+        Thread server = new Thread(
+                new MessageServer(
+                        61000,
+                        requestQueue,
+                        eventTriggerHandler,
+                        virtualMachine,
+                        storageRequestQueue,
+                        storage,
+                        sharedMemory
+                ),
+                "Message server"
+        );
+
+        //
+        storage.start();
+
+        // Start the virtual machine
+        virtualMachine.start();
+
+        // Start the server
+        server.start();
+    }
+
+    /*public static void oldMain(String[] args) throws Exception {
         String path = String.valueOf(Constants.EXAMPLES_PATH);
 
         contractsStorage = new ContractsStorage();
@@ -58,11 +99,11 @@ class Main {
 
         // Load the function
         String rawBytecode;
-        if (message instanceof AgreementCallMessage) {
-            AgreementCallMessage agreementCallMessage = (AgreementCallMessage) message;
+        if (message instanceof AgreementCall) {
+            AgreementCall agreementCall = (AgreementCall) message;
 
             // Get the contract
-            contract = contractsStorage.getContract(agreementCallMessage.getContractId());
+            contract = contractsStorage.getContract(agreementCall.getContractId());
 
             DeterministicFiniteAutomata stateMachine = new DeterministicFiniteAutomata(
                     contract.getInitialState(),
@@ -72,16 +113,16 @@ class Main {
 
             // Create a new instance of the contract
             instance = new ContractInstance(
-                    agreementCallMessage.getContractId(),
+                    agreementCall.getContractId(),
                     stateMachine
             );
             contractInstancesStorage.createContractInstance(instance);
             System.out.println("main: contractInstanceId = " + instance.getInstanceId());
 
-            rawBytecode = loadFunction(agreementCallMessage.getContractId(), "agreement");
+            rawBytecode = loadFunction(agreementCall.getContractId(), "agreement");
             System.out.println("main: loadFunction\n" + rawBytecode);
         } else {
-            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
+            FunctionCall functionCall = (FunctionCall) message;
 
             if (signedMessage.getSignatures().size() == 0) {
                 // Error
@@ -96,12 +137,12 @@ class Main {
 
             address = new Address(publicKeyParty);
 
-            instance = contractInstancesStorage.getContractInstance(functionCallMessage.getContractInstanceId());
+            instance = contractInstancesStorage.getContractInstance(functionCall.getContractInstanceId());
 
-            nextState = getNextStateFromFunction(functionCallMessage.getContractId(), functionCallMessage.getFunction());
+            nextState = getNextStateFromFunction(functionCall.getContractId(), functionCall.getFunction());
             System.out.println("main: nextState: " + nextState);
 
-            rawBytecode = loadFunction(functionCallMessage.getContractId(), functionCallMessage.getFunction());
+            rawBytecode = loadFunction(functionCall.getContractId(), functionCall.getFunction());
             System.out.println("loadFunction: Function\n" + rawBytecode);
         }
 
@@ -110,13 +151,13 @@ class Main {
 
         // Load asset arguments
         HashMap<String, AssetType> assetArguments = new HashMap<>();
-        if (message instanceof FunctionCallMessage) {
+        if (message instanceof FunctionCall) {
             assetArguments = loadAssetArguments(message);
         }
 
         // Load the bytecode
         String bytecode;
-        if (message instanceof AgreementCallMessage) {
+        if (message instanceof AgreementCall) {
             bytecode = loadBytecode(rawBytecode, arguments);
             System.out.println("main: loadBytecode\n" + bytecode);
         } else {
@@ -127,7 +168,7 @@ class Main {
         String[] instructions = bytecode.split("\n");
 
         // Check if the state is correct
-        if (message instanceof FunctionCallMessage && !instance.getStateMachine().isNextState(nextState, address)) {
+        if (message instanceof FunctionCall && !instance.getStateMachine().isNextState(nextState, address)) {
             // Error
             System.out.println("main: Error in the state machine");
             System.out.println("main: Current state => " + instance.getStateMachine().getCurrentState());
@@ -139,7 +180,7 @@ class Main {
         // Set up the virtual machine
         SmartContractVirtualMachine vm;
 
-        if (message instanceof AgreementCallMessage) {
+        if (message instanceof AgreementCall) {
             vm = new SmartContractVirtualMachine(instructions, offset);
         } else {
             // Load global storage
@@ -177,9 +218,9 @@ class Main {
         System.out.println("GLOBALSPACE");
         System.out.println(instance.getGlobalVariables());
         System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
-    }
+    }*/
 
-    private static void setupContract() throws IOException, NoSuchAlgorithmException {
+    /*private static void setupContract() throws IOException, NoSuchAlgorithmException {
         String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
 
         // Load the DFA
@@ -202,7 +243,7 @@ class Main {
         String contractId = contractsStorage.addContract(contract);
 
         System.out.println("setupContract: contractId = " + contractId);
-    }
+    }*/
 
     private static String readProgram(String pathname) {
         String bytecode = "";
@@ -314,16 +355,16 @@ class Main {
     private static HashMap<String, String> loadArguments(Message message) {
         HashMap<String, String> arguments = new HashMap<>();
 
-        if (message instanceof AgreementCallMessage) {
-            AgreementCallMessage agreementCallMessage = (AgreementCallMessage) message;
-            arguments.putAll(agreementCallMessage.getArguments());
+        if (message instanceof AgreementCall) {
+            AgreementCall agreementCall = (AgreementCall) message;
+            arguments.putAll(agreementCall.getArguments());
 
-            for (HashMap.Entry<String, Address> entry : agreementCallMessage.getParties().entrySet()) {
+            for (HashMap.Entry<String, Address> entry : agreementCall.getParties().entrySet()) {
                 arguments.put(entry.getKey(), entry.getValue().getPublicKey());
             }
         } else {
-            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
-            arguments.putAll(functionCallMessage.getArguments());
+            FunctionCall functionCall = (FunctionCall) message;
+            arguments.putAll(functionCall.getArguments());
         }
 
         return arguments;
@@ -332,11 +373,11 @@ class Main {
     private static HashMap<String, AssetType> loadAssetArguments(Message message) throws Exception {
         HashMap<String, AssetType> assetArguments = new HashMap<>();
 
-        if (message instanceof FunctionCallMessage) {
-            FunctionCallMessage functionCallMessage = (FunctionCallMessage) message;
+        if (message instanceof FunctionCall) {
+            FunctionCall functionCall = (FunctionCall) message;
 
-            if (!functionCallMessage.getAssetArguments().isEmpty()) {
-                for (HashMap.Entry<String, PayToContract> entry : functionCallMessage.getAssetArguments().entrySet()) {
+            if (!functionCall.getAssetArguments().isEmpty()) {
+                for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
                     // Set up the asset
                     FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
 
@@ -451,7 +492,7 @@ class Main {
         return finalBytecode;
     }
 
-    private static SignedMessage callAgreementFunction(String path) throws Exception {
+    /*public static SignedMessage callAgreementFunction(String path) throws Exception {
         // Start example of signed message
         Base64.Encoder encoder = Base64.getEncoder();
 
@@ -459,11 +500,11 @@ class Main {
         // KeyPair lenderKeys = generateKeyPair();
         // KeyPair borrowerKeys = generateKeyPair();
 
-        PublicKey lenderPublicKey = getPublicKeyFromFile(path + "lender-keys/publicKey");
-        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
+        PublicKey lenderPublicKey = Crypto.getPublicKeyFromFile(path + "lender-keys/publicKey");
+        PrivateKey lenderPrivateKey = Crypto.getPrivateKeyFromFile(path + "lender-keys/privateKey");
 
-        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
-        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+        PublicKey borrowerPublicKey = Crypto.getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = Crypto.getPrivateKeyFromFile(path + "borrower-keys/privateKey");
 
         // Get public key as String
         // String lenderPubKey = encoder.encodeToString(lenderKeys.getPublic().getEncoded());
@@ -485,49 +526,51 @@ class Main {
         arguments.put("cost", "1200 2");
         arguments.put("rent_time", "1");
 
-        AgreementCallMessage agreementCallMessage = new AgreementCallMessage(
+        AgreementCall agreementCall = new AgreementCall(
                 "1dc563ca-066b-4bd1-9af3-399af8879a1d",
                 arguments,
-                parties);
+                parties
+        );
 
         // String lenderSign = sign(agreementCallMessage.toString(), lenderKeys.getPrivate());
-        String lenderSign = sign(agreementCallMessage.toString(), lenderPrivateKey);
+        String lenderSign = Crypto.sign(agreementCall.toString(), lenderPrivateKey);
         // String borrowerSign = sign(agreementCallMessage.toString(), borrowerKeys.getPrivate());
-        String borrowerSign = sign(agreementCallMessage.toString(), borrowerPrivateKey);
+        String borrowerSign = Crypto.sign(agreementCall.toString(), borrowerPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         signatures.put("Lender", lenderSign);
         signatures.put("Borrower", borrowerSign);
 
-        return new SignedMessage(agreementCallMessage, signatures);
+        return new SignedMessage(agreementCall, signatures);
     }
 
     private static SignedMessage callOfferFunction(String path) throws Exception {
-        PrivateKey lenderPrivateKey = getPrivateKeyFromFile(path + "lender-keys/privateKey");
+        PrivateKey lenderPrivateKey = Crypto.getPrivateKeyFromFile(path + "lender-keys/privateKey");
 
         HashMap<String, String> arguments = new HashMap<>();
         arguments.put("z", "1");
 
-        FunctionCallMessage functionCallMessage = new FunctionCallMessage(
+        FunctionCall functionCall = new FunctionCall(
                 "1dc563ca-066b-4bd1-9af3-399af8879a1d",
                 "f017c131-8f66-4769-bcd2-1865c30e8510",
-                "offer");
-        functionCallMessage.setArguments(arguments);
+                "offer"
+        );
+        functionCall.setArguments(arguments);
 
-        String lenderSign = sign(functionCallMessage.toString(), lenderPrivateKey);
+        String lenderSign = Crypto.sign(functionCall.toString(), lenderPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         // signatures.put("Lender", lenderSign);
         signatures.put(
                 "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB",
                 lenderSign);
 
-        return new SignedMessage(functionCallMessage, signatures);
+        return new SignedMessage(functionCall, signatures);
     }
 
     private static SignedMessage callAcceptFunction(String path) throws Exception {
         Base64.Encoder encoder = Base64.getEncoder();
 
-        PublicKey borrowerPublicKey = getPublicKeyFromFile(path + "borrower-keys/publicKey");
-        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+        PublicKey borrowerPublicKey = Crypto.getPublicKeyFromFile(path + "borrower-keys/publicKey");
+        PrivateKey borrowerPrivateKey = Crypto.getPrivateKeyFromFile(path + "borrower-keys/privateKey");
 
         // Get public key as String
         String borrowerPubKey = encoder.encodeToString(borrowerPublicKey.getEncoded());
@@ -545,7 +588,7 @@ class Main {
         SingleUseSeal singleUseSeal = new SingleUseSeal("aaa111", bitcoin.getAssetId(), amount, borrowerAddress.getAddress());
 
         // Set up the unlock script
-        String signature = sign("aaa111", borrowerPrivateKey);
+        String signature = Crypto.sign("aaa111", borrowerPrivateKey);
         String unlockScript = "PUSH str " + signature + "\nPUSH str " + borrowerPubKey + "\n";
 
         PayToContract payToContract = new PayToContract(
@@ -556,36 +599,38 @@ class Main {
         HashMap<String, PayToContract> assetArguments = new HashMap<>();
         assetArguments.put("y", payToContract);
 
-        FunctionCallMessage functionCallMessage = new FunctionCallMessage(
+        FunctionCall functionCall = new FunctionCall(
                 "1dc563ca-066b-4bd1-9af3-399af8879a1d",
                 "f017c131-8f66-4769-bcd2-1865c30e8510",
-                "accept");
-        functionCallMessage.setArguments(arguments);
-        functionCallMessage.setAssetArguments(assetArguments);
+                "accept"
+        );
+        functionCall.setArguments(arguments);
+        functionCall.setAssetArguments(assetArguments);
 
-        String borrowerSign = sign(functionCallMessage.toString(), borrowerPrivateKey);
+        String borrowerSign = Crypto.sign(functionCall.toString(), borrowerPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         signatures.put(
                 "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB",
                 borrowerSign);
 
-        return new SignedMessage(functionCallMessage, signatures);
+        return new SignedMessage(functionCall, signatures);
     }
 
     private static SignedMessage callEndFunction(String path) throws Exception {
-        PrivateKey borrowerPrivateKey = getPrivateKeyFromFile(path + "borrower-keys/privateKey");
+        PrivateKey borrowerPrivateKey = Crypto.getPrivateKeyFromFile(path + "borrower-keys/privateKey");
 
-        FunctionCallMessage functionCallMessage = new FunctionCallMessage(
+        FunctionCall functionCall = new FunctionCall(
                 "1dc563ca-066b-4bd1-9af3-399af8879a1d",
                 "f017c131-8f66-4769-bcd2-1865c30e8510",
-                "end");
+                "end"
+        );
 
-        String borrowerSign = sign(functionCallMessage.toString(), borrowerPrivateKey);
+        String borrowerSign = Crypto.sign(functionCall.toString(), borrowerPrivateKey);
         HashMap<String, String> signatures = new HashMap<>();
         signatures.put(
                 "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB",
                 borrowerSign);
 
-        return new SignedMessage(functionCallMessage, signatures);
-    }
+        return new SignedMessage(functionCall, signatures);
+    }*/
 }
