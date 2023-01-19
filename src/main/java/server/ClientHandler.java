@@ -11,6 +11,9 @@ import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import shared.SharedMemory;
+import storage.Storage;
+import storage.StorageRequestQueue;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -20,30 +23,37 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
-    private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
     private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
+    private final StorageRequestQueue storageRequestQueue;
+    private final Storage storage;
+    private final SharedMemory<Response> sharedMemory;
     private final Gson gson;
 
     public ClientHandler(
             String name,
             Socket socket,
-            HashMap<String, Response> responsesToSend,
             RequestQueue requestQueue,
             EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
+            StorageRequestQueue storageRequestQueue,
+            Storage storage,
+            SharedMemory<Response> sharedMemory,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
         this.socket = socket;
-        this.responsesToSend = responsesToSend;
+        this.sharedMemory = sharedMemory;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
+        this.storageRequestQueue = storageRequestQueue;
+        this.storage = storage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -81,20 +91,19 @@ public class ClientHandler extends Thread {
                     Message message = signedMessage.getMessage();
 
                     if (message instanceof DeployContract) {
-                        System.out.println("ClientHandler: DeployContract message");
+                        String threadName = this.sharedMemory.add();
+                        System.out.println("ClientHandler: threadName => " + threadName);
 
-                        // Set up a compiler thread
-                        Thread compilerThread = new Thread(
-                                new StipulaCompiler(
-                                        this,
-                                        (DeployContract) message,
-                                        this.eventTriggerHandler,
-                                        this.responsesToSend
-                                )
-                        );
-
-                        // Start the compiler thread
-                        compilerThread.start();
+                        // Set up and start a compiler thread
+                        new StipulaCompiler(
+                                threadName,
+                                this,
+                                (DeployContract) message,
+                                eventTriggerHandler,
+                                storageRequestQueue,
+                                storage,
+                                sharedMemory
+                        ).start();
 
                         // Wait a notification from the virtual machine thread
                         synchronized (this) {
@@ -104,7 +113,7 @@ public class ClientHandler extends Thread {
                         System.out.println("ClientHandler: Notified from the compiler");
 
                         System.out.println("ClientHandler: Prepare the response...");
-                        Response response = this.responsesToSend.get(Thread.currentThread().getName());
+                        Response response = this.sharedMemory.get(Thread.currentThread().getName());
                         String jsonResponse = "";
                         if (response instanceof SuccessDataResponse) {
                             jsonResponse = gson.toJson(response, SuccessDataResponse.class);
@@ -118,7 +127,11 @@ public class ClientHandler extends Thread {
                         }
                     } else {
                         // Send a request to the queue manager
-                        this.requestQueue.enqueue(this, signedMessage.getMessage());
+                        this.requestQueue.enqueue(
+                                this,
+                                this.getName(),
+                                signedMessage.getMessage()
+                        );
 
                         // Notify the virtual machine that a new request is ready to be fulfilled
                         synchronized (this.virtualMachine) {
@@ -131,7 +144,7 @@ public class ClientHandler extends Thread {
                         }
 
                         System.out.println("ClientHandler: Prepare the response...");
-                        Response response = this.responsesToSend.get(Thread.currentThread().getName());
+                        Response response = this.sharedMemory.get(Thread.currentThread().getName());
                         String jsonResponse = "";
                         if (response instanceof SuccessDataResponse) {
                             jsonResponse = gson.toJson(response, SuccessDataResponse.class);

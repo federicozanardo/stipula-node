@@ -2,6 +2,7 @@ package compiler;
 
 import constants.Constants;
 import event.EventTriggerHandler;
+import exceptions.queue.QueueOverflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.contract.Contract;
@@ -10,32 +11,42 @@ import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import shared.SharedMemory;
+import storage.Storage;
+import storage.StorageRequest;
+import storage.StorageRequestQueue;
 import vm.dfa.ContractCallByParty;
-import vm.dfa.State;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
 
-public class StipulaCompiler implements Runnable {
+public class StipulaCompiler extends Thread {
     private final Thread clientHandler;
     private final DeployContract contractToDeploy;
     private final EventTriggerHandler eventTriggerHandler;
-    private final HashMap<String, Response> responsesToSend;
+    private final StorageRequestQueue storageRequestQueue;
+    private final Storage storage;
+    private final SharedMemory<Response> sharedMemory;
 
     public StipulaCompiler(
+            String name,
             Thread clientHandler,
             DeployContract contractToDeploy,
             EventTriggerHandler eventTriggerHandler,
-            HashMap<String, Response> responsesToSend
+            StorageRequestQueue storageRequestQueue,
+            Storage storage,
+            SharedMemory<Response> sharedMemory
     ) {
+        super(name);
         this.clientHandler = clientHandler;
         this.contractToDeploy = contractToDeploy;
         this.eventTriggerHandler = eventTriggerHandler;
-        this.responsesToSend = responsesToSend;
+        this.storageRequestQueue = storageRequestQueue;
+        this.storage = storage;
+        this.sharedMemory = sharedMemory;
     }
 
     @Override
@@ -58,12 +69,12 @@ public class StipulaCompiler implements Runnable {
         System.out.println("StipulaCompiler: Compilation successful");
         System.out.println("StipulaCompiler: Set up event triggers...");
 
-        for (int i = 0; i < 5; i++) {
-            /*try {
+        /*for (int i = 0; i < 5; i++) {
+            *//*try {
                 Thread.sleep(1500);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            }*/
+            }*//*
 
             EventTriggerRequest request = new EventTriggerRequest(
                     "a" + i,
@@ -73,10 +84,60 @@ public class StipulaCompiler implements Runnable {
             EventTriggerSchedulingRequest schedulingRequest = new EventTriggerSchedulingRequest(request, 5);
             this.eventTriggerHandler.addTask(schedulingRequest);
             System.out.println("StipulaCompiler: added " + schedulingRequest);
+        }*/
+
+        try {
+            this.storageRequestQueue.enqueue(
+                    this,
+                    this.clientHandler.getName(),
+                    new StorageRequest()
+            );
+        } catch (QueueOverflowException e) {
+            System.out.println("StipulaCompiler: error => " + e);
+            throw new RuntimeException(e);
         }
 
-        if (this.responsesToSend.containsKey(this.clientHandler.getName())) {
-            this.responsesToSend.put(this.clientHandler.getName(), new SuccessDataResponse("ack from StipulaCompiler thread"));
+        synchronized (this.storage) {
+            this.storage.notify();
+        }
+
+        // Wait a notification from the storage thread
+        synchronized (this) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                System.out.println("StipulaCompiler: error => " + e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.println("StipulaCompiler: response from Storage " + this.sharedMemory.get(this.clientHandler.getName()));
+        String text = ((SuccessDataResponse) this.sharedMemory.get(this.clientHandler.getName()))
+                .getData().toString();
+
+        this.sharedMemory.set(
+                this.clientHandler.getName(),
+                // new SuccessDataResponse("ack from StipulaCompiler thread")
+                new SuccessDataResponse(text + " and StipulaCompiler")
+        );
+
+        System.out.println("StipulaCompiler: Now I'll notify the thread " + this.clientHandler.getName());
+        synchronized (this.clientHandler) {
+            this.clientHandler.notify();
+        }
+
+        System.out.println("StipulaCompiler: Bye bye!");
+
+        /*if (this.responsesToSend.containsKey(this.getName()) && this.responsesToSend.containsKey(this.clientHandler.getName()) ) {
+            System.out.println("StipulaCompiler: response from Storage" + this.responsesToSend.get(this.getName()));
+            String text = ((SuccessDataResponse) this.responsesToSend.get(this.getName()))
+                    .getData().toString();
+
+            this.responsesToSend.put(
+                    this.clientHandler.getName(),
+                    // new SuccessDataResponse("ack from StipulaCompiler thread")
+                    new SuccessDataResponse(text + " and StipulaCompiler")
+            );
 
             System.out.println("StipulaCompiler: Now I'll notify the thread " + this.clientHandler.getName());
             synchronized (this.clientHandler) {
@@ -85,8 +146,8 @@ public class StipulaCompiler implements Runnable {
 
             System.out.println("StipulaCompiler: Bye bye!");
         } else {
-            System.out.println("StipulaCompiler: Oh no! There is no reference in the common space for this thread " + this.clientHandler.getName());
-        }
+            System.out.println("StipulaCompiler: Oh no! There is no reference in the shared space for this thread " + this.clientHandler.getName());
+        }*/
     }
 
     private boolean compile() throws NoSuchAlgorithmException {
@@ -107,12 +168,30 @@ public class StipulaCompiler implements Runnable {
         ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
         authorizedParties2.add(borrowerAddr);
 
-        ArrayList<Pair<String, State>> transitions = new ArrayList<>();
-        transitions.add(new Pair<String, State>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
-        transitions.add(new Pair<String, State>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
-        transitions.add(new Pair<String, State>("Using", new ContractCallByParty("End", authorizedParties2)));
+        ArrayList<Pair<String, vm.dfa.State>> transitions = new ArrayList<>();
+        transitions.add(new Pair<String, vm.dfa.State>(
+                        "Inactive",
+                        new ContractCallByParty("Proposal", authorizedParties1)
+                )
+        );
+        transitions.add(new Pair<String, vm.dfa.State>(
+                        "Proposal",
+                        new ContractCallByParty("Using", authorizedParties2)
+                )
+        );
+        transitions.add(new Pair<String, vm.dfa.State>(
+                        "Using",
+                        new ContractCallByParty("End", authorizedParties2)
+                )
+        );
 
-        Contract contract = new Contract("", bytecode, "Inactive", "End", transitions);
+        Contract contract = new Contract(
+                "",
+                bytecode,
+                "Inactive",
+                "End",
+                transitions
+        );
 
         // Save the contract
         // String contractId = contractsStorage.addContract(contract);

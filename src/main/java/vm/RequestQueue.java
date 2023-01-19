@@ -12,8 +12,8 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
-    private final Queue<Pair<Thread, Message>> functionCallRequests;
-    private final Queue<Pair<Thread, Message>> triggerRequests;
+    private final Queue<Pair<Thread, Pair<String, Message>>> functionCallRequests;
+    private final Queue<Pair<Thread, Pair<String, Message>>> triggerRequests;
     private final ReentrantLock mutex;
 
     public RequestQueue() {
@@ -27,14 +27,14 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(Thread thread, Message value) throws QueueOverflowException {
+    public void enqueue(Thread thread, String threadNameToNotify, Message value) throws QueueOverflowException {
         if (value instanceof AgreementCall || value instanceof FunctionCall) {
             this.mutex.lock();
             if (this.functionCallRequests.isFull()) {
                 this.mutex.unlock();
                 throw new QueueOverflowException();
             }
-            this.functionCallRequests.enqueue(new Pair<>(thread, value));
+            this.functionCallRequests.enqueue(new Pair<>(thread, new Pair<>(threadNameToNotify, value)));
             this.mutex.unlock();
         } else {
             throw new Error();
@@ -51,7 +51,7 @@ public class RequestQueue {
             this.mutex.unlock();
             throw new QueueOverflowException();
         }
-        this.triggerRequests.enqueue(new Pair<>(null, value));
+        this.triggerRequests.enqueue(new Pair<>(null, new Pair<>(null, value)));
         this.mutex.unlock();
     }
 
@@ -59,8 +59,8 @@ public class RequestQueue {
      * @return
      * @throws QueueUnderflowException
      */
-    public Pair<Thread, Message> dequeue() throws QueueUnderflowException {
-        Pair<Thread, Message> request;
+    public Pair<Thread, Pair<String, Message>> dequeue() throws QueueUnderflowException {
+        Pair<Thread, Pair<String, Message>> request;
         this.mutex.lock();
 
         if (!this.triggerRequests.isEmpty()) {

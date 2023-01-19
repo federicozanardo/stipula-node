@@ -1,34 +1,56 @@
 package vm;
 
+import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import models.dto.requests.Message;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import shared.SharedMemory;
+import storage.Storage;
+import storage.StorageRequest;
+import storage.StorageRequestQueue;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public class VirtualMachine extends Thread {
     private final RequestQueue queue;
-    private final HashMap<String, Response> responsesToSend;
+    private final StorageRequestQueue storageRequestQueue;
+    private final Storage storage;
+    private final SharedMemory<Response> sharedMemory;
 
-    public VirtualMachine(RequestQueue queue, HashMap<String, Response> responsesToSend) {
+    public VirtualMachine(
+            RequestQueue queue,
+            StorageRequestQueue storageRequestQueue,
+            Storage storage,
+            SharedMemory<Response> sharedMemory
+    ) {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
-        this.responsesToSend = responsesToSend;
+        this.storageRequestQueue = storageRequestQueue;
+        this.storage = storage;
+        this.sharedMemory = sharedMemory;
     }
 
     @Override
     public void run() {
-        Pair<Thread, Message> pair;
+        Pair<Thread, Pair<String, Message>> request;
+        Pair<String, Message> packet;
+        Thread thread;
+        String whereToNotify;
         Message message;
 
         while (true) {
             System.out.println("VirtualMachine: Ready to dequeue a value...");
             try {
-                pair = this.queue.dequeue();
-                message = pair.getSecond();
+                request = this.queue.dequeue();
+
+                thread = request.getFirst();
+                packet = request.getSecond();
+                whereToNotify = packet.getFirst();
+                message = packet.getSecond();
 
                 if (message != null) {
                     if (message instanceof AgreementCall) {
@@ -38,7 +60,42 @@ public class VirtualMachine extends Thread {
 
                         // TODO: Call SmartContractVirtualMachine in order to execute the request
 
-                        if (this.responsesToSend.containsKey(pair.getFirst().getName())) {
+                        this.storageRequestQueue.enqueue(
+                                this,
+                                thread.getName(),
+                                new StorageRequest()
+                        );
+
+                        synchronized (this.storage) {
+                            this.storage.notify();
+                        }
+
+                        // Wait a notification from the storage thread
+                        synchronized (this) {
+                            this.wait();
+                        }
+
+                        System.out.println("VirtualMachine: Notified from the storage");
+
+                        if (thread != null && whereToNotify != null) {
+                            System.out.println("VirtualMachine: response from Storage " + this.sharedMemory.get(whereToNotify));
+                            String text = ((SuccessDataResponse) this.sharedMemory.get(whereToNotify))
+                                    .getData().toString();
+
+                            this.sharedMemory.set(
+                                    whereToNotify,
+                                    new SuccessDataResponse(text + " and VirtualMachine")
+                            );
+
+                            System.out.println("VirtualMachine: Now I'll notify the thread " + thread.getName());
+                            synchronized (thread) {
+                                thread.notify();
+                            }
+                        }
+
+                        System.out.println("VirtualMachine: Bye bye!");
+
+                        /*if (this.responsesToSend.containsKey(pair.getFirst().getName())) {
                             this.responsesToSend.put(
                                     pair.getFirst().getName(),
                                     new SuccessDataResponse("ack from VirtualMachine")
@@ -51,11 +108,11 @@ public class VirtualMachine extends Thread {
 
                             System.out.println("VirtualMachine: Bye bye!");
                         } else {
-                            System.out.println("VirtualMachine: Oh no! There is no reference in the common space for this thread " + pair.getFirst().getName());
-                        }
+                            System.out.println("VirtualMachine: Oh no! There is no reference in the shared space for this thread " + pair.getFirst().getName());
+                        }*/
                     }
                 }
-            } catch (QueueUnderflowException e) {
+            } catch (QueueUnderflowException | QueueOverflowException | InterruptedException error) {
                 // throw new RuntimeException(e);
                 try {
                     System.out.println("VirtualMachine: I'm waiting...");
@@ -63,6 +120,7 @@ public class VirtualMachine extends Thread {
                         this.wait();
                     }
                 } catch (InterruptedException ex) {
+                    System.out.println("VirtualMachine: " + ex);
                     throw new RuntimeException(ex);
                 }
             }

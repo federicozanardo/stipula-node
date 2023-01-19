@@ -6,6 +6,9 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
+import shared.SharedMemory;
+import storage.Storage;
+import storage.StorageRequestQueue;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -17,23 +20,30 @@ import java.util.UUID;
 
 public class MessageServer implements Runnable {
     private final int port;
-    private final HashMap<String, Response> responsesToSend;
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
     private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
+    private final StorageRequestQueue storageRequestQueue;
+    private final Storage storage;
+    private final SharedMemory<Response> sharedMemory;
 
     public MessageServer(
             int port,
-            HashMap<String, Response> responsesToSend,
             RequestQueue requestQueue,
             EventTriggerHandler eventTriggerHandler,
-            VirtualMachine virtualMachine) {
+            VirtualMachine virtualMachine,
+            StorageRequestQueue storageRequestQueue,
+            Storage storage,
+            SharedMemory<Response> sharedMemory
+    ) {
         this.port = port;
-        this.responsesToSend = responsesToSend;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
+        this.storageRequestQueue = storageRequestQueue;
+        this.storage = storage;
+        this.sharedMemory = sharedMemory;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -81,15 +91,16 @@ public class MessageServer implements Runnable {
                         System.out.println("MessageServer: New client");
                         System.out.println("MessageServer: Delegating the client communication with a dedicated thread...");
 
-                        String threadName = this.generateThreadName();
-                        this.responsesToSend.put(threadName, null);
+                        String threadName = this.sharedMemory.add();
                         new ClientHandler(
                                 threadName,
                                 socket,
-                                responsesToSend,
                                 requestQueue,
                                 eventTriggerHandler,
                                 virtualMachine,
+                                storageRequestQueue,
+                                storage,
+                                sharedMemory,
                                 messageDeserializer
                         ).start();
 
@@ -98,15 +109,5 @@ public class MessageServer implements Runnable {
                 }
             }
         }
-    }
-
-    private String generateThreadName() {
-        String threadName = UUID.randomUUID().toString();
-
-        while (this.responsesToSend.containsKey(threadName)) {
-            threadName = UUID.randomUUID().toString();
-        }
-
-        return threadName;
     }
 }

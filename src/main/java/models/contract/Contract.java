@@ -10,10 +10,15 @@ public class Contract implements Serializable {
     private final String sourceCode;
     private final String bytecode;
     private final String initialState;
-    private final String endState; // acceptanceState
+    private final String endState; // acceptance state
     private final ArrayList<Pair<String, State>> transitions;
 
-    public Contract(String sourceCode, String bytecode, String initialState, String endState, ArrayList<Pair<String, State>> transitions) {
+    public Contract(String sourceCode,
+                    String bytecode,
+                    String initialState,
+                    String endState,
+                    ArrayList<Pair<String, State>> transitions
+    ) {
         this.sourceCode = sourceCode;
         this.bytecode = bytecode;
         this.initialState = initialState;
