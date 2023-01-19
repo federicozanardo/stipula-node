@@ -69,12 +69,12 @@ public class StipulaCompiler extends Thread {
         System.out.println("StipulaCompiler: Compilation successful");
         System.out.println("StipulaCompiler: Set up event triggers...");
 
-        /*for (int i = 0; i < 5; i++) {
-            *//*try {
+        for (int i = 0; i < 5; i++) {
+            try {
                 Thread.sleep(1500);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            }*//*
+            }
 
             EventTriggerRequest request = new EventTriggerRequest(
                     "a" + i,
@@ -84,7 +84,7 @@ public class StipulaCompiler extends Thread {
             EventTriggerSchedulingRequest schedulingRequest = new EventTriggerSchedulingRequest(request, 5);
             this.eventTriggerHandler.addTask(schedulingRequest);
             System.out.println("StipulaCompiler: added " + schedulingRequest);
-        }*/
+        }
 
         try {
             this.storageRequestQueue.enqueue(

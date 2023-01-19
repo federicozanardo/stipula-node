@@ -46,6 +46,7 @@ public class VirtualMachine extends Thread {
             System.out.println("VirtualMachine: Ready to dequeue a value...");
             try {
                 request = this.queue.dequeue();
+                System.out.println("VirtualMachine: request => " + request);
 
                 thread = request.getFirst();
                 packet = request.getSecond();
