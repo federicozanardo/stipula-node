@@ -17,6 +17,12 @@ public enum Constants {
             return currentDirectory + "/storage/asset-transfers/";
         }
     },
+    ASSETS_PATH {
+        public String toString() {
+            File currentDirectory = new File(new File(".").getAbsolutePath());
+            return currentDirectory + "/storage/assets/";
+        }
+    },
 
     CONTRACTS_PATH {
         public String toString() {

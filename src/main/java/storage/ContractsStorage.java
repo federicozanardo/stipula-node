@@ -21,6 +21,20 @@ public class ContractsStorage extends StorageSerializer<Contract> {
         this.mutex = new ReentrantLock();
     }
 
+    public String addContract(Contract contract) throws IOException {
+        this.mutex.lock();
+
+        // TODO: check that the id is unique
+        String contractId = UUID.randomUUID().toString();
+
+        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
+        this.levelDb.put(bytes(contractId), this.serialize(contract));
+        this.levelDb.close();
+
+        this.mutex.unlock();
+        return contractId;
+    }
+
     public Contract getContract(String contractId) throws IOException {
         this.mutex.lock();
         this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
@@ -34,19 +48,5 @@ public class ContractsStorage extends StorageSerializer<Contract> {
         this.levelDb.close();
         this.mutex.unlock();
         return contract;
-    }
-
-    public String addContract(Contract contract) throws IOException {
-        this.mutex.lock();
-
-        // TODO: check that the id is unique
-        String contractId = UUID.randomUUID().toString();
-
-        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
-        this.levelDb.put(bytes(contractId), this.serialize(contract));
-        this.levelDb.close();
-
-        this.mutex.unlock();
-        return contractId;
     }
 }

@@ -105,10 +105,6 @@ public class VirtualMachine extends Thread {
 
                         rawBytecode = this.loadFunction(agreementCall.getContractId(), "agreement");
                         System.out.println("main: loadFunction\n" + rawBytecode);
-
-                        // TODO: Call SmartContractVirtualMachine in order to execute the request
-
-
                     } else {
                         FunctionCall functionCall = (FunctionCall) message;
 
@@ -206,7 +202,6 @@ public class VirtualMachine extends Thread {
                     System.out.println("GLOBALSPACE");
                     System.out.println(instance.getGlobalVariables());
                     System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
-
 
                     if (thread != null && whereToNotify != null) {
                         if (this.sharedMemory.containsKey(whereToNotify)) {
