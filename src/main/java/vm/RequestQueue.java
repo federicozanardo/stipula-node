@@ -5,6 +5,7 @@ import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import lib.datastructures.Queue;
 import models.dto.requests.Message;
+import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
@@ -12,8 +13,8 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
-    private final Queue<Pair<Thread, Pair<String, Message>>> functionCallRequests;
-    private final Queue<Pair<Thread, Pair<String, Message>>> triggerRequests;
+    private final Queue<Pair<Thread, Pair<String, Object>>> functionCallRequests;
+    private final Queue<Pair<Thread, Pair<String, Object>>> triggerRequests;
     private final ReentrantLock mutex;
 
     public RequestQueue() {
@@ -27,8 +28,10 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(Thread thread, String threadNameToNotify, Message value) throws QueueOverflowException {
-        if (value instanceof AgreementCall || value instanceof FunctionCall) {
+    public void enqueue(Thread thread, String threadNameToNotify, SignedMessage value) throws QueueOverflowException {
+        Message message = value.getMessage();
+
+        if (message instanceof AgreementCall || message instanceof FunctionCall) {
             this.mutex.lock();
             if (this.functionCallRequests.isFull()) {
                 this.mutex.unlock();
@@ -59,8 +62,8 @@ public class RequestQueue {
      * @return
      * @throws QueueUnderflowException
      */
-    public Pair<Thread, Pair<String, Message>> dequeue() throws QueueUnderflowException {
-        Pair<Thread, Pair<String, Message>> request;
+    public Pair<Thread, Pair<String, Object>> dequeue() throws QueueUnderflowException {
+        Pair<Thread, Pair<String, Object>> request;
         this.mutex.lock();
 
         if (!this.triggerRequests.isEmpty()) {

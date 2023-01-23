@@ -1,13 +1,10 @@
 package models.dto.requests.event;
 
-import models.dto.requests.Message;
-
-public class EventTriggerSchedulingRequest extends Message {
+public class EventTriggerSchedulingRequest {
     private final EventTriggerRequest request;
     private final int secondsBeforeCalling;
 
     public EventTriggerSchedulingRequest(EventTriggerRequest request, int secondsBeforeCalling) {
-        super(EventTriggerSchedulingRequest.class.getSimpleName());
         this.request = request;
         this.secondsBeforeCalling = secondsBeforeCalling;
     }

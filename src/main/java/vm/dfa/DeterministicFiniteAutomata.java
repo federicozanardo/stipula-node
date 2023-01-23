@@ -9,9 +9,9 @@ import java.util.ArrayList;
 public class DeterministicFiniteAutomata implements Serializable {
     private final String endState; // acceptanceState
     private String currentState;
-    private final ArrayList<Pair<String, State>> transitions;
+    private final ArrayList<Pair<String, DfaState>> transitions;
 
-    public DeterministicFiniteAutomata(String initialState, String endState, ArrayList<Pair<String, State>> transitions) {
+    public DeterministicFiniteAutomata(String initialState, String endState, ArrayList<Pair<String, DfaState>> transitions) {
         this.currentState = initialState;
         this.endState = endState;
         this.transitions = transitions;
@@ -22,7 +22,7 @@ public class DeterministicFiniteAutomata implements Serializable {
         boolean found = false;
 
         while (i < this.transitions.size() && !found) {
-            Pair<String, State> state = this.transitions.get(i);
+            Pair<String, DfaState> state = this.transitions.get(i);
 
             // Find the source state
             if (this.currentState.equals(state.getFirst())) {
@@ -54,7 +54,7 @@ public class DeterministicFiniteAutomata implements Serializable {
         boolean found = false;
 
         while (i < this.transitions.size() && !found) {
-            Pair<String, State> state = this.transitions.get(i);
+            Pair<String, DfaState> state = this.transitions.get(i);
 
             // Find the source state
             if (this.currentState.equals(state.getFirst())) {

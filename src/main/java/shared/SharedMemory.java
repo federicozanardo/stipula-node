@@ -14,9 +14,20 @@ public class SharedMemory<T> {
     }
 
     public String add() {
+        this.mutex.lock();
+
         String key = this.generateKey();
         this.memory.put(key, null);
+
+        this.mutex.unlock();
         return key;
+    }
+
+    public boolean containsKey(String key) {
+        this.mutex.lock();
+        boolean result = this.memory.containsKey(key);
+        this.mutex.unlock();
+        return result;
     }
 
     public T get(String key) {
@@ -57,13 +68,11 @@ public class SharedMemory<T> {
     }
 
     private String generateKey() {
-        this.mutex.lock();
         String keyName = UUID.randomUUID().toString();
 
         while (this.memory.containsKey(keyName)) {
             keyName = UUID.randomUUID().toString();
         }
-        this.mutex.unlock();
 
         return keyName;
     }

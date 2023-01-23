@@ -1,53 +1,111 @@
 import event.EventTriggerHandler;
 import models.address.Address;
-import models.assets.FungibleAsset;
-import models.contract.Contract;
-import models.contract.SingleUseSeal;
 import models.dto.requests.Message;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.contract.function.PayToContract;
 import models.dto.responses.Response;
 import server.MessageServer;
 import shared.SharedMemory;
+import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
-import storage.Storage;
-import storage.StorageRequestQueue;
 import vm.RequestQueue;
-import vm.ScriptVirtualMachine;
 import vm.VirtualMachine;
 import vm.types.AssetType;
-import vm.types.FloatType;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
 
 class Main {
-    private static int offset = 0;
-    private static ContractsStorage contractsStorage;
+    /*public static void main(String[] args) {
+        RequestQueue requestQueue = new RequestQueue();
+        Thread thread1 = new Thread("thread1") {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                System.out.println(this.getName() + ": I'm waiting to push in the queue...");
+                try {
+                    requestQueue.enqueue(this.getName());
+                } catch (QueueOverflowException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(this.getName() + ": Pushed in the queue");
+            }
+        };
+
+        Thread thread2 = new Thread("thread2") {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                System.out.println(this.getName() + ": I'm waiting to push in the queue...");
+                try {
+                    requestQueue.enqueue(this.getName());
+                } catch (QueueOverflowException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(this.getName() + ": Pushed in the queue");
+            }
+        };
+
+        Thread thread3 = new Thread("thread3") {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                System.out.println(this.getName() + ": I'm waiting to push in the queue...");
+                try {
+                    requestQueue.enqueue(this.getName());
+                } catch (QueueOverflowException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(this.getName() + ": Pushed in the queue");
+            }
+        };
+
+        thread1.start();
+        thread2.start();
+        thread3.start();
+    }*/
 
     public static void main(String[] args) {
         // Set up the requests queue
         RequestQueue requestQueue = new RequestQueue();
 
         //
-        StorageRequestQueue storageRequestQueue = new StorageRequestQueue();
+        // StorageRequestQueue storageRequestQueue = new StorageRequestQueue();
 
         // HashMap<String, Response> responsesToSend = new HashMap<>();
         SharedMemory<Response> sharedMemory = new SharedMemory<>();
 
         //
-        Storage storage = new Storage(storageRequestQueue, sharedMemory);
+        // Storage storage = new Storage(storageRequestQueue, sharedMemory);
+
+        // Set up the storage
+        ContractsStorage contractsStorage = new ContractsStorage();
+        ContractInstancesStorage contractInstancesStorage = new ContractInstancesStorage();
+        // TODO: asset storage
 
         // Set up the virtual machine handler
         VirtualMachine virtualMachine = new VirtualMachine(
                 requestQueue,
-                storageRequestQueue,
-                storage,
-                sharedMemory
+                sharedMemory,
+                contractsStorage,
+                contractInstancesStorage
         );
 
         // Set up the Event trigger handler
@@ -60,15 +118,13 @@ class Main {
                         requestQueue,
                         eventTriggerHandler,
                         virtualMachine,
-                        storageRequestQueue,
-                        storage,
-                        sharedMemory
-                ),
+                        sharedMemory,
+                        contractsStorage),
                 "Message server"
         );
 
         //
-        storage.start();
+        // storage.start();
 
         // Start the virtual machine
         virtualMachine.start();
@@ -232,10 +288,10 @@ class Main {
         ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
         authorizedParties2.add(borrowerAddr);
 
-        ArrayList<Pair<String, State>> transitions = new ArrayList<>();
-        transitions.add(new Pair<String, State>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
-        transitions.add(new Pair<String, State>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
-        transitions.add(new Pair<String, State>("Using", new ContractCallByParty("End", authorizedParties2)));
+        ArrayList<Pair<String, DfaState>> transitions = new ArrayList<>();
+        transitions.add(new Pair<String, DfaState>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
+        transitions.add(new Pair<String, DfaState>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
+        transitions.add(new Pair<String, DfaState>("Using", new ContractCallByParty("End", authorizedParties2)));
 
         Contract contract = new Contract("", bytecode, "Inactive", "End", transitions);
 
@@ -244,253 +300,6 @@ class Main {
 
         System.out.println("setupContract: contractId = " + contractId);
     }*/
-
-    private static String readProgram(String pathname) {
-        String bytecode = "";
-
-        boolean startMultilineComment = false;
-        boolean endMultilineComment = false;
-        boolean isCommentLine = false;
-
-        System.out.println("readProgram: Loading the program...");
-        try {
-            File file = new File(pathname);
-            Scanner fileReader = new Scanner(file);
-
-            while (fileReader.hasNextLine()) {
-                String data = fileReader.nextLine().trim();
-
-                if (data.startsWith("/*")) {
-                    startMultilineComment = true;
-                }
-
-                if (data.startsWith("*/")) {
-                    endMultilineComment = true;
-                }
-
-                if (data.startsWith("//")) {
-                    isCommentLine = true;
-                    // System.out.println("comment line: " + data);
-                }
-
-                // It is a non-comment line, so add it to the bytecode
-                if (!startMultilineComment && !isCommentLine) {
-                    bytecode += data + "\n";
-                }
-
-                if (endMultilineComment) {
-                    startMultilineComment = false;
-                }
-
-                if (isCommentLine) {
-                    isCommentLine = false;
-                }
-            }
-            fileReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("readProgram: An error occurred while reading the file.");
-            e.printStackTrace();
-        }
-        System.out.println("readProgram: Program loaded");
-        // System.out.println("readProgram: Program\n" + bytecode);
-
-        return bytecode;
-    }
-
-    private static String getNextStateFromFunction(String contractId, String function) throws IOException {
-        String nextState = "";
-
-        // Load all the bytecode
-        // String bytecode = readProgram(pathname);
-        Contract contract = contractsStorage.getContract(contractId);
-        String bytecode = contract.getBytecode();
-        String[] instructions = bytecode.split("\n");
-
-        System.out.println("loadFunction: Loading the function...");
-        for (String s : instructions) {
-            String[] instruction = s.trim().split(" ");
-
-            if (instruction[0].equals("fn") && instruction[1].equals(function)) {
-                nextState = instruction[3];
-            }
-        }
-        System.out.println("loadFunction: Function loaded");
-
-        return nextState;
-    }
-
-    private static String loadFunction(String contractId, String function) throws IOException {
-        String bytecodeFunction = "";
-        boolean isFunctionStarted = false;
-        boolean isFunctionEnded = false;
-
-        // Load all the bytecode
-        // String bytecode = readProgram(pathname);
-        Contract contract = contractsStorage.getContract(contractId);
-        String bytecode = contract.getBytecode();
-        String[] instructions = bytecode.split("\n");
-
-        System.out.println("loadFunction: Loading the function...");
-        for (int i = 0; i < instructions.length && !isFunctionEnded; i++) {
-            String[] instruction = instructions[i].trim().split(" ");
-
-            if (isFunctionStarted) {
-                bytecodeFunction += instructions[i].trim() + "\n";
-            }
-
-            if (instruction[0].equals("fn") && instruction[1].equals(function)) {
-                isFunctionStarted = true;
-                offset = i + 1;
-            }
-
-            if (instruction[0].equals("HALT") && isFunctionStarted) {
-                isFunctionEnded = true;
-            }
-        }
-        System.out.println("loadFunction: Function loaded");
-
-        return bytecodeFunction;
-    }
-
-    private static HashMap<String, String> loadArguments(Message message) {
-        HashMap<String, String> arguments = new HashMap<>();
-
-        if (message instanceof AgreementCall) {
-            AgreementCall agreementCall = (AgreementCall) message;
-            arguments.putAll(agreementCall.getArguments());
-
-            for (HashMap.Entry<String, Address> entry : agreementCall.getParties().entrySet()) {
-                arguments.put(entry.getKey(), entry.getValue().getPublicKey());
-            }
-        } else {
-            FunctionCall functionCall = (FunctionCall) message;
-            arguments.putAll(functionCall.getArguments());
-        }
-
-        return arguments;
-    }
-
-    private static HashMap<String, AssetType> loadAssetArguments(Message message) throws Exception {
-        HashMap<String, AssetType> assetArguments = new HashMap<>();
-
-        if (message instanceof FunctionCall) {
-            FunctionCall functionCall = (FunctionCall) message;
-
-            if (!functionCall.getAssetArguments().isEmpty()) {
-                for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                    // Set up the asset
-                    FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
-
-                    PayToContract payToContract = entry.getValue();
-                    SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
-
-                    // TODO: Check if the single-use seal exists
-                    // singleUseSeal.getId()
-
-                    // Check if the asset id matches
-                    if (!singleUseSeal.getAssetId().equals(bitcoin.getAssetId())) {
-                        // Error
-                    }
-
-                    // Check if the decimals matches
-                    if (!(singleUseSeal.getAmount().getDecimals() == bitcoin.getDecimals())) {
-                        // Error
-                    }
-
-                    // Check if the amount <= asset supply
-                    if (!(singleUseSeal.getAmount().getInteger() <= bitcoin.getSupply())) {
-                        // Error
-                    }
-
-                    // Check if it is possible to unlock the script
-                    String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
-                    System.out.println("loadAssetArguments: Script to validate\n" + script);
-                    String[] instructions = script.split("\n");
-
-                    System.out.println("loadAssetArguments: Start validating the script...");
-                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions);
-
-                    // Execute the code
-                    boolean result = vm.execute();
-
-                    if (!result) {
-                        System.out.println("loadAssetArguments: Error while executing the function");
-                        return null;
-                    }
-
-                    System.out.println("loadAssetArguments: Script validated");
-
-                    AssetType value = new AssetType(
-                            bitcoin.getAssetId(),
-                            new FloatType(
-                                    singleUseSeal.getAmount().getInteger(),
-                                    singleUseSeal.getAmount().getDecimals()
-                            )
-                    );
-
-                    // All the checks are true, so add the argument
-                    assetArguments.put(entry.getKey(), value);
-                }
-            }
-
-            return assetArguments;
-        } else {
-            // Error
-            return null;
-        }
-    }
-
-    private static String loadBytecode(String rawBytecode, HashMap<String, String> arguments) {
-        String bytecode = "";
-        String substitution = "";
-        String[] instructions = rawBytecode.split("\n");
-
-        System.out.println("loadBytecode: Loading the function...");
-        for (int i = 0; i < instructions.length; i++) {
-            String[] instruction = instructions[i].trim().split(" ");
-
-            if (arguments.containsKey(instruction[instruction.length - 1].substring(1))) {
-                for (int j = 0; j < instruction.length - 1; j++) {
-                    substitution += instruction[j] + " ";
-                }
-                substitution += arguments.get(instruction[instruction.length - 1].substring(1));
-                bytecode += substitution + "\n";
-                substitution = "";
-            } else {
-                bytecode += instructions[i].trim() + "\n";
-            }
-        }
-        System.out.println("loadBytecode: Function loaded\n");
-
-        return bytecode;
-    }
-
-    private static String loadBytecode(String rawBytecode, HashMap<String, String> arguments, HashMap<String, AssetType> assetArguments) {
-        String bytecode = loadBytecode(rawBytecode, arguments);
-        String finalBytecode = "";
-        String substitution = "";
-        String[] instructions = bytecode.split("\n");
-
-        System.out.println("loadBytecode: Loading the function...");
-        for (int i = 0; i < instructions.length; i++) {
-            String[] instruction = instructions[i].trim().split(" ");
-
-            if (assetArguments.containsKey(instruction[instruction.length - 1].substring(1))) {
-                for (int j = 0; j < instruction.length - 1; j++) {
-                    substitution += instruction[j] + " ";
-                }
-                AssetType value = assetArguments.get(instruction[instruction.length - 1].substring(1));
-                substitution += value.getValue().getInteger() + " " + value.getValue().getDecimals();
-                finalBytecode += substitution + "\n";
-                substitution = "";
-            } else {
-                finalBytecode += instructions[i].trim() + "\n";
-            }
-        }
-        System.out.println("loadBytecode: Function loaded");
-
-        return finalBytecode;
-    }
 
     /*public static SignedMessage callAgreementFunction(String path) throws Exception {
         // Start example of signed message

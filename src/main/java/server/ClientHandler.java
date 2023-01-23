@@ -12,8 +12,7 @@ import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
-import storage.Storage;
-import storage.StorageRequestQueue;
+import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -28,9 +27,8 @@ public class ClientHandler extends Thread {
     private final RequestQueue requestQueue;
     private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
-    private final StorageRequestQueue storageRequestQueue;
-    private final Storage storage;
     private final SharedMemory<Response> sharedMemory;
+    private final ContractsStorage contractsStorage;
     private final Gson gson;
 
     public ClientHandler(
@@ -39,9 +37,8 @@ public class ClientHandler extends Thread {
             RequestQueue requestQueue,
             EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
-            StorageRequestQueue storageRequestQueue,
-            Storage storage,
             SharedMemory<Response> sharedMemory,
+            ContractsStorage contractsStorage,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
@@ -50,8 +47,7 @@ public class ClientHandler extends Thread {
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
-        this.storageRequestQueue = storageRequestQueue;
-        this.storage = storage;
+        this.contractsStorage = contractsStorage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -98,12 +94,11 @@ public class ClientHandler extends Thread {
                                 this,
                                 (DeployContract) message,
                                 eventTriggerHandler,
-                                storageRequestQueue,
-                                storage,
-                                sharedMemory
+                                sharedMemory,
+                                contractsStorage
                         ).start();
 
-                        // Wait a notification from the virtual machine thread
+                        // Wait a notification from the compiler thread
                         synchronized (this) {
                             this.wait();
                         }
@@ -128,7 +123,7 @@ public class ClientHandler extends Thread {
                         this.requestQueue.enqueue(
                                 this,
                                 this.getName(),
-                                signedMessage.getMessage()
+                                signedMessage
                         );
 
                         // Notify the virtual machine that a new request is ready to be fulfilled

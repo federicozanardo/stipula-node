@@ -7,8 +7,7 @@ import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
 import shared.SharedMemory;
-import storage.Storage;
-import storage.StorageRequestQueue;
+import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -22,26 +21,22 @@ public class MessageServer implements Runnable {
     private final MessageDeserializer messageDeserializer;
     private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
-    private final StorageRequestQueue storageRequestQueue;
-    private final Storage storage;
     private final SharedMemory<Response> sharedMemory;
+    private final ContractsStorage contractsStorage;
 
     public MessageServer(
             int port,
             RequestQueue requestQueue,
             EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
-            StorageRequestQueue storageRequestQueue,
-            Storage storage,
-            SharedMemory<Response> sharedMemory
-    ) {
+            SharedMemory<Response> sharedMemory,
+            ContractsStorage contractsStorage) {
         this.port = port;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
-        this.storageRequestQueue = storageRequestQueue;
-        this.storage = storage;
         this.sharedMemory = sharedMemory;
+        this.contractsStorage = contractsStorage;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -96,9 +91,8 @@ public class MessageServer implements Runnable {
                                 requestQueue,
                                 eventTriggerHandler,
                                 virtualMachine,
-                                storageRequestQueue,
-                                storage,
                                 sharedMemory,
+                                contractsStorage,
                                 messageDeserializer
                         ).start();
 

@@ -4,7 +4,7 @@ import models.address.Address;
 
 import java.util.ArrayList;
 
-public class ContractCallByParty extends State {
+public class ContractCallByParty extends DfaState {
     private final ArrayList<Address> authorizedParties;
 
     public ContractCallByParty(String name, ArrayList<Address> authorizedParties) {

@@ -27,8 +27,6 @@ public class SmartContractVirtualMachine {
     private final ArrayList<SingleUseSeal> singleUseSealsToSend = new ArrayList<>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
-    // private int programCounter; // or instructionPointer
-    // private int stackPointer;
 
     public SmartContractVirtualMachine(String[] instructions, int offset) {
         this.instructions = instructions;

@@ -1,7 +1,7 @@
 package models.contract;
 
 import lib.datastructures.Pair;
-import vm.dfa.State;
+import vm.dfa.DfaState;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,13 +11,13 @@ public class Contract implements Serializable {
     private final String bytecode;
     private final String initialState;
     private final String endState; // acceptance state
-    private final ArrayList<Pair<String, State>> transitions;
+    private final ArrayList<Pair<String, DfaState>> transitions;
 
     public Contract(String sourceCode,
                     String bytecode,
                     String initialState,
                     String endState,
-                    ArrayList<Pair<String, State>> transitions
+                    ArrayList<Pair<String, DfaState>> transitions
     ) {
         this.sourceCode = sourceCode;
         this.bytecode = bytecode;
@@ -42,7 +42,7 @@ public class Contract implements Serializable {
         return endState;
     }
 
-    public ArrayList<Pair<String, State>> getTransitions() {
+    public ArrayList<Pair<String, DfaState>> getTransitions() {
         return transitions;
     }
 }

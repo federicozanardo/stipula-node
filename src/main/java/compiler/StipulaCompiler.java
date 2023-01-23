@@ -2,7 +2,6 @@ package compiler;
 
 import constants.Constants;
 import event.EventTriggerHandler;
-import exceptions.queue.QueueOverflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.contract.Contract;
@@ -12,13 +11,13 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
-import storage.Storage;
-import storage.StorageRequest;
-import storage.StorageRequestQueue;
+import storage.ContractsStorage;
 import vm.dfa.ContractCallByParty;
+import vm.dfa.DfaState;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -27,26 +26,23 @@ public class StipulaCompiler extends Thread {
     private final Thread clientHandler;
     private final DeployContract contractToDeploy;
     private final EventTriggerHandler eventTriggerHandler;
-    private final StorageRequestQueue storageRequestQueue;
-    private final Storage storage;
     private final SharedMemory<Response> sharedMemory;
+    private final ContractsStorage contractsStorage;
 
     public StipulaCompiler(
             String name,
             Thread clientHandler,
             DeployContract contractToDeploy,
             EventTriggerHandler eventTriggerHandler,
-            StorageRequestQueue storageRequestQueue,
-            Storage storage,
-            SharedMemory<Response> sharedMemory
+            SharedMemory<Response> sharedMemory,
+            ContractsStorage contractsStorage
     ) {
         super(name);
         this.clientHandler = clientHandler;
         this.contractToDeploy = contractToDeploy;
         this.eventTriggerHandler = eventTriggerHandler;
-        this.storageRequestQueue = storageRequestQueue;
-        this.storage = storage;
         this.sharedMemory = sharedMemory;
+        this.contractsStorage = contractsStorage;
     }
 
     @Override
@@ -67,6 +63,44 @@ public class StipulaCompiler extends Thread {
         }
 
         System.out.println("StipulaCompiler: Compilation successful");
+
+        String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
+
+        // Load the DFA
+        Address lenderAddr;
+        try {
+            lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        Address borrowerAddr;
+        try {
+            borrowerAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        ArrayList<Address> authorizedParties1 = new ArrayList<Address>();
+        authorizedParties1.add(lenderAddr);
+        ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
+        authorizedParties2.add(borrowerAddr);
+
+        ArrayList<Pair<String, DfaState>> transitions = new ArrayList<>();
+        transitions.add(new Pair<String, DfaState>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
+        transitions.add(new Pair<String, DfaState>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
+        transitions.add(new Pair<String, DfaState>("Using", new ContractCallByParty("End", authorizedParties2)));
+
+        Contract contract = new Contract("", bytecode, "Inactive", "End", transitions);
+
+        String contractId;
+        try {
+            contractId = contractsStorage.addContract(contract);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("StipulaCompiler: contractId = " + contractId);
+
         System.out.println("StipulaCompiler: Set up event triggers...");
 
         for (int i = 0; i < 5; i++) {
@@ -86,57 +120,12 @@ public class StipulaCompiler extends Thread {
             System.out.println("StipulaCompiler: added " + schedulingRequest);
         }
 
-        try {
-            this.storageRequestQueue.enqueue(
-                    this,
+        System.out.println("StipulaCompiler: get => " + this.sharedMemory.get(this.getName()));
+
+        if (this.sharedMemory.containsKey(this.clientHandler.getName())) {
+            this.sharedMemory.set(
                     this.clientHandler.getName(),
-                    new StorageRequest()
-            );
-        } catch (QueueOverflowException e) {
-            System.out.println("StipulaCompiler: error => " + e);
-            throw new RuntimeException(e);
-        }
-
-        synchronized (this.storage) {
-            this.storage.notify();
-        }
-
-        // Wait a notification from the storage thread
-        synchronized (this) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-                System.out.println("StipulaCompiler: error => " + e);
-                throw new RuntimeException(e);
-            }
-        }
-
-        System.out.println("StipulaCompiler: response from Storage " + this.sharedMemory.get(this.clientHandler.getName()));
-        String text = ((SuccessDataResponse) this.sharedMemory.get(this.clientHandler.getName()))
-                .getData().toString();
-
-        this.sharedMemory.set(
-                this.clientHandler.getName(),
-                // new SuccessDataResponse("ack from StipulaCompiler thread")
-                new SuccessDataResponse(text + " and StipulaCompiler")
-        );
-
-        System.out.println("StipulaCompiler: Now I'll notify the thread " + this.clientHandler.getName());
-        synchronized (this.clientHandler) {
-            this.clientHandler.notify();
-        }
-
-        System.out.println("StipulaCompiler: Bye bye!");
-
-        /*if (this.responsesToSend.containsKey(this.getName()) && this.responsesToSend.containsKey(this.clientHandler.getName()) ) {
-            System.out.println("StipulaCompiler: response from Storage" + this.responsesToSend.get(this.getName()));
-            String text = ((SuccessDataResponse) this.responsesToSend.get(this.getName()))
-                    .getData().toString();
-
-            this.responsesToSend.put(
-                    this.clientHandler.getName(),
-                    // new SuccessDataResponse("ack from StipulaCompiler thread")
-                    new SuccessDataResponse(text + " and StipulaCompiler")
+                    new SuccessDataResponse("ack from StipulaCompiler\nThe contract id is " + contractId)
             );
 
             System.out.println("StipulaCompiler: Now I'll notify the thread " + this.clientHandler.getName());
@@ -147,7 +136,7 @@ public class StipulaCompiler extends Thread {
             System.out.println("StipulaCompiler: Bye bye!");
         } else {
             System.out.println("StipulaCompiler: Oh no! There is no reference in the shared space for this thread " + this.clientHandler.getName());
-        }*/
+        }
     }
 
     private boolean compile() throws NoSuchAlgorithmException {
@@ -168,18 +157,18 @@ public class StipulaCompiler extends Thread {
         ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
         authorizedParties2.add(borrowerAddr);
 
-        ArrayList<Pair<String, vm.dfa.State>> transitions = new ArrayList<>();
-        transitions.add(new Pair<String, vm.dfa.State>(
+        ArrayList<Pair<String, DfaState>> transitions = new ArrayList<>();
+        transitions.add(new Pair<String, DfaState>(
                         "Inactive",
                         new ContractCallByParty("Proposal", authorizedParties1)
                 )
         );
-        transitions.add(new Pair<String, vm.dfa.State>(
+        transitions.add(new Pair<String, DfaState>(
                         "Proposal",
                         new ContractCallByParty("Using", authorizedParties2)
                 )
         );
-        transitions.add(new Pair<String, vm.dfa.State>(
+        transitions.add(new Pair<String, DfaState>(
                         "Using",
                         new ContractCallByParty("End", authorizedParties2)
                 )

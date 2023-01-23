@@ -2,10 +2,10 @@ package vm.dfa;
 
 import java.io.Serializable;
 
-public class State implements Serializable {
+public class DfaState implements Serializable {
     private final String name;
 
-    public State(String name) {
+    public DfaState(String name) {
         this.name = name;
     }
 
