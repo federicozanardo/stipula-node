@@ -1,22 +1,16 @@
 package models.assets;
 
 public abstract class AssetConfig {
-    private final String assetId;
     private final String assetName;
     private final String unitName;
     private final int supply;
     private final int decimals;
 
-    public AssetConfig(String assetId, String assetName, String unitName, int supply, int decimals) {
-        this.assetId = assetId;
+    public AssetConfig(String assetName, String unitName, int supply, int decimals) {
         this.assetName = assetName;
         this.unitName = unitName;
         this.supply = supply;
         this.decimals = decimals;
-    }
-
-    public String getAssetId() {
-        return assetId;
     }
 
     public String getAssetName() {
@@ -38,8 +32,7 @@ public abstract class AssetConfig {
     @Override
     public String toString() {
         return "AssetConfig{" +
-                "assetId='" + assetId + '\'' +
-                ", assetName='" + assetName + '\'' +
+                "assetName='" + assetName + '\'' +
                 ", unitName='" + unitName + '\'' +
                 ", supply=" + supply +
                 ", decimals=" + decimals +
