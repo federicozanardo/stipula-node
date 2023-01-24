@@ -3,7 +3,7 @@ fn agreement
 global:
 GINST addr Lender
 GINST addr Borrower
-GINST asset wallet iop890
+GINST asset wallet 2 09c137f0-6ffc-425c-9657-de4577d8502c
 GINST float cost 2
 GINST int rent_time
 GINST int use_code
@@ -29,8 +29,9 @@ GSTORE use_code
 HALT
 fn accept Borrower Using
 args:
-PUSH float :y
-AINST asset y iop890
+// PUSH asset 100 2 iop890
+PUSH asset :y
+AINST asset y 2 09c137f0-6ffc-425c-9657-de4577d8502c
 ASTORE y
 start:
 ALOAD y
