@@ -41,6 +41,7 @@ public class ContractsStorage extends StorageSerializer<Contract> {
 
         Contract contract = this.deserialize(this.levelDb.get(bytes(contractId)));
         if (contract == null) {
+            this.mutex.unlock();
             // Error: this contractInstanceId does not exist
             return null;
         }

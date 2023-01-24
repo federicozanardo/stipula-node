@@ -1,6 +1,8 @@
 package models.assets;
 
-public abstract class AssetConfig {
+import java.io.Serializable;
+
+public abstract class AssetConfig implements Serializable {
     private final String assetName;
     private final String unitName;
     private final int supply;

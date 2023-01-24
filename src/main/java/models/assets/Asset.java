@@ -1,6 +1,8 @@
 package models.assets;
 
-public class Asset {
+import java.io.Serializable;
+
+public class Asset implements Serializable {
     private final String id;
     private final AssetConfig asset;
 

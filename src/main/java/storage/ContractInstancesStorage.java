@@ -47,11 +47,11 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
         ContractInstance instance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
         if (instance == null) {
             // Error: this contractInstanceId does not exist
+            this.mutex.unlock();
             return null;
         }
 
         levelDb.close();
-
         this.mutex.unlock();
         return instance;
     }
@@ -63,6 +63,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
         ContractInstance instance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
         if (instance == null) {
             // Error: this contractInstanceId does not exist
+            this.mutex.unlock();
             return;
         }
 

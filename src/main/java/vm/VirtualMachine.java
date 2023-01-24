@@ -4,7 +4,7 @@ import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
-import models.assets.FungibleAsset;
+import models.assets.Asset;
 import models.contract.Contract;
 import models.contract.ContractInstance;
 import models.contract.SingleUseSeal;
@@ -17,6 +17,7 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
+import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
 import vm.dfa.DeterministicFiniteAutomata;
@@ -36,18 +37,21 @@ public class VirtualMachine extends Thread {
     private int offset = 0;
     private final ContractsStorage contractsStorage;
     private final ContractInstancesStorage contractInstancesStorage;
+    private final AssetsStorage assetsStorage;
 
     public VirtualMachine(
             RequestQueue queue,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            ContractInstancesStorage contractInstancesStorage
+            ContractInstancesStorage contractInstancesStorage,
+            AssetsStorage assetsStorage
     ) {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
         this.contractInstancesStorage = contractInstancesStorage;
+        this.assetsStorage = assetsStorage;
     }
 
     @Override
@@ -193,7 +197,7 @@ public class VirtualMachine extends Thread {
                     if (vm.getGlobalSpace().isEmpty()) {
                         System.out.println("There is nothing to save in the global store");
                     } else {
-                        //contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
+                        contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
                         System.out.println("main: Global store updated");
                     }
 
@@ -225,6 +229,9 @@ public class VirtualMachine extends Thread {
                 } else if (triggerRequest != null) {
 
                 }
+
+                signedMessage = null;
+                triggerRequest = null;
             } catch (QueueUnderflowException error) {
                 // throw new RuntimeException(e);
                 try {
@@ -305,7 +312,7 @@ public class VirtualMachine extends Thread {
             if (!functionCall.getAssetArguments().isEmpty()) {
                 for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
                     // Set up the asset
-                    FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
+                    // FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
 
                     PayToContract payToContract = entry.getValue();
                     SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
@@ -313,18 +320,25 @@ public class VirtualMachine extends Thread {
                     // TODO: Check if the single-use seal exists
                     // singleUseSeal.getId()
 
-                    // Check if the asset id matches
-                    if (!singleUseSeal.getAssetId().equals(bitcoin.getAssetId())) {
-                        // Error
+                    Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
+
+                    if (asset == null) {
+                        // TODO: Error
+                        return null;
                     }
 
+                    // Check if the asset id matches TODO: this check is useless
+                    /*if (!singleUseSeal.getAssetId().equals(asset.getId())) {
+                        // Error
+                    }*/
+
                     // Check if the decimals matches
-                    if (!(singleUseSeal.getAmount().getDecimals() == bitcoin.getDecimals())) {
+                    if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
                         // Error
                     }
 
                     // Check if the amount <= asset supply
-                    if (!(singleUseSeal.getAmount().getInteger() <= bitcoin.getSupply())) {
+                    if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
                         // Error
                     }
 
@@ -347,7 +361,7 @@ public class VirtualMachine extends Thread {
                     System.out.println("loadAssetArguments: Script validated");
 
                     AssetType value = new AssetType(
-                            bitcoin.getAssetId(),
+                            asset.getId(),
                             new FloatType(
                                     singleUseSeal.getAmount().getInteger(),
                                     singleUseSeal.getAmount().getDecimals()
@@ -428,7 +442,7 @@ public class VirtualMachine extends Thread {
                     substitution += instruction[j] + " ";
                 }
                 AssetType value = assetArguments.get(instruction[instruction.length - 1].substring(1));
-                substitution += value.getValue().getInteger() + " " + value.getValue().getDecimals();
+                substitution += value.getValue().getInteger() + " " + value.getValue().getDecimals() + " " + value.getAssetId();
                 finalBytecode += substitution + "\n";
                 substitution = "";
             } else {
