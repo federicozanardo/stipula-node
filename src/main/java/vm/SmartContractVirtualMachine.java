@@ -4,7 +4,6 @@ import exceptions.stack.StackOverflowException;
 import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
-import models.assets.FungibleAsset;
 import models.contract.SingleUseSeal;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
@@ -238,12 +237,17 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        if (instruction.length - 1 > 3) {
+        if (instruction.length - 1 > 3 && !instruction[1].equals("asset")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        if (instruction.length - 1 > 4) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -251,8 +255,15 @@ public class SmartContractVirtualMachine {
         String type = instruction[1];
         String value = instruction[2];
         String decimals = "";
+        String assetId = "";
+
         if (type.equals("float")) {
             decimals = instruction[3];
+        }
+
+        if (type.equals("asset")) {
+            decimals = instruction[3];
+            assetId = instruction[4];
         }
 
         switch (type) {
@@ -270,6 +281,9 @@ public class SmartContractVirtualMachine {
                 break;
             case "float":
                 stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
+                break;
+            case "asset":
+                stack.push(new AssetType(assetId, new FloatType(Integer.parseInt(value), Integer.parseInt(decimals))));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
@@ -894,7 +908,16 @@ public class SmartContractVirtualMachine {
             case "asset":
                 AssetType firstAsset = (AssetType) first;
                 AssetType secondAsset = (AssetType) second;
-                stack.push(new BoolType(Objects.equals(firstAsset.getValue().getValue(), secondAsset.getValue().getValue())));
+
+                boolean result = false;
+
+                if (firstAsset.getAssetId().equals(secondAsset.getAssetId())) {
+                    if (Objects.equals(firstAsset.getValue().getValue(), secondAsset.getValue().getValue())) {
+                        result = true;
+                    }
+                }
+
+                stack.push(new BoolType(result));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
@@ -1021,7 +1044,12 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if (instruction.length - 1 > 3) {
+        if (instruction.length - 1 > 3 && !instruction[1].equals("asset")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        if (instruction.length - 1 > 4) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1033,8 +1061,11 @@ public class SmartContractVirtualMachine {
 
         if (type.equals("float")) {
             decimals = instruction[3];
-        } else if (type.equals("asset")) {
-            assetId = instruction[3];
+        }
+
+        if (type.equals("asset")) {
+            decimals = instruction[3];
+            assetId = instruction[4];
         }
 
         if (argumentsSpace.containsKey(variableName)) {
@@ -1059,15 +1090,8 @@ public class SmartContractVirtualMachine {
                 argumentsSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
                 break;
             case "asset":
-                FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
-
-                if (assetId.equals(bitcoin.getAssetId())) {
-                    AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
-                    argumentsSpace.put(variableName, value);
-                } else {
-                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
-                    return;
-                }
+                AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
+                argumentsSpace.put(variableName, value);
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
@@ -1121,24 +1145,30 @@ public class SmartContractVirtualMachine {
             Type value = stack.pop();
 
             // Check that the element popped from the stack is a float value
-            if (!value.getType().equals("float")) {
+            if (!value.getType().equals("asset")) {
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
-            FloatType floatValue = (FloatType) value;
+            AssetType assetValuePopped = (AssetType) value;
 
             // Check that the element popped from the stack has the same decimals of the asset
-            if (floatValue.getDecimals() != currentAssetValue.getValue().getDecimals()) {
+            if (assetValuePopped.getValue().getDecimals() != currentAssetValue.getValue().getDecimals()) {
                 trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
+            // Check that the element popped from the stack has the same asset id
+            if (!assetValuePopped.getAssetId().equals(currentAssetValue.getAssetId())) {
+                trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
+                return;
+            }
+
             AssetType newValue = new AssetType(
-                    currentAssetValue.getAssetId(),
+                    assetValuePopped.getAssetId(),
                     new FloatType(
-                            floatValue.getInteger(),
-                            floatValue.getDecimals()
+                            assetValuePopped.getValue().getInteger(),
+                            assetValuePopped.getValue().getDecimals()
                     )
             );
             argumentsSpace.put(variableName, newValue);
@@ -1165,7 +1195,12 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if (instruction.length - 1 > 3) {
+        if (instruction.length - 1 > 3 && !instruction[1].equals("asset")) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        if (instruction.length - 1 > 4) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1177,8 +1212,11 @@ public class SmartContractVirtualMachine {
 
         if (type.equals("float")) {
             decimals = instruction[3];
-        } else if (type.equals("asset")) {
-            assetId = instruction[3];
+        }
+
+        if (type.equals("asset")) {
+            decimals = instruction[3];
+            assetId = instruction[4];
         }
 
         if (globalSpace.containsKey(variableName)) {
@@ -1203,15 +1241,8 @@ public class SmartContractVirtualMachine {
                 globalSpace.put(variableName, new TraceChange(new FloatType(0, Integer.parseInt(decimals)), true));
                 break;
             case "asset":
-                FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
-
-                if (assetId.equals(bitcoin.getAssetId())) {
-                    AssetType value = new AssetType(bitcoin.getAssetId(), new FloatType(0, bitcoin.getDecimals()));
-                    globalSpace.put(variableName, new TraceChange(value, true));
-                } else {
-                    trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
-                    return;
-                }
+                AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
+                globalSpace.put(variableName, new TraceChange(value, true));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
