@@ -16,8 +16,8 @@ import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
-import storage.PropertiesStorage;
 import storage.ContractsStorage;
+import storage.PropertiesStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
