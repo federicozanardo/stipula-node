@@ -12,7 +12,10 @@ import vm.types.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Objects;
 
 public class SmartContractVirtualMachine {
     private final String[] instructions;
@@ -1411,7 +1414,6 @@ public class SmartContractVirtualMachine {
 
         // Set up the single-use seal
         SingleUseSeal singleUseSeal = new SingleUseSeal(
-                UUID.randomUUID().toString(),
                 assetVal.getAssetId(),
                 floatVal,
                 addressVal.getAddress()

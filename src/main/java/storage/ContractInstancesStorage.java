@@ -5,7 +5,6 @@ import models.contract.ContractInstance;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import vm.types.TraceChange;
-import vm.types.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.iq80.leveldb.impl.Iq80DBFactory.*;
+import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
+import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
 public class ContractInstancesStorage extends StorageSerializer<ContractInstance> {
     public DB levelDb;
@@ -24,10 +24,6 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     public ContractInstancesStorage() {
         this.storage = new HashMap<>();
         this.mutex = new ReentrantLock();
-    }
-
-    public HashMap<String, TraceChange> getStorage() {
-        return storage;
     }
 
     public void createContractInstance(ContractInstance instance) throws IOException {
@@ -55,42 +51,6 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
         this.mutex.unlock();
         return instance;
     }
-
-    public void loadGlobalStorage(String contractInstanceId) throws IOException {
-        this.mutex.lock();
-
-        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
-        ContractInstance instance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
-        if (instance == null) {
-            // Error: this contractInstanceId does not exist
-            this.mutex.unlock();
-            return;
-        }
-
-        for (HashMap.Entry<String, Type> entry : instance.getGlobalVariables().entrySet()) {
-            System.out.println(asString(bytes(entry.getKey())) + ": " + entry.getValue().getValue());
-            this.storage.put(entry.getKey(), new TraceChange(entry.getValue()));
-        }
-
-        levelDb.close();
-        this.mutex.unlock();
-    }
-
-    /*public ContractInstance storeGlobalStorage(String contractId, HashMap<String, TraceChange> updates) throws IOException {
-        // Create an instance of the current contract
-        ContractInstance instance = new ContractInstance(contractId, "Inactive");
-
-        for (HashMap.Entry<String, TraceChange> entry : updates.entrySet()) {
-            Type value = entry.getValue().getValue();
-            instance.getGlobalVariables().put(entry.getKey(), value);
-        }
-
-        // Store the instance
-        levelDb.put(bytes(instance.getInstanceId()), this.serialize(instance));
-        levelDb.close();
-
-        return instance;
-    }*/
 
     public void storeGlobalStorage(HashMap<String, TraceChange> updates, ContractInstance instance) throws IOException {
         this.mutex.lock();

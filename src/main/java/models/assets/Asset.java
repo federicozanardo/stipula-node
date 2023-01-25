@@ -18,4 +18,12 @@ public class Asset implements Serializable {
     public AssetConfig getAsset() {
         return asset;
     }
+
+    @Override
+    public String toString() {
+        return "Asset{" +
+                "id='" + id + '\'' +
+                ", asset=" + asset +
+                '}';
+    }
 }

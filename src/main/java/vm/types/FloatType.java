@@ -1,9 +1,10 @@
 package vm.types;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public class FloatType extends Type {
+public class FloatType extends Type implements Serializable {
     private final Integer value;
     private final int decimals;
 

@@ -2,13 +2,12 @@ import event.EventTriggerHandler;
 import models.dto.responses.Response;
 import server.MessageServer;
 import shared.SharedMemory;
+import storage.AssetTransfersStorage;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
-
-import java.io.IOException;
 
 class Main {
     public static void main(String[] args) {
@@ -27,8 +26,13 @@ class Main {
             throw new RuntimeException(e);
         }*/
         // assetId => 09c137f0-6ffc-425c-9657-de4577d8502c
-
-        // TODO: asset transfers storage
+        AssetTransfersStorage assetTransfersStorage = new AssetTransfersStorage();
+        /*try {
+            assetTransfersStorage.seed();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }*/
+        // propertyId => ccba5f39-460f-4dd8-93ef-3dc591ff2abb
 
         // Set up the virtual machine handler
         VirtualMachine virtualMachine = new VirtualMachine(
@@ -50,7 +54,9 @@ class Main {
                         eventTriggerHandler,
                         virtualMachine,
                         sharedMemory,
-                        contractsStorage),
+                        contractsStorage,
+                        assetTransfersStorage
+                ),
                 "Message server"
         );
 

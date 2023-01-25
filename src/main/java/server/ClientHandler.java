@@ -5,13 +5,16 @@ import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
 import event.EventTriggerHandler;
 import exceptions.queue.QueueOverflowException;
+import models.contract.Property;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
+import models.dto.requests.asset.GetAssetsByAddress;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
+import storage.AssetTransfersStorage;
 import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
@@ -21,6 +24,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
@@ -29,6 +33,7 @@ public class ClientHandler extends Thread {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
+    private final AssetTransfersStorage assetTransfersStorage;
     private final Gson gson;
 
     public ClientHandler(
@@ -39,6 +44,7 @@ public class ClientHandler extends Thread {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
+            AssetTransfersStorage assetTransfersStorage,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
@@ -48,6 +54,7 @@ public class ClientHandler extends Thread {
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
         this.contractsStorage = contractsStorage;
+        this.assetTransfersStorage = assetTransfersStorage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -85,7 +92,7 @@ public class ClientHandler extends Thread {
                     Message message = signedMessage.getMessage();
 
                     if (message instanceof DeployContract) {
-                        String threadName = this.sharedMemory.add();
+                        String threadName = this.sharedMemory.instantiate();
                         System.out.println("ClientHandler: threadName => " + threadName);
 
                         // Set up and start a compiler thread
@@ -107,6 +114,25 @@ public class ClientHandler extends Thread {
 
                         System.out.println("ClientHandler: Prepare the response...");
                         Response response = this.sharedMemory.get(Thread.currentThread().getName());
+                        String jsonResponse = "";
+                        if (response instanceof SuccessDataResponse) {
+                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
+                        }
+
+                        System.out.println("ClientHandler: Sending response...");
+                        try {
+                            outputServerStream.writeUTF(jsonResponse);
+                        } catch (IOException error) {
+                            System.out.println("ClientHandler: " + error);
+                        }
+                    } else if (message instanceof GetAssetsByAddress) {
+                        GetAssetsByAddress getAssetsByAddressMessage = (GetAssetsByAddress) message;
+                        ArrayList<Property> properties = assetTransfersStorage.getFunds(getAssetsByAddressMessage.getAddress());
+
+                        System.out.println("ClientHandler: properties => " + properties);
+
+                        System.out.println("ClientHandler: Prepare the response...");
+                        Response response = new SuccessDataResponse(properties.toString());
                         String jsonResponse = "";
                         if (response instanceof SuccessDataResponse) {
                             jsonResponse = gson.toJson(response, SuccessDataResponse.class);

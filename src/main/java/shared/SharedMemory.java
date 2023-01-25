@@ -13,7 +13,7 @@ public class SharedMemory<T> {
         this.mutex = new ReentrantLock();
     }
 
-    public String add() {
+    public String instantiate() { // TODO: call it "allocate"?
         this.mutex.lock();
 
         String key = this.generateKey();

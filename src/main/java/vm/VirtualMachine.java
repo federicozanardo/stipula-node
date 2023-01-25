@@ -1,13 +1,12 @@
 package vm;
 
-import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.assets.Asset;
 import models.contract.Contract;
 import models.contract.ContractInstance;
-import models.contract.SingleUseSeal;
+import models.contract.Property;
 import models.dto.requests.Message;
 import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
@@ -230,6 +229,7 @@ public class VirtualMachine extends Thread {
 
                 }
 
+                // Reset variables
                 signedMessage = null;
                 triggerRequest = null;
             } catch (QueueUnderflowException error) {
@@ -243,7 +243,7 @@ public class VirtualMachine extends Thread {
                     System.out.println("VirtualMachine: " + ex);
                     throw new RuntimeException(ex);
                 }
-            } catch (IOException | QueueOverflowException | InterruptedException | NoSuchAlgorithmException e) {
+            } catch (IOException | InterruptedException | NoSuchAlgorithmException e) {
                 System.out.println("VirtualMachine: " + e);
                 throw new RuntimeException(e);
             } catch (Exception e) {
@@ -311,39 +311,31 @@ public class VirtualMachine extends Thread {
 
             if (!functionCall.getAssetArguments().isEmpty()) {
                 for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                    // Set up the asset
-                    // FungibleAsset bitcoin = new FungibleAsset("iop890", "Bitcoin", "BTC", 10000, 2);
-
                     PayToContract payToContract = entry.getValue();
-                    SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
+                    Property property = payToContract.getProperty();
 
                     // TODO: Check if the single-use seal exists
                     // singleUseSeal.getId()
 
-                    Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
+                    Asset asset = assetsStorage.getAsset(property.getSingleUseSeal().getAssetId());
 
                     if (asset == null) {
                         // TODO: Error
                         return null;
                     }
 
-                    // Check if the asset id matches TODO: this check is useless
-                    /*if (!singleUseSeal.getAssetId().equals(asset.getId())) {
-                        // Error
-                    }*/
-
                     // Check if the decimals matches
-                    if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
+                    if (!(property.getSingleUseSeal().getAmount().getDecimals() == asset.getAsset().getDecimals())) {
                         // Error
                     }
 
                     // Check if the amount <= asset supply
-                    if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
+                    if (!(property.getSingleUseSeal().getAmount().getInteger() <= asset.getAsset().getSupply())) {
                         // Error
                     }
 
                     // Check if it is possible to unlock the script
-                    String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
+                    String script = payToContract.getUnlockScript() + property.getSingleUseSeal().getLockScript();
                     System.out.println("loadAssetArguments: Script to validate\n" + script);
                     String[] instructions = script.split("\n");
 
@@ -363,8 +355,8 @@ public class VirtualMachine extends Thread {
                     AssetType value = new AssetType(
                             asset.getId(),
                             new FloatType(
-                                    singleUseSeal.getAmount().getInteger(),
-                                    singleUseSeal.getAmount().getDecimals()
+                                    property.getSingleUseSeal().getAmount().getInteger(),
+                                    property.getSingleUseSeal().getAmount().getDecimals()
                             )
                     );
 

@@ -2,11 +2,13 @@ package server;
 
 import event.EventTriggerHandler;
 import models.dto.requests.MessageDeserializer;
+import models.dto.requests.asset.GetAssetsByAddress;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.responses.Response;
 import shared.SharedMemory;
+import storage.AssetTransfersStorage;
 import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
@@ -23,6 +25,7 @@ public class MessageServer implements Runnable {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
+    private final AssetTransfersStorage assetTransfersStorage;
 
     public MessageServer(
             int port,
@@ -30,19 +33,23 @@ public class MessageServer implements Runnable {
             EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
-            ContractsStorage contractsStorage) {
+            ContractsStorage contractsStorage,
+            AssetTransfersStorage assetTransfersStorage
+    ) {
         this.port = port;
         this.requestQueue = requestQueue;
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
+        this.assetTransfersStorage = assetTransfersStorage;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
         this.messageDeserializer.registerDataType(AgreementCall.class.getSimpleName(), AgreementCall.class);
         this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
         this.messageDeserializer.registerDataType(DeployContract.class.getSimpleName(), DeployContract.class);
+        this.messageDeserializer.registerDataType(GetAssetsByAddress.class.getSimpleName(), GetAssetsByAddress.class);
     }
 
     @Override
@@ -84,7 +91,7 @@ public class MessageServer implements Runnable {
                         System.out.println("MessageServer: New client");
                         System.out.println("MessageServer: Delegating the client communication with a dedicated thread...");
 
-                        String threadName = this.sharedMemory.add();
+                        String threadName = this.sharedMemory.instantiate();
                         new ClientHandler(
                                 threadName,
                                 socket,
@@ -93,6 +100,7 @@ public class MessageServer implements Runnable {
                                 virtualMachine,
                                 sharedMemory,
                                 contractsStorage,
+                                assetTransfersStorage,
                                 messageDeserializer
                         ).start();
 

@@ -2,21 +2,17 @@ package models.contract;
 
 import vm.types.FloatType;
 
-public class SingleUseSeal {
-    private final String id;
+import java.io.Serializable;
+
+public class SingleUseSeal implements Serializable {
     private final String assetId;
     private final FloatType amount;
     private final String lockScript;
 
-    public SingleUseSeal(String id, String assetId, FloatType amount, String publicKeyHash) {
-        this.id = id;
+    public SingleUseSeal(String assetId, FloatType amount, String publicKeyHash) {
         this.assetId = assetId;
         this.amount = amount;
         this.lockScript = "DUP\nSHA256\nPUSH str " + publicKeyHash + "\nEQUAL\nCHECKSIG\nHALT\n";
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getAssetId() {
@@ -34,8 +30,7 @@ public class SingleUseSeal {
     @Override
     public String toString() {
         return "SingleUseSeal{" +
-                "id='" + id + '\'' +
-                ", assetId='" + assetId + '\'' +
+                "assetId='" + assetId + '\'' +
                 ", amount=" + amount +
                 ", lockScript='" + lockScript + '\'' +
                 '}';
