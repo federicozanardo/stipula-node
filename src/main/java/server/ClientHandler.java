@@ -9,7 +9,9 @@ import models.contract.Property;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
+import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
+import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
@@ -144,7 +146,7 @@ public class ClientHandler extends Thread {
                         } catch (IOException error) {
                             System.out.println("ClientHandler: " + error);
                         }
-                    } else {
+                    } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                         // Send a request to the queue manager
                         this.requestQueue.enqueue(
                                 this,
@@ -175,6 +177,8 @@ public class ClientHandler extends Thread {
                         } catch (IOException error) {
                             System.out.println("ClientHandler: " + error);
                         }
+                    } else {
+                        // TODO: raise error. this is an invalid request.
                     }
                 } else {
                     // TODO: Send a response to notify that the thread received an wrong request
