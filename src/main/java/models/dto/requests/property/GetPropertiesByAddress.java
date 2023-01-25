@@ -1,12 +1,12 @@
-package models.dto.requests.asset;
+package models.dto.requests.property;
 
 import models.dto.requests.Message;
 
-public class GetAssetsByAddress extends Message {
+public class GetPropertiesByAddress extends Message {
     private final String address;
 
-    public GetAssetsByAddress(String address) {
-        super(GetAssetsByAddress.class.getSimpleName());
+    public GetPropertiesByAddress(String address) {
+        super(GetPropertiesByAddress.class.getSimpleName());
         this.address = address;
     }
 

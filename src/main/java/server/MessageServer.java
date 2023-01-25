@@ -2,10 +2,11 @@ package server;
 
 import event.EventTriggerHandler;
 import models.dto.requests.MessageDeserializer;
-import models.dto.requests.asset.GetAssetsByAddress;
+import models.dto.requests.asset.GetAssetById;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
+import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import shared.SharedMemory;
 import storage.AssetTransfersStorage;
@@ -46,10 +47,17 @@ public class MessageServer implements Runnable {
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
+
+        // Asset
+        this.messageDeserializer.registerDataType(GetAssetById.class.getSimpleName(), GetAssetById.class);
+
+        // Contract
         this.messageDeserializer.registerDataType(AgreementCall.class.getSimpleName(), AgreementCall.class);
-        this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
         this.messageDeserializer.registerDataType(DeployContract.class.getSimpleName(), DeployContract.class);
-        this.messageDeserializer.registerDataType(GetAssetsByAddress.class.getSimpleName(), GetAssetsByAddress.class);
+        this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
+
+        // Property
+        this.messageDeserializer.registerDataType(GetPropertiesByAddress.class.getSimpleName(), GetPropertiesByAddress.class);
     }
 
     @Override

@@ -9,8 +9,8 @@ import models.contract.Property;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
-import models.dto.requests.asset.GetAssetsByAddress;
 import models.dto.requests.contract.deploy.DeployContract;
+import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
@@ -125,9 +125,9 @@ public class ClientHandler extends Thread {
                         } catch (IOException error) {
                             System.out.println("ClientHandler: " + error);
                         }
-                    } else if (message instanceof GetAssetsByAddress) {
-                        GetAssetsByAddress getAssetsByAddressMessage = (GetAssetsByAddress) message;
-                        ArrayList<Property> properties = assetTransfersStorage.getFunds(getAssetsByAddressMessage.getAddress());
+                    } else if (message instanceof GetPropertiesByAddress) {
+                        GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
+                        ArrayList<Property> properties = assetTransfersStorage.getFunds(getPropertiesByAddress.getAddress());
 
                         System.out.println("ClientHandler: properties => " + properties);
 

@@ -6,7 +6,7 @@ import models.address.Address;
 import models.assets.Asset;
 import models.contract.Contract;
 import models.contract.ContractInstance;
-import models.contract.Property;
+import models.contract.SingleUseSeal;
 import models.dto.requests.Message;
 import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
@@ -312,12 +312,12 @@ public class VirtualMachine extends Thread {
             if (!functionCall.getAssetArguments().isEmpty()) {
                 for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
                     PayToContract payToContract = entry.getValue();
-                    Property property = payToContract.getProperty();
+                    SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
 
                     // TODO: Check if the single-use seal exists
                     // singleUseSeal.getId()
 
-                    Asset asset = assetsStorage.getAsset(property.getSingleUseSeal().getAssetId());
+                    Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
 
                     if (asset == null) {
                         // TODO: Error
@@ -325,17 +325,17 @@ public class VirtualMachine extends Thread {
                     }
 
                     // Check if the decimals matches
-                    if (!(property.getSingleUseSeal().getAmount().getDecimals() == asset.getAsset().getDecimals())) {
+                    if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
                         // Error
                     }
 
                     // Check if the amount <= asset supply
-                    if (!(property.getSingleUseSeal().getAmount().getInteger() <= asset.getAsset().getSupply())) {
+                    if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
                         // Error
                     }
 
                     // Check if it is possible to unlock the script
-                    String script = payToContract.getUnlockScript() + property.getSingleUseSeal().getLockScript();
+                    String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
                     System.out.println("loadAssetArguments: Script to validate\n" + script);
                     String[] instructions = script.split("\n");
 
@@ -355,8 +355,8 @@ public class VirtualMachine extends Thread {
                     AssetType value = new AssetType(
                             asset.getId(),
                             new FloatType(
-                                    property.getSingleUseSeal().getAmount().getInteger(),
-                                    property.getSingleUseSeal().getAmount().getDecimals()
+                                    singleUseSeal.getAmount().getInteger(),
+                                    singleUseSeal.getAmount().getDecimals()
                             )
                     );
 
