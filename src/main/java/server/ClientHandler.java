@@ -16,7 +16,7 @@ import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
-import storage.AssetTransfersStorage;
+import storage.PropertiesStorage;
 import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
@@ -35,7 +35,7 @@ public class ClientHandler extends Thread {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
-    private final AssetTransfersStorage assetTransfersStorage;
+    private final PropertiesStorage propertiesStorage;
     private final Gson gson;
 
     public ClientHandler(
@@ -46,7 +46,7 @@ public class ClientHandler extends Thread {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            AssetTransfersStorage assetTransfersStorage,
+            PropertiesStorage propertiesStorage,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
@@ -56,7 +56,7 @@ public class ClientHandler extends Thread {
         this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
         this.contractsStorage = contractsStorage;
-        this.assetTransfersStorage = assetTransfersStorage;
+        this.propertiesStorage = propertiesStorage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -129,7 +129,7 @@ public class ClientHandler extends Thread {
                         }
                     } else if (message instanceof GetPropertiesByAddress) {
                         GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
-                        ArrayList<Property> properties = assetTransfersStorage.getFunds(getPropertiesByAddress.getAddress());
+                        ArrayList<Property> properties = propertiesStorage.getFunds(getPropertiesByAddress.getAddress());
 
                         System.out.println("ClientHandler: properties => " + properties);
 

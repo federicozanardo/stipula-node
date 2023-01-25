@@ -2,7 +2,7 @@ import event.EventTriggerHandler;
 import models.dto.responses.Response;
 import server.MessageServer;
 import shared.SharedMemory;
-import storage.AssetTransfersStorage;
+import storage.PropertiesStorage;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
@@ -26,7 +26,7 @@ class Main {
             throw new RuntimeException(e);
         }*/
         // assetId => 09c137f0-6ffc-425c-9657-de4577d8502c
-        AssetTransfersStorage assetTransfersStorage = new AssetTransfersStorage();
+        PropertiesStorage propertiesStorage = new PropertiesStorage();
         /*try {
             assetTransfersStorage.seed();
         } catch (IOException e) {
@@ -55,7 +55,7 @@ class Main {
                         virtualMachine,
                         sharedMemory,
                         contractsStorage,
-                        assetTransfersStorage
+                        propertiesStorage
                 ),
                 "Message server"
         );

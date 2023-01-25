@@ -16,11 +16,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
 import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
-public class AssetTransfersStorage extends StorageSerializer<ArrayList<Property>> {
+public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     private DB levelDb;
     private final ReentrantLock mutex;
 
-    public AssetTransfersStorage() {
+    public PropertiesStorage() {
         this.mutex = new ReentrantLock();
     }
 
@@ -42,7 +42,7 @@ public class AssetTransfersStorage extends StorageSerializer<ArrayList<Property>
     public ArrayList<Property> getFunds(String address) throws IOException {
         this.mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.ASSET_TRANSFERS_PATH)), new Options());
+        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
@@ -58,7 +58,7 @@ public class AssetTransfersStorage extends StorageSerializer<ArrayList<Property>
     public Property getFund(String address, String singleUseSealId) throws IOException {
         this.mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.ASSET_TRANSFERS_PATH)), new Options());
+        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
@@ -95,7 +95,7 @@ public class AssetTransfersStorage extends StorageSerializer<ArrayList<Property>
     public void addFund(String address, Property fund) throws IOException {
         this.mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.ASSET_TRANSFERS_PATH)), new Options());
+        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = null;
 
         try {

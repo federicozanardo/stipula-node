@@ -9,7 +9,7 @@ import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.property.GetPropertiesByAddress;
 import models.dto.responses.Response;
 import shared.SharedMemory;
-import storage.AssetTransfersStorage;
+import storage.PropertiesStorage;
 import storage.ContractsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
@@ -26,7 +26,7 @@ public class MessageServer implements Runnable {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
-    private final AssetTransfersStorage assetTransfersStorage;
+    private final PropertiesStorage propertiesStorage;
 
     public MessageServer(
             int port,
@@ -35,7 +35,7 @@ public class MessageServer implements Runnable {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            AssetTransfersStorage assetTransfersStorage
+            PropertiesStorage propertiesStorage
     ) {
         this.port = port;
         this.requestQueue = requestQueue;
@@ -43,7 +43,7 @@ public class MessageServer implements Runnable {
         this.virtualMachine = virtualMachine;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
-        this.assetTransfersStorage = assetTransfersStorage;
+        this.propertiesStorage = propertiesStorage;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -108,7 +108,7 @@ public class MessageServer implements Runnable {
                                 virtualMachine,
                                 sharedMemory,
                                 contractsStorage,
-                                assetTransfersStorage,
+                                propertiesStorage,
                                 messageDeserializer
                         ).start();
 
