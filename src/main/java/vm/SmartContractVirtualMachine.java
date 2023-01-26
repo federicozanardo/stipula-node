@@ -5,6 +5,7 @@ import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
 import models.contract.SingleUseSeal;
+import storage.PropertyUpdateData;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
@@ -25,7 +26,7 @@ public class SmartContractVirtualMachine {
     private final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
-    private final HashMap<String, SingleUseSeal> singleUseSealsToSend = new HashMap<String, SingleUseSeal>();
+    private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<String, SingleUseSeal>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
@@ -47,8 +48,8 @@ public class SmartContractVirtualMachine {
         return globalSpace;
     }
 
-    public HashMap<String, SingleUseSeal> getSingleUseSealsToSend() {
-        return singleUseSealsToSend;
+    public HashMap<String, SingleUseSeal> getSingleUseSealsToCreate() {
+        return singleUseSealsToCreate;
     }
 
     public boolean execute() {
@@ -1417,8 +1418,8 @@ public class SmartContractVirtualMachine {
                 floatVal,
                 addressVal.getAddress()
         );
-        singleUseSealsToSend.put(addressVal.getAddress(), singleUseSeal);
-        System.out.println("withdrawOperation: singleUseSealsToSend => " + singleUseSealsToSend);
+        singleUseSealsToCreate.put(addressVal.getAddress(), singleUseSeal);
+        System.out.println("withdrawOperation: singleUseSealsToSend => " + singleUseSealsToCreate);
     }
 
     private void raiseOperation(String[] instruction) {

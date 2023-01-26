@@ -6,13 +6,13 @@ public class Property implements Serializable {
     private final String id;
     private final SingleUseSeal singleUseSeal;
     private String unlockScript;
-    private String contractInstance;
+    private String contractInstanceId;
 
     public Property(String id, SingleUseSeal singleUseSeal) {
         this.id = id;
         this.singleUseSeal = singleUseSeal;
         this.unlockScript = "";
-        this.contractInstance = "";
+        this.contractInstanceId = "";
     }
 
     public String getId() {
@@ -27,16 +27,16 @@ public class Property implements Serializable {
         return unlockScript;
     }
 
-    public String getContractInstance() {
-        return contractInstance;
+    public String getContractInstanceId() {
+        return contractInstanceId;
     }
 
     public void setUnlockScript(String unlockScript) {
         this.unlockScript = unlockScript;
     }
 
-    public void setContractInstance(String contractInstance) {
-        this.contractInstance = contractInstance;
+    public void setContractInstanceId(String contractInstanceId) {
+        this.contractInstanceId = contractInstanceId;
     }
 
     @Override
@@ -44,6 +44,8 @@ public class Property implements Serializable {
         return "Property{" +
                 "id='" + id + '\'' +
                 ", singleUseSeal=" + singleUseSeal +
+                ", unlockScript='" + unlockScript + '\'' +
+                ", contractInstanceId='" + contractInstanceId + '\'' +
                 '}';
     }
 }

@@ -21,21 +21,21 @@ public class EventTriggerHandler {
         this.virtualMachine = virtualMachine;
         this.tasks = new ArrayList<>();
         this.timer = new Timer();
-        this.mutex = new ReentrantLock();
+        mutex = new ReentrantLock();
     }
 
     public void addTask(EventTriggerSchedulingRequest schedulingRequest) {
         EventTrigger task = new EventTrigger(schedulingRequest, this, requestQueue, virtualMachine);
-        this.mutex.lock();
+        mutex.lock();
 
         this.timer.schedule(task, schedulingRequest.getSecondsBeforeCalling() * 1000L);
         this.tasks.add(task);
 
-        this.mutex.unlock();
+        mutex.unlock();
     }
 
     public void removeTask(EventTriggerRequest request) {
-        this.mutex.lock();
+        mutex.lock();
 
         int i = 0;
         boolean found = false;
@@ -58,7 +58,7 @@ public class EventTriggerHandler {
         }
 
         this.tasks.remove(i);
-        this.mutex.unlock();
+        mutex.unlock();
     }
 
     public ArrayList<EventTrigger> getTasks() {

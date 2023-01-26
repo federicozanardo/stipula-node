@@ -20,7 +20,7 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     private final ReentrantLock mutex;
 
     public AssetsStorage() {
-        this.mutex = new ReentrantLock();
+        mutex = new ReentrantLock();
     }
 
     public void seed() throws IOException {
@@ -30,7 +30,7 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     }
 
     public String addAsset(AssetConfig assetConfig) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         // TODO: check that the id is unique
         String assetId = UUID.randomUUID().toString();
@@ -40,23 +40,23 @@ public class AssetsStorage extends StorageSerializer<Asset> {
         this.levelDb.put(bytes(assetId), this.serialize(asset));
         this.levelDb.close();
 
-        this.mutex.unlock();
+        mutex.unlock();
         return assetId;
     }
 
     public Asset getAsset(String assetId) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
         this.levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
 
         Asset asset = this.deserialize(this.levelDb.get(bytes(assetId)));
         if (asset == null) {
-            this.mutex.unlock();
+            mutex.unlock();
             // Error: this contractInstanceId does not exist
             return null;
         }
 
         this.levelDb.close();
-        this.mutex.unlock();
+        mutex.unlock();
         return asset;
     }
 }

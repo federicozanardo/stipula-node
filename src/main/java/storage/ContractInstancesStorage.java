@@ -23,37 +23,37 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
 
     public ContractInstancesStorage() {
         this.storage = new HashMap<>();
-        this.mutex = new ReentrantLock();
+        mutex = new ReentrantLock();
     }
 
     public void createContractInstance(ContractInstance instance) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
         levelDb.put(bytes(instance.getInstanceId()), this.serialize(instance));
         levelDb.close();
 
-        this.mutex.unlock();
+        mutex.unlock();
     }
 
     public ContractInstance getContractInstance(String contractInstanceId) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
         ContractInstance instance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
         if (instance == null) {
             // Error: this contractInstanceId does not exist
-            this.mutex.unlock();
+            mutex.unlock();
             return null;
         }
 
         levelDb.close();
-        this.mutex.unlock();
+        mutex.unlock();
         return instance;
     }
 
     public void storeGlobalStorage(HashMap<String, TraceChange> updates, ContractInstance instance) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
 
@@ -90,6 +90,6 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
         levelDb.put(bytes(instance.getInstanceId()), this.serialize(instance));
 
         levelDb.close();
-        this.mutex.unlock();
+        mutex.unlock();
     }
 }
