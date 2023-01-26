@@ -12,7 +12,6 @@ import vm.types.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
@@ -26,7 +25,7 @@ public class SmartContractVirtualMachine {
     private final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
-    private final ArrayList<SingleUseSeal> singleUseSealsToSend = new ArrayList<>();
+    private final HashMap<String, SingleUseSeal> singleUseSealsToSend = new HashMap<String, SingleUseSeal>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
@@ -48,7 +47,7 @@ public class SmartContractVirtualMachine {
         return globalSpace;
     }
 
-    public ArrayList<SingleUseSeal> getSingleUseSealsToSend() {
+    public HashMap<String, SingleUseSeal> getSingleUseSealsToSend() {
         return singleUseSealsToSend;
     }
 
@@ -1418,7 +1417,8 @@ public class SmartContractVirtualMachine {
                 floatVal,
                 addressVal.getAddress()
         );
-        singleUseSealsToSend.add(singleUseSeal);
+        singleUseSealsToSend.put(addressVal.getAddress(), singleUseSeal);
+        System.out.println("withdrawOperation: singleUseSealsToSend => " + singleUseSealsToSend);
     }
 
     private void raiseOperation(String[] instruction) {

@@ -40,7 +40,8 @@ class Main {
                 sharedMemory,
                 contractsStorage,
                 contractInstancesStorage,
-                assetsStorage
+                assetsStorage,
+                propertiesStorage
         );
 
         // Set up the Event trigger handler

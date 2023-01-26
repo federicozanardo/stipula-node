@@ -1,18 +1,18 @@
 package models.dto.requests.contract.function;
 
-import models.contract.SingleUseSeal;
+import models.contract.Property;
 
 public class PayToContract {
-    private final SingleUseSeal singleUseSeal;
+    private final Property property;
     private final String unlockScript;
 
-    public PayToContract(SingleUseSeal singleUseSeal, String unlockScript) {
-        this.singleUseSeal = singleUseSeal;
+    public PayToContract(Property property, String unlockScript) {
+        this.property = property;
         this.unlockScript = unlockScript;
     }
 
-    public SingleUseSeal getSingleUseSeal() {
-        return singleUseSeal;
+    public Property getProperty() {
+        return property;
     }
 
     public String getUnlockScript() {

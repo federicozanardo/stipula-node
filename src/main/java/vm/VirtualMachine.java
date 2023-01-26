@@ -19,6 +19,7 @@ import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
+import storage.PropertiesStorage;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.types.AssetType;
 import vm.types.FloatType;
@@ -37,13 +38,15 @@ public class VirtualMachine extends Thread {
     private final ContractsStorage contractsStorage;
     private final ContractInstancesStorage contractInstancesStorage;
     private final AssetsStorage assetsStorage;
+    private final PropertiesStorage propertiesStorage;
 
     public VirtualMachine(
             RequestQueue queue,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
             ContractInstancesStorage contractInstancesStorage,
-            AssetsStorage assetsStorage
+            AssetsStorage assetsStorage,
+            PropertiesStorage propertiesStorage
     ) {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
@@ -51,6 +54,7 @@ public class VirtualMachine extends Thread {
         this.contractsStorage = contractsStorage;
         this.contractInstancesStorage = contractInstancesStorage;
         this.assetsStorage = assetsStorage;
+        this.propertiesStorage = propertiesStorage;
     }
 
     @Override
@@ -189,8 +193,8 @@ public class VirtualMachine extends Thread {
                     }
 
                     // Go to the next state
-                    instance.getStateMachine().nextState(nextState, address);
-                    System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
+                    // instance.getStateMachine().nextState(nextState, address);
+                    // System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
 
                     System.out.println("main: Updating the global store...");
                     if (vm.getGlobalSpace().isEmpty()) {
@@ -199,6 +203,9 @@ public class VirtualMachine extends Thread {
                         contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
                         System.out.println("main: Global store updated");
                     }
+
+                    HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToSend();
+                    propertiesStorage.addFunds(singleUseSealsToSend);
 
                     // contractInstancesStorage.close();
 
@@ -312,7 +319,7 @@ public class VirtualMachine extends Thread {
             if (!functionCall.getAssetArguments().isEmpty()) {
                 for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
                     PayToContract payToContract = entry.getValue();
-                    SingleUseSeal singleUseSeal = payToContract.getSingleUseSeal();
+                    SingleUseSeal singleUseSeal = payToContract.getProperty().getSingleUseSeal();
 
                     // TODO: Check if the single-use seal exists
                     // singleUseSeal.getId()
