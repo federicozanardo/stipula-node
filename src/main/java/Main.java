@@ -32,7 +32,7 @@ class Main {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }*/
-        // propertyId => 60e62f2c-f7e8-4385-8e06-41c87a006e13
+        // propertyId => a86d2ed2-a455-43e1-b3be-264c05d7fc20
 
         // Set up the virtual machine handler
         VirtualMachine virtualMachine = new VirtualMachine(

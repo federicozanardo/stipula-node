@@ -22,7 +22,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     private final ReentrantLock mutex;
 
     public PropertiesStorage() {
-        this.mutex = new ReentrantLock();
+        mutex = new ReentrantLock();
     }
 
     public void seed() throws IOException {
@@ -41,30 +41,30 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     }
 
     public ArrayList<Property> getFunds(String address) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
             // Error: this contractInstanceId does not exist
-            this.mutex.unlock();
+            mutex.unlock();
             return null;
         }
 
-        this.mutex.unlock();
+        mutex.unlock();
         return funds;
     }
 
-    public Property getFund(String address, String singleUseSealId) throws IOException {
-        this.mutex.lock();
+    public Property getFund(String address, String propertyId) throws IOException {
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
             // Error: this contractInstanceId does not exist
-            this.mutex.unlock();
+            mutex.unlock();
             return null;
         }
 
@@ -75,7 +75,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         while (i < funds.size() && !found) {
             Property currentFund = funds.get(i);
 
-            if (currentFund.getId().equals(singleUseSealId)) {
+            if (currentFund.getId().equals(propertyId)) {
                 found = true;
                 fund = currentFund;
             } else {
@@ -85,16 +85,17 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
 
         if (!found) {
             // Error
-            this.mutex.unlock();
+            mutex.unlock();
             return null;
         }
 
-        this.mutex.unlock();
+        levelDb.close();
+        mutex.unlock();
         return fund;
     }
 
     public void addFund(String address, Property fund) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
 
         this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = null;
@@ -112,11 +113,11 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         funds.add(fund);
         levelDb.put(bytes(address), this.serialize(funds));
         levelDb.close();
-        this.mutex.unlock();
+        mutex.unlock();
     }
 
     public void addFunds(HashMap<String, SingleUseSeal> funds) throws IOException {
-        this.mutex.lock();
+        mutex.lock();
         this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
 
         for (HashMap.Entry<String, SingleUseSeal> entry : funds.entrySet()) {
@@ -146,6 +147,58 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         }
 
         levelDb.close();
-        this.mutex.unlock();
+        mutex.unlock();
+    }
+
+    public void makePropertySpent(
+            String address,
+            String propertyId,
+            String contractInstanceId,
+            String unlockScript
+    ) throws Exception {
+        mutex.lock();
+
+        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
+        System.out.println("makePropertySpent: currentFunds => " + funds);
+
+        if (funds == null) {
+            // Error: this contractInstanceId does not exist
+            levelDb.close();
+            mutex.unlock();
+            throw new Exception("Impossible to find the funds given the following address => " + address);
+        }
+
+        int i = 0;
+        boolean found = false;
+
+        while (i < funds.size() && !found) {
+            Property currentFund = funds.get(i);
+
+            if (currentFund.getId().equals(propertyId)) {
+                found = true;
+            } else {
+                i++;
+            }
+        }
+
+        if (!found) {
+            // Error
+            levelDb.close();
+            mutex.unlock();
+            throw new Exception("Impossible to find the funds given the following address => " + address +
+                    " and the propertyId => " + propertyId);
+        }
+
+        // Update the property
+        funds.get(i).setContractInstanceId(contractInstanceId);
+        funds.get(i).setUnlockScript(unlockScript);
+
+        // Save
+        levelDb.put(bytes(address), this.serialize(funds));
+        System.out.println("makePropertySpent: updatedFunds => " + funds);
+
+        levelDb.close();
+        mutex.unlock();
     }
 }

@@ -5,7 +5,6 @@ import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
 import models.contract.SingleUseSeal;
-import storage.PropertyUpdateData;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;

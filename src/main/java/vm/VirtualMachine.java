@@ -6,6 +6,7 @@ import models.address.Address;
 import models.assets.Asset;
 import models.contract.Contract;
 import models.contract.ContractInstance;
+import models.contract.Property;
 import models.contract.SingleUseSeal;
 import models.dto.requests.Message;
 import models.dto.requests.SignedMessage;
@@ -16,10 +17,7 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
-import storage.AssetsStorage;
-import storage.ContractInstancesStorage;
-import storage.ContractsStorage;
-import storage.PropertiesStorage;
+import storage.*;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.types.AssetType;
 import vm.types.FloatType;
@@ -140,10 +138,20 @@ public class VirtualMachine extends Thread {
                     // Load arguments
                     HashMap<String, String> arguments = loadArguments(message);
 
-                    // Load asset arguments
+
                     HashMap<String, AssetType> assetArguments = new HashMap<>();
+                    HashMap<String, PropertyUpdateData> propertiesToUpdate = new HashMap<>();
                     if (message instanceof FunctionCall) {
-                        assetArguments = loadAssetArguments(message);
+
+                        // Properties validation
+                        if (!validateProperties(address, (FunctionCall) message)) {
+                            throw new Error("Not all the properties are valid");
+                        }
+
+                        // Load asset arguments
+                        assetArguments = loadAssetArguments((FunctionCall) message);
+
+                        propertiesToUpdate = getPropertiesToUpdate(address, (FunctionCall) message);
                     }
 
                     // Load the bytecode
@@ -193,8 +201,19 @@ public class VirtualMachine extends Thread {
                     }
 
                     // Go to the next state
-                    // instance.getStateMachine().nextState(nextState, address);
-                    // System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
+                    instance.getStateMachine().nextState(nextState, address);
+                    System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
+
+                    for (HashMap.Entry<String, PropertyUpdateData> entry : propertiesToUpdate.entrySet()) {
+                        PropertyUpdateData data = entry.getValue();
+                        System.out.println("main: address => " + entry.getKey());
+                        propertiesStorage.makePropertySpent(
+                                entry.getKey(),
+                                data.getPropertyId(),
+                                data.getContractInstanceId(),
+                                data.getUnlockScript()
+                        );
+                    }
 
                     System.out.println("main: Updating the global store...");
                     if (vm.getGlobalSpace().isEmpty()) {
@@ -204,7 +223,7 @@ public class VirtualMachine extends Thread {
                         System.out.println("main: Global store updated");
                     }
 
-                    HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToSend();
+                    HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
                     propertiesStorage.addFunds(singleUseSealsToSend);
 
                     // contractInstancesStorage.close();
@@ -310,73 +329,115 @@ public class VirtualMachine extends Thread {
         return arguments;
     }
 
-    private HashMap<String, AssetType> loadAssetArguments(Message message) throws Exception {
+    private boolean validateProperties(Address address, FunctionCall functionCall) throws Exception {
+        if (!functionCall.getAssetArguments().isEmpty()) {
+            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
+                PayToContract payToContract = entry.getValue();
+                Property property = payToContract.getProperty();
+
+                Property propertyFromStorage = propertiesStorage.getFund(address.getAddress(), property.getId());
+                if (propertyFromStorage == null) {
+                    // TODO: Error: the property does not exist in the storage
+                    System.out.println("validateProperties: the property does not exist in the storage");
+                    return false;
+                }
+
+                if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
+                    // TODO: Error: the property has been spent
+                    System.out.println("validateProperties: the property has been spent");
+                    return false;
+                }
+
+                SingleUseSeal singleUseSeal = property.getSingleUseSeal();
+
+                // TODO: Check if the single-use seal exists
+                // singleUseSeal.getId()
+
+                Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
+
+                if (asset == null) {
+                    // TODO: Error
+                    return false;
+                }
+
+                // Check if the decimals matches
+                if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
+                    // Error
+                }
+
+                // Check if the amount <= asset supply
+                if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
+                    // Error
+                }
+
+                // Check if it is possible to unlock the script
+                String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
+                System.out.println("loadAssetArguments: Script to validate\n" + script);
+                String[] instructions = script.split("\n");
+
+                System.out.println("loadAssetArguments: Start validating the script...");
+                ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions);
+
+                // Execute the code
+                boolean result = vm.execute();
+
+                if (!result) {
+                    System.out.println("loadAssetArguments: Error while executing the function");
+                    return false;
+                }
+
+                System.out.println("loadAssetArguments: Script validated");
+            }
+        }
+
+        return true;
+    }
+
+    private HashMap<String, AssetType> loadAssetArguments(FunctionCall functionCall) throws Exception {
         HashMap<String, AssetType> assetArguments = new HashMap<>();
 
-        if (message instanceof FunctionCall) {
-            FunctionCall functionCall = (FunctionCall) message;
+        if (!functionCall.getAssetArguments().isEmpty()) {
+            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
+                PayToContract payToContract = entry.getValue();
+                SingleUseSeal singleUseSeal = payToContract.getProperty().getSingleUseSeal();
 
-            if (!functionCall.getAssetArguments().isEmpty()) {
-                for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                    PayToContract payToContract = entry.getValue();
-                    SingleUseSeal singleUseSeal = payToContract.getProperty().getSingleUseSeal();
+                // TODO: Check if the single-use seal exists
+                // singleUseSeal.getId()
 
-                    // TODO: Check if the single-use seal exists
-                    // singleUseSeal.getId()
+                Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
 
-                    Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
+                AssetType value = new AssetType(
+                        asset.getId(),
+                        new FloatType(
+                                singleUseSeal.getAmount().getInteger(),
+                                singleUseSeal.getAmount().getDecimals()
+                        )
+                );
 
-                    if (asset == null) {
-                        // TODO: Error
-                        return null;
-                    }
-
-                    // Check if the decimals matches
-                    if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
-                        // Error
-                    }
-
-                    // Check if the amount <= asset supply
-                    if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
-                        // Error
-                    }
-
-                    // Check if it is possible to unlock the script
-                    String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
-                    System.out.println("loadAssetArguments: Script to validate\n" + script);
-                    String[] instructions = script.split("\n");
-
-                    System.out.println("loadAssetArguments: Start validating the script...");
-                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions);
-
-                    // Execute the code
-                    boolean result = vm.execute();
-
-                    if (!result) {
-                        System.out.println("loadAssetArguments: Error while executing the function");
-                        return null;
-                    }
-
-                    System.out.println("loadAssetArguments: Script validated");
-
-                    AssetType value = new AssetType(
-                            asset.getId(),
-                            new FloatType(
-                                    singleUseSeal.getAmount().getInteger(),
-                                    singleUseSeal.getAmount().getDecimals()
-                            )
-                    );
-
-                    // All the checks are true, so add the argument
-                    assetArguments.put(entry.getKey(), value);
-                }
+                // All the checks are true, so add the argument
+                assetArguments.put(entry.getKey(), value);
             }
-
-            return assetArguments;
-        } else {
-            // Error
-            return null;
         }
+
+        return assetArguments;
+    }
+
+    private HashMap<String, PropertyUpdateData> getPropertiesToUpdate(Address address, FunctionCall functionCall) throws Exception {
+        HashMap<String, PropertyUpdateData> propertiesToUpdate = new HashMap<>();
+
+        if (!functionCall.getAssetArguments().isEmpty()) {
+            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
+                PayToContract payToContract = entry.getValue();
+                PropertyUpdateData data = new PropertyUpdateData(
+                        payToContract.getProperty().getId(),
+                        functionCall.getContractInstanceId(),
+                        payToContract.getUnlockScript()
+                );
+                propertiesToUpdate.put(address.getAddress(), data);
+            }
+        }
+
+        return propertiesToUpdate;
     }
 
     private String getNextStateFromFunction(String contractId, String function) throws IOException {
