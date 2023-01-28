@@ -5,7 +5,7 @@ GINST addr Lender
 GINST addr Borrower
 GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
 GINST float cost 2
-GINST int rent_time
+GINST time rent_time
 GINST int use_code
 args:
 PUSH addr :Lender
@@ -14,7 +14,7 @@ PUSH addr :Borrower
 GSTORE Borrower
 PUSH float :cost
 GSTORE cost
-PUSH int :rent_time
+PUSH time :rent_time
 GSTORE rent_time
 start:
 HALT
@@ -46,9 +46,28 @@ ALOAD y
 GLOAD wallet
 DEPOSIT wallet
 // end deposit
+// trigger an obligation
+PUSH time now
+GLOAD rent_time
+ADD
+TRIGGER accept_obl_1
 end:
 HALT
 fn end Borrower End
+start:
+// start withdraw
+// start expression
+PUSH float 100 2
+GLOAD wallet
+MUL
+// end expression
+GLOAD wallet
+GLOAD Lender
+WITHDRAW wallet
+// end withdraw
+HALT
+// obligation function
+obligation accept_obl_1 End
 start:
 // start withdraw
 // start expression
