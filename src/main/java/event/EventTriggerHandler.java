@@ -1,40 +1,34 @@
 package event;
 
-import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
-import vm.RequestQueue;
-import vm.VirtualMachine;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Timer;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class EventTriggerHandler {
     private final ArrayList<EventTrigger> tasks;
     private final Timer timer;
-    private final RequestQueue requestQueue;
-    private final VirtualMachine virtualMachine;
     private final ReentrantLock mutex;
 
-    public EventTriggerHandler(RequestQueue requestQueue, VirtualMachine virtualMachine) {
-        this.requestQueue = requestQueue;
-        this.virtualMachine = virtualMachine;
+    public EventTriggerHandler() {
         this.tasks = new ArrayList<>();
         this.timer = new Timer();
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
-    public void addTask(EventTriggerSchedulingRequest schedulingRequest) {
-        EventTrigger task = new EventTrigger(schedulingRequest, this, requestQueue, virtualMachine);
+    public void addTask(EventTrigger task) {
         mutex.lock();
 
-        this.timer.schedule(task, schedulingRequest.getSecondsBeforeCalling() * 1000L);
-        this.tasks.add(task);
+        // timer.schedule(task, task.getSchedulingRequest().getRequest().getTime() * 1000L);
+        timer.schedule(task, new Date(task.getSchedulingRequest().getRequest().getTime() * 1000L));
+        tasks.add(task);
 
         mutex.unlock();
     }
 
-    public void removeTask(EventTriggerRequest request) {
+    public void removeTask(EventTriggerSchedulingRequest schedulingRequest) {
         mutex.lock();
 
         int i = 0;
@@ -42,11 +36,11 @@ public class EventTriggerHandler {
 
         while (i < tasks.size() && !found) {
             EventTrigger task = tasks.get(i);
-            EventTriggerRequest taskRequest = task.getSchedulingRequest().getRequest();
+            EventTriggerSchedulingRequest taskRequest = task.getSchedulingRequest();
 
-            if (taskRequest.getContractId().equals(request.getContractId()) &&
-                    taskRequest.getContractInstanceId().equals(request.getContractInstanceId()) &&
-                    taskRequest.getObligationName().equals(request.getObligationName())) {
+            if (taskRequest.getContractId().equals(schedulingRequest.getContractId()) &&
+                    taskRequest.getContractInstanceId().equals(schedulingRequest.getContractInstanceId()) &&
+                    taskRequest.getRequest().getObligationFunctionName().equals(schedulingRequest.getRequest().getObligationFunctionName())) {
                 found = true;
             } else {
                 i++;
@@ -57,7 +51,7 @@ public class EventTriggerHandler {
             throw new Error();
         }
 
-        this.tasks.remove(i);
+        tasks.remove(i);
         mutex.unlock();
     }
 

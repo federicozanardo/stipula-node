@@ -1,17 +1,15 @@
 package compiler;
 
 import constants.Constants;
-import event.EventTriggerHandler;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.contract.Contract;
 import models.dto.requests.contract.deploy.DeployContract;
-import models.dto.requests.event.EventTriggerRequest;
-import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
 import storage.ContractsStorage;
+import vm.dfa.ContractCallByEvent;
 import vm.dfa.ContractCallByParty;
 import vm.dfa.DfaState;
 
@@ -25,7 +23,6 @@ import java.util.Scanner;
 public class StipulaCompiler extends Thread {
     private final Thread clientHandler;
     private final DeployContract contractToDeploy;
-    private final EventTriggerHandler eventTriggerHandler;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
 
@@ -33,14 +30,12 @@ public class StipulaCompiler extends Thread {
             String name,
             Thread clientHandler,
             DeployContract contractToDeploy,
-            EventTriggerHandler eventTriggerHandler,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage
     ) {
         super(name);
         this.clientHandler = clientHandler;
         this.contractToDeploy = contractToDeploy;
-        this.eventTriggerHandler = eventTriggerHandler;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
     }
@@ -89,8 +84,18 @@ public class StipulaCompiler extends Thread {
         transitions.add(new Pair<String, DfaState>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
         transitions.add(new Pair<String, DfaState>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
         transitions.add(new Pair<String, DfaState>("Using", new ContractCallByParty("End", authorizedParties2)));
+        transitions.add(new Pair<String, DfaState>("Using", new ContractCallByEvent("End", "accept_obl_1")));
 
-        Contract contract = new Contract("", bytecode, "Inactive", "End", transitions);
+        ArrayList<String> endStates = new ArrayList<>();
+        endStates.add("End");
+
+        Contract contract = new Contract(
+                "",
+                bytecode,
+                "Inactive",
+                endStates,
+                transitions
+        );
 
         String contractId;
         try {
@@ -100,27 +105,6 @@ public class StipulaCompiler extends Thread {
         }
 
         System.out.println("StipulaCompiler: contractId = " + contractId);
-
-        System.out.println("StipulaCompiler: Set up event triggers...");
-
-        for (int i = 0; i < 5; i++) {
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            EventTriggerRequest request = new EventTriggerRequest(
-                    "a" + i,
-                    "b" + i,
-                    "call" + i
-            );
-            EventTriggerSchedulingRequest schedulingRequest = new EventTriggerSchedulingRequest(request, 5);
-            this.eventTriggerHandler.addTask(schedulingRequest);
-            System.out.println("StipulaCompiler: added " + schedulingRequest);
-        }
-
-        System.out.println("StipulaCompiler: get => " + this.sharedMemory.get(this.getName()));
 
         if (this.sharedMemory.containsKey(this.clientHandler.getName())) {
             this.sharedMemory.set(
@@ -140,12 +124,12 @@ public class StipulaCompiler extends Thread {
     }
 
     private boolean compile() throws NoSuchAlgorithmException {
-        this.setupContract();
+        //this.setupContract();
         System.out.println("StipulaCompiler:compile => " + this.contractToDeploy);
         return true;
     }
 
-    private void setupContract() throws NoSuchAlgorithmException {
+    /*private void setupContract() throws NoSuchAlgorithmException {
         String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
 
         // Load the DFA
@@ -174,19 +158,17 @@ public class StipulaCompiler extends Thread {
                 )
         );
 
+        ArrayList<String> endStates = new ArrayList<>();
+        endStates.add("End");
+
         Contract contract = new Contract(
                 "",
                 bytecode,
                 "Inactive",
-                "End",
+                endStates,
                 transitions
         );
-
-        // Save the contract
-        // String contractId = contractsStorage.addContract(contract);
-
-        // System.out.println("setupContract: contractId = " + contractId);
-    }
+    }*/
 
     private String readProgram(String pathname) {
         String bytecode = "";

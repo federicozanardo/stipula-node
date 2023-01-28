@@ -9,6 +9,8 @@ import storage.PropertiesStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
+import java.io.IOException;
+
 class Main {
     public static void main(String[] args) {
         // Set up the requests queue
@@ -25,34 +27,32 @@ class Main {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }*/
-        // assetId => 09c137f0-6ffc-425c-9657-de4577d8502c
         PropertiesStorage propertiesStorage = new PropertiesStorage();
         /*try {
             propertiesStorage.seed();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }*/
-        // propertyId => a86d2ed2-a455-43e1-b3be-264c05d7fc20
+
+        // Set up the Event trigger handler
+        EventTriggerHandler eventTriggerHandler = new EventTriggerHandler();
 
         // Set up the virtual machine handler
         VirtualMachine virtualMachine = new VirtualMachine(
                 requestQueue,
                 sharedMemory,
+                eventTriggerHandler,
                 contractsStorage,
                 contractInstancesStorage,
                 assetsStorage,
                 propertiesStorage
         );
 
-        // Set up the Event trigger handler
-        EventTriggerHandler eventTriggerHandler = new EventTriggerHandler(requestQueue, virtualMachine);
-
         // Set up the server
         Thread server = new Thread(
                 new MessageServer(
                         61000,
                         requestQueue,
-                        eventTriggerHandler,
                         virtualMachine,
                         sharedMemory,
                         contractsStorage,

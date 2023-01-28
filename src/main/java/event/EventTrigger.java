@@ -3,7 +3,6 @@ package event;
 import exceptions.queue.QueueOverflowException;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
 import vm.RequestQueue;
-import vm.VirtualMachine;
 
 import java.util.TimerTask;
 
@@ -11,17 +10,18 @@ public class EventTrigger extends TimerTask {
     private final EventTriggerSchedulingRequest schedulingRequest;
     private final EventTriggerHandler handler;
     private final RequestQueue requestQueue;
-    private final VirtualMachine virtualMachine;
+    private final Thread virtualMachineThread;
 
     public EventTrigger(
             EventTriggerSchedulingRequest schedulingRequest,
             EventTriggerHandler handler,
             RequestQueue requestQueue,
-            VirtualMachine virtualMachine) {
+            Thread virtualMachineThread
+    ) {
         this.schedulingRequest = schedulingRequest;
         this.handler = handler;
         this.requestQueue = requestQueue;
-        this.virtualMachine = virtualMachine;
+        this.virtualMachineThread = virtualMachineThread;
     }
 
     @Override
@@ -35,13 +35,13 @@ public class EventTrigger extends TimerTask {
         }
 
         System.out.println("EventTrigger: notifying the virtual machine...");
-        synchronized (this.virtualMachine) {
-            this.virtualMachine.notify();
+        synchronized (this.virtualMachineThread) {
+            this.virtualMachineThread.notify();
         }
         System.out.println("EventTrigger: virtual machine notified");
 
         System.out.println("EventTrigger: removing the request from EventTriggerHandler...");
-        this.handler.removeTask(schedulingRequest.getRequest());
+        this.handler.removeTask(schedulingRequest);
     }
 
     public EventTriggerSchedulingRequest getSchedulingRequest() {

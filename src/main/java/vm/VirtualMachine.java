@@ -1,5 +1,7 @@
 package vm;
 
+import event.EventTrigger;
+import event.EventTriggerHandler;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
@@ -13,6 +15,7 @@ import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.contract.function.PayToContract;
+import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
@@ -33,6 +36,7 @@ public class VirtualMachine extends Thread {
     private final RequestQueue queue;
     private final SharedMemory<Response> sharedMemory;
     private int offset = 0;
+    private final EventTriggerHandler eventTriggerHandler;
     private final ContractsStorage contractsStorage;
     private final ContractInstancesStorage contractInstancesStorage;
     private final AssetsStorage assetsStorage;
@@ -41,6 +45,7 @@ public class VirtualMachine extends Thread {
     public VirtualMachine(
             RequestQueue queue,
             SharedMemory<Response> sharedMemory,
+            EventTriggerHandler eventTriggerHandler,
             ContractsStorage contractsStorage,
             ContractInstancesStorage contractInstancesStorage,
             AssetsStorage assetsStorage,
@@ -49,6 +54,7 @@ public class VirtualMachine extends Thread {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
         this.sharedMemory = sharedMemory;
+        this.eventTriggerHandler = eventTriggerHandler;
         this.contractsStorage = contractsStorage;
         this.contractInstancesStorage = contractInstancesStorage;
         this.assetsStorage = assetsStorage;
@@ -99,17 +105,17 @@ public class VirtualMachine extends Thread {
 
                         DeterministicFiniteAutomata stateMachine = new DeterministicFiniteAutomata(
                                 contract.getInitialState(),
-                                contract.getEndState(),
+                                contract.getEndStates(),
                                 contract.getTransitions()
                         );
 
                         // Create a new instance of the contract
                         instance = new ContractInstance(agreementCall.getContractId(), stateMachine);
                         contractInstancesStorage.createContractInstance(instance);
-                        System.out.println("main: contractInstanceId = " + instance.getInstanceId());
+                        System.out.println("VirtualMachine: contractInstanceId = " + instance.getInstanceId());
 
                         rawBytecode = this.loadFunction(agreementCall.getContractId(), "agreement");
-                        System.out.println("main: loadFunction\n" + rawBytecode);
+                        System.out.println("VirtualMachine: Function\n" + rawBytecode);
                     } else {
                         FunctionCall functionCall = (FunctionCall) message;
 
@@ -129,26 +135,26 @@ public class VirtualMachine extends Thread {
                         instance = contractInstancesStorage.getContractInstance(functionCall.getContractInstanceId());
 
                         nextState = getNextStateFromFunction(functionCall.getContractId(), functionCall.getFunction());
-                        System.out.println("main: nextState: " + nextState);
+                        System.out.println("VirtualMachine: nextState: " + nextState);
 
                         rawBytecode = loadFunction(functionCall.getContractId(), functionCall.getFunction());
-                        System.out.println("loadFunction: Function\n" + rawBytecode);
+                        System.out.println("VirtualMachine: Function\n" + rawBytecode);
                     }
 
                     // Load arguments
                     HashMap<String, String> arguments = loadArguments(message);
 
-
+                    // Load asset arguments
                     HashMap<String, AssetType> assetArguments = new HashMap<>();
                     HashMap<String, PropertyUpdateData> propertiesToUpdate = new HashMap<>();
-                    if (message instanceof FunctionCall) {
 
+                    if (message instanceof FunctionCall) {
                         // Properties validation
                         if (!validateProperties(address, (FunctionCall) message)) {
                             throw new Error("Not all the properties are valid");
                         }
 
-                        // Load asset arguments
+                        // (Effectively) Load asset arguments
                         assetArguments = loadAssetArguments((FunctionCall) message);
 
                         propertiesToUpdate = getPropertiesToUpdate(address, (FunctionCall) message);
@@ -158,10 +164,10 @@ public class VirtualMachine extends Thread {
                     String bytecode;
                     if (message instanceof AgreementCall) {
                         bytecode = loadBytecode(rawBytecode, arguments);
-                        System.out.println("main: loadBytecode\n" + bytecode);
+                        System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
                     } else {
                         bytecode = loadBytecode(rawBytecode, arguments, assetArguments);
-                        System.out.println("main: loadBytecode\n" + bytecode);
+                        System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
                     }
 
                     String[] instructions = bytecode.split("\n");
@@ -169,9 +175,9 @@ public class VirtualMachine extends Thread {
                     // Check if the state is correct
                     if (message instanceof FunctionCall && !instance.getStateMachine().isNextState(nextState, address)) {
                         // Error
-                        System.out.println("main: Error in the state machine");
-                        System.out.println("main: Current state => " + instance.getStateMachine().getCurrentState());
-                        System.out.println("main: Next state => " + nextState);
+                        System.out.println("VirtualMachine: Error in the state machine");
+                        System.out.println("VirtualMachine: Current state => " + instance.getStateMachine().getCurrentState());
+                        System.out.println("VirtualMachine: Next state => " + nextState);
                         System.out.println(address);
                         System.exit(-1);
                     }
@@ -196,17 +202,36 @@ public class VirtualMachine extends Thread {
                     boolean result = vm.execute();
 
                     if (!result) {
-                        System.out.println("main: Error while executing the function");
+                        System.out.println("VirtualMachine: Error while executing the function");
                         return;
                     }
 
                     // Go to the next state
                     instance.getStateMachine().nextState(nextState, address);
-                    System.out.println("main: current state = " + instance.getStateMachine().getCurrentState());
+                    System.out.println("VirtualMachine: current state = " + instance.getStateMachine().getCurrentState());
 
+                    // Set up trigger events
+                    for (EventTriggerRequest eventTriggerRequest : vm.getEventTriggersToRequest()) {
+                        EventTriggerSchedulingRequest eventTriggerSchedulingRequest =
+                                new EventTriggerSchedulingRequest(
+                                        eventTriggerRequest,
+                                        instance.getContractId(),
+                                        instance.getInstanceId()
+                                );
+                        EventTrigger eventTrigger = new EventTrigger(
+                                eventTriggerSchedulingRequest,
+                                eventTriggerHandler,
+                                queue,
+                                this
+                        );
+                        eventTriggerHandler.addTask(eventTrigger);
+                        System.out.println("VirtualMachine: add trigger => " + eventTrigger);
+                    }
+
+                    // Update the properties/single-use seals
                     for (HashMap.Entry<String, PropertyUpdateData> entry : propertiesToUpdate.entrySet()) {
                         PropertyUpdateData data = entry.getValue();
-                        System.out.println("main: address => " + entry.getKey());
+                        System.out.println("VirtualMachine: address => " + entry.getKey());
                         propertiesStorage.makePropertySpent(
                                 entry.getKey(),
                                 data.getPropertyId(),
@@ -215,18 +240,16 @@ public class VirtualMachine extends Thread {
                         );
                     }
 
-                    System.out.println("main: Updating the global store...");
+                    System.out.println("VirtualMachine: Updating the global store...");
                     if (vm.getGlobalSpace().isEmpty()) {
                         System.out.println("There is nothing to save in the global store");
                     } else {
                         contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
-                        System.out.println("main: Global store updated");
+                        System.out.println("VirtualMachine: Global store updated");
                     }
 
                     HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
                     propertiesStorage.addFunds(singleUseSealsToSend);
-
-                    // contractInstancesStorage.close();
 
                     System.out.println("GLOBALSPACE");
                     System.out.println(instance.getGlobalVariables());
@@ -252,7 +275,70 @@ public class VirtualMachine extends Thread {
                         }
                     }
                 } else if (triggerRequest != null) {
+                    System.out.println("VirtualMachine: just received a trigger request");
+                    String contractId = triggerRequest.getContractId();
+                    String contractInstanceId = triggerRequest.getContractInstanceId();
+                    String obligationFunctionName = triggerRequest.getRequest().getObligationFunctionName();
 
+                    ContractInstance instance = contractInstancesStorage.getContractInstance(contractInstanceId);
+                    String nextState = getNextStateFromFunction(contractId, obligationFunctionName);
+
+                    String rawBytecode = loadFunction(contractId, obligationFunctionName);
+                    System.out.println("VirtualMachine: Function\n" + rawBytecode);
+
+                    String bytecode = loadBytecode(rawBytecode, new HashMap<String, String>());
+                    System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
+
+                    String[] instructions = bytecode.split("\n");
+
+                    // Check if the state is correct
+                    if (!instance.getStateMachine().isNextState(nextState, obligationFunctionName)) {
+                        // Warning
+                        System.out.println("VirtualMachine: Error in the state machine");
+                        System.out.println("VirtualMachine: Current state => " + instance.getStateMachine().getCurrentState());
+                        System.out.println("VirtualMachine: Next state => " + nextState);
+                        System.out.println(obligationFunctionName);
+                        // System.exit(-1);
+                    } else {
+                        // Set up the virtual machine
+                        SmartContractVirtualMachine vm;
+
+                        // Load global storage
+                        HashMap<String, TraceChange> global = new HashMap<>();
+
+                        for (HashMap.Entry<String, Type> entry : instance.getGlobalVariables().entrySet()) {
+                            global.put(entry.getKey(), new TraceChange(entry.getValue()));
+                        }
+
+                        vm = new SmartContractVirtualMachine(instructions, offset, global);
+
+                        // Execute the code
+                        boolean result = vm.execute();
+
+                        if (!result) {
+                            System.out.println("VirtualMachine: Error while executing the function");
+                            return;
+                        }
+
+                        // Go to the next state
+                        instance.getStateMachine().nextState(nextState, obligationFunctionName);
+                        System.out.println("VirtualMachine: current state = " + instance.getStateMachine().getCurrentState());
+
+                        System.out.println("VirtualMachine: Updating the global store...");
+                        if (vm.getGlobalSpace().isEmpty()) {
+                            System.out.println("There is nothing to save in the global store");
+                        } else {
+                            contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
+                            System.out.println("VirtualMachine: Global store updated");
+                        }
+
+                        HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
+                        propertiesStorage.addFunds(singleUseSealsToSend);
+
+                        System.out.println("GLOBALSPACE");
+                        System.out.println(instance.getGlobalVariables());
+                        System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
+                    }
                 }
 
                 // Reset variables
@@ -284,7 +370,6 @@ public class VirtualMachine extends Thread {
         boolean isFunctionEnded = false;
 
         // Load all the bytecode
-        // String bytecode = readProgram(pathname);
         Contract contract = contractsStorage.getContract(contractId);
         String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
@@ -297,7 +382,7 @@ public class VirtualMachine extends Thread {
                 bytecodeFunction += instructions[i].trim() + "\n";
             }
 
-            if (instruction[0].equals("fn") && instruction[1].equals(function)) {
+            if ((instruction[0].equals("fn") || instruction[0].equals("obligation")) && instruction[1].equals(function)) {
                 isFunctionStarted = true;
                 offset = i + 1;
             }
@@ -444,7 +529,6 @@ public class VirtualMachine extends Thread {
         String nextState = "";
 
         // Load all the bytecode
-        // String bytecode = readProgram(pathname);
         Contract contract = contractsStorage.getContract(contractId);
         String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
@@ -455,6 +539,12 @@ public class VirtualMachine extends Thread {
 
             if (instruction[0].equals("fn") && instruction[1].equals(function)) {
                 nextState = instruction[3];
+                break;
+            }
+
+            if (instruction[0].equals("obligation") && instruction[1].equals(function)) {
+                nextState = instruction[2];
+                break;
             }
         }
         System.out.println("loadFunction: Function loaded");
