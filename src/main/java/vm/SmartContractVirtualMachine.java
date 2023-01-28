@@ -5,6 +5,7 @@ import exceptions.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
 import models.contract.SingleUseSeal;
+import models.dto.requests.event.EventTriggerRequest;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
@@ -12,6 +13,7 @@ import vm.types.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
@@ -26,6 +28,7 @@ public class SmartContractVirtualMachine {
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
     private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<String, SingleUseSeal>();
+    private final ArrayList<EventTriggerRequest> eventTriggersToRequest = new ArrayList<EventTriggerRequest>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
@@ -49,6 +52,10 @@ public class SmartContractVirtualMachine {
 
     public HashMap<String, SingleUseSeal> getSingleUseSealsToCreate() {
         return singleUseSealsToCreate;
+    }
+
+    public ArrayList<EventTriggerRequest> getEventTriggersToRequest() {
+        return eventTriggersToRequest;
     }
 
     public boolean execute() {
@@ -140,13 +147,11 @@ public class SmartContractVirtualMachine {
                         case "RAISE":
                             this.raiseOperation(instruction);
                             break;
+                        case "TRIGGER":
+                            this.triggerOperation(instruction);
+                            break;
                         case "HALT":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-                                break;
-                            }
-                            // Terminate the execution
-                            this.haltProgramExecution();
+                            this.haltOperation(instruction);
                             break;
                         default:
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
@@ -233,6 +238,16 @@ public class SmartContractVirtualMachine {
 
     // Instructions
 
+    private void haltOperation(String[] instruction) {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        // Terminate the execution
+        this.haltProgramExecution();
+    }
+
     private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
         if ((instruction.length - 1) < 2) {
             trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
@@ -286,6 +301,14 @@ public class SmartContractVirtualMachine {
                 break;
             case "asset":
                 stack.push(new AssetType(assetId, new FloatType(Integer.parseInt(value), Integer.parseInt(decimals))));
+                break;
+            case "time":
+                if (value.equals("now")) {
+                    long timestamp = System.currentTimeMillis() / 1000;
+                    stack.push(new TimeType((int) timestamp));
+                } else {
+                    stack.push(new TimeType(Integer.parseInt(value)));
+                }
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
@@ -354,6 +377,10 @@ public class SmartContractVirtualMachine {
                     firstVal.getInteger() + secondVal.getValue().getInteger(),
                     firstVal.getDecimals()
             );
+        } else if (first.getType().equals("time") && second.getType().equals("time")) {
+            TimeType firstVal = (TimeType) first;
+            TimeType secondVal = (TimeType) second;
+            result = new TimeType(firstVal.getValue() + secondVal.getValue());
         } else {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
@@ -674,6 +701,9 @@ public class SmartContractVirtualMachine {
             case "float":
                 dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
                 break;
+            case "time":
+                dataSpace.put(variableName, new TimeType());
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
@@ -921,6 +951,11 @@ public class SmartContractVirtualMachine {
 
                 stack.push(new BoolType(result));
                 break;
+            case "time":
+                TimeType firstTime = new TimeType((Integer) first.getValue());
+                TimeType secondTime = new TimeType((Integer) second.getValue());
+                stack.push(new BoolType(firstTime.getValue() == secondTime.getValue()));
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
         }
@@ -1095,6 +1130,9 @@ public class SmartContractVirtualMachine {
                 AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
                 argumentsSpace.put(variableName, value);
                 break;
+            case "time":
+                argumentsSpace.put(variableName, new TimeType());
+                break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
         }
@@ -1245,6 +1283,9 @@ public class SmartContractVirtualMachine {
             case "asset":
                 AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
                 globalSpace.put(variableName, new TraceChange(value, true));
+                break;
+            case "time":
+                globalSpace.put(variableName, new TraceChange(new TimeType(), true));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
@@ -1446,5 +1487,41 @@ public class SmartContractVirtualMachine {
             default:
                 trap.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
         }
+    }
+
+    private void triggerOperation(String[] instruction) throws StackUnderflowException {
+        if ((instruction.length - 1) < 1) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        if ((instruction.length - 1) > 1) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        String obligationFunctionName = instruction[1];
+
+        Type value = stack.pop();   // Time
+
+        if (!value.getType().equals("time")) {
+            trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        TimeType timeVal = (TimeType) value;
+
+        // Check that the value is not negative
+        if (timeVal.getValue() <= 0) {
+            trap.raiseError(TrapErrorCodes.LESS_THAN_ZERO, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        EventTriggerRequest eventTriggerRequest = new EventTriggerRequest(obligationFunctionName, timeVal.getValue());
+        eventTriggersToRequest.add(eventTriggerRequest);
+
+        System.out.println("triggerOperation: eventTriggersToRequest => " + eventTriggersToRequest);
+        System.out.println("triggerOperation: current timestamp => " + System.currentTimeMillis() / 1000);
+        System.out.println("triggerOperation: expire => " + eventTriggerRequest.getTime());
     }
 }
