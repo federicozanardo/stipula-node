@@ -1,34 +1,27 @@
 package models.dto.requests.event;
 
 public class EventTriggerRequest {
-    private final String contractId;
-    private final String contractInstanceId;
-    private final String obligationName;
+    private final String obligationFunctionName;
+    private final int time;
 
-    public EventTriggerRequest(String contractId, String contractInstanceId, String obligationName) {
-        this.contractId = contractId;
-        this.contractInstanceId = contractInstanceId;
-        this.obligationName = obligationName;
+    public EventTriggerRequest(String obligationFunctionName, int time) {
+        this.obligationFunctionName = obligationFunctionName;
+        this.time = time;
     }
 
-    public String getContractId() {
-        return contractId;
+    public String getObligationFunctionName() {
+        return obligationFunctionName;
     }
 
-    public String getContractInstanceId() {
-        return contractInstanceId;
-    }
-
-    public String getObligationName() {
-        return obligationName;
+    public int getTime() {
+        return time;
     }
 
     @Override
     public String toString() {
         return "EventTriggerRequest{" +
-                "contractId='" + contractId + '\'' +
-                ", contractInstanceId='" + contractInstanceId + '\'' +
-                ", functionName='" + obligationName + '\'' +
+                "obligationFunctionName='" + obligationFunctionName + '\'' +
+                ", time=" + time +
                 '}';
     }
 }

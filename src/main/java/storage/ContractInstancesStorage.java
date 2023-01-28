@@ -23,7 +23,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
 
     public ContractInstancesStorage() {
         this.storage = new HashMap<>();
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
     public void createContractInstance(ContractInstance instance) throws IOException {

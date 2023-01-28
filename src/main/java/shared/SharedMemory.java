@@ -10,10 +10,10 @@ public class SharedMemory<T> {
 
     public SharedMemory() {
         this.memory = new HashMap<>();
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
-    public String instantiate() { // TODO: call it "allocate"?
+    public String allocate() { // TODO: call it "allocate"?
         mutex.lock();
 
         String key = this.generateKey();

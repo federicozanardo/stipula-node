@@ -15,4 +15,11 @@ public class ContractCallByParty extends DfaState {
     public ArrayList<Address> getAuthorizedParties() {
         return authorizedParties;
     }
+
+    @Override
+    public String toString() {
+        return "ContractCallByParty{" +
+                "authorizedParties=" + authorizedParties +
+                '}';
+    }
 }

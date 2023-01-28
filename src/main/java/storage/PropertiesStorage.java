@@ -22,7 +22,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     private final ReentrantLock mutex;
 
     public PropertiesStorage() {
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
     public void seed() throws IOException {
@@ -53,6 +53,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         }
 
         mutex.unlock();
+        System.out.println("getFunds: mutex.isLocked() => " + mutex.isLocked());
         return funds;
     }
 

@@ -20,7 +20,7 @@ public class RequestQueue {
     public RequestQueue() {
         this.functionCallRequests = new Queue<>(100);
         this.triggerRequests = new Queue<>(100);
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
     /**

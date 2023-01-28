@@ -20,7 +20,7 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     private final ReentrantLock mutex;
 
     public AssetsStorage() {
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
     public void seed() throws IOException {

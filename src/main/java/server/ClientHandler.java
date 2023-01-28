@@ -3,7 +3,6 @@ package server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
-import event.EventTriggerHandler;
 import exceptions.queue.QueueOverflowException;
 import models.contract.Property;
 import models.dto.requests.Message;
@@ -31,7 +30,6 @@ import java.util.ArrayList;
 public class ClientHandler extends Thread {
     private final Socket socket;
     private final RequestQueue requestQueue;
-    private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
@@ -42,7 +40,6 @@ public class ClientHandler extends Thread {
             String name,
             Socket socket,
             RequestQueue requestQueue,
-            EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
@@ -53,7 +50,6 @@ public class ClientHandler extends Thread {
         this.socket = socket;
         this.sharedMemory = sharedMemory;
         this.requestQueue = requestQueue;
-        this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
         this.contractsStorage = contractsStorage;
         this.propertiesStorage = propertiesStorage;
@@ -94,7 +90,7 @@ public class ClientHandler extends Thread {
                     Message message = signedMessage.getMessage();
 
                     if (message instanceof DeployContract) {
-                        String threadName = this.sharedMemory.instantiate();
+                        String threadName = this.sharedMemory.allocate();
                         System.out.println("ClientHandler: threadName => " + threadName);
 
                         // Set up and start a compiler thread
@@ -102,7 +98,6 @@ public class ClientHandler extends Thread {
                                 threadName,
                                 this,
                                 (DeployContract) message,
-                                eventTriggerHandler,
                                 sharedMemory,
                                 contractsStorage
                         ).start();

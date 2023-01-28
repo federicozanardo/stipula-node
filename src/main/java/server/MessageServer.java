@@ -1,6 +1,5 @@
 package server;
 
-import event.EventTriggerHandler;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.asset.GetAssetById;
 import models.dto.requests.contract.agreement.AgreementCall;
@@ -22,7 +21,6 @@ public class MessageServer implements Runnable {
     private final int port;
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
-    private final EventTriggerHandler eventTriggerHandler;
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
@@ -31,7 +29,6 @@ public class MessageServer implements Runnable {
     public MessageServer(
             int port,
             RequestQueue requestQueue,
-            EventTriggerHandler eventTriggerHandler,
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
@@ -39,7 +36,6 @@ public class MessageServer implements Runnable {
     ) {
         this.port = port;
         this.requestQueue = requestQueue;
-        this.eventTriggerHandler = eventTriggerHandler;
         this.virtualMachine = virtualMachine;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
@@ -99,12 +95,11 @@ public class MessageServer implements Runnable {
                         System.out.println("MessageServer: New client");
                         System.out.println("MessageServer: Delegating the client communication with a dedicated thread...");
 
-                        String threadName = this.sharedMemory.instantiate();
+                        String threadName = this.sharedMemory.allocate();
                         new ClientHandler(
                                 threadName,
                                 socket,
                                 requestQueue,
-                                eventTriggerHandler,
                                 virtualMachine,
                                 sharedMemory,
                                 contractsStorage,

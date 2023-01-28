@@ -18,7 +18,7 @@ public class ContractsStorage extends StorageSerializer<Contract> {
     private final ReentrantLock mutex;
 
     public ContractsStorage() {
-        mutex = new ReentrantLock();
+        this.mutex = new ReentrantLock();
     }
 
     public String addContract(Contract contract) throws IOException {
