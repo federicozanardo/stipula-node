@@ -21,7 +21,6 @@ public class EventTriggerHandler {
     public void addTask(EventTrigger task) {
         mutex.lock();
 
-        // timer.schedule(task, task.getSchedulingRequest().getRequest().getTime() * 1000L);
         timer.schedule(task, new Date(task.getSchedulingRequest().getRequest().getTime() * 1000L));
         tasks.add(task);
 
