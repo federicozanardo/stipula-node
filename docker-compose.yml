@@ -8,10 +8,6 @@ services:
       - 127.0.0.1:61000:61000
     volumes:
       - stipula-storage:/usr/app/storage/
-#      - stipula-storage:/usr/app/storage/assets/
-#      - stipula-storage:/usr/app/storage/contracts/
-#      - stipula-storage:/usr/app/storage/contract-instances/
-#      - stipula-storage:/usr/app/storage/properties/
     environment:
       - SEED=no
 
