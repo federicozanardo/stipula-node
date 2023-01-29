@@ -4,13 +4,13 @@ What does it include?
 - [x] Message layer (API)
   - [x] Handle the socket 
   - [x] Handle the messages
-- [ ] Execution layer
+- [x] Execution layer
   - [x] Stipula Virtual Machine (SVM)
     - [x] Smart Contract Virtual Machine
     - [x] Script Virtual Machine
-  - [ ] Handle triggers
+  - [x] Handle triggers
     - [x] Thread management
-    - [ ] Develop code for virtual machine
+    - [x] Develop code for virtual machine
 - [ ] Deploy a contract
   - [x] Handle the request 
   - [ ] Stipula compiler 
@@ -23,8 +23,11 @@ The node is able to:
 - [x] Call functions
 - [x] Keep the state of the contract
 - [x] Manage addresses
-- [ ] Manage assets
+- [x] Manage assets
 - [x] Create and manage a contract instances
+- [x] Manage storage
+- [x] Add Docker support
+- [x] Manage event trigger
 
 ## How to run a node?
 
