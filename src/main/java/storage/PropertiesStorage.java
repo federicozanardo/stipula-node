@@ -43,15 +43,17 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     public ArrayList<Property> getFunds(String address) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
             // Error: this contractInstanceId does not exist
+            levelDb.close();
             mutex.unlock();
             return null;
         }
 
+        levelDb.close();
         mutex.unlock();
         System.out.println("getFunds: mutex.isLocked() => " + mutex.isLocked());
         return funds;
@@ -60,11 +62,12 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     public Property getFund(String address, String propertyId) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
             // Error: this contractInstanceId does not exist
+            levelDb.close();
             mutex.unlock();
             return null;
         }
@@ -86,6 +89,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
 
         if (!found) {
             // Error
+            levelDb.close();
             mutex.unlock();
             return null;
         }
@@ -98,7 +102,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     public void addFund(String address, Property fund) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = null;
 
         try {
@@ -119,7 +123,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
 
     public void addFunds(HashMap<String, SingleUseSeal> funds) throws IOException {
         mutex.lock();
-        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
 
         for (HashMap.Entry<String, SingleUseSeal> entry : funds.entrySet()) {
             String address = entry.getKey();
@@ -159,7 +163,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     ) throws Exception {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
         System.out.println("makePropertySpent: currentFunds => " + funds);
 

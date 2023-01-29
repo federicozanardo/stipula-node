@@ -29,7 +29,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     public void createContractInstance(ContractInstance instance) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
         levelDb.put(bytes(instance.getInstanceId()), this.serialize(instance));
         levelDb.close();
 
@@ -39,10 +39,11 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     public ContractInstance getContractInstance(String contractInstanceId) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
         ContractInstance instance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
         if (instance == null) {
             // Error: this contractInstanceId does not exist
+            levelDb.close();
             mutex.unlock();
             return null;
         }
@@ -55,7 +56,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     public void storeGlobalStorage(HashMap<String, TraceChange> updates, ContractInstance instance) throws IOException {
         mutex.lock();
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
 
         System.out.println("storeGlobalSpace: " + instance.getGlobalVariables());
 

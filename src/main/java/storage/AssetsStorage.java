@@ -36,9 +36,9 @@ public class AssetsStorage extends StorageSerializer<Asset> {
         String assetId = UUID.randomUUID().toString();
         Asset asset = new Asset(assetId, assetConfig);
 
-        this.levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
-        this.levelDb.put(bytes(assetId), this.serialize(asset));
-        this.levelDb.close();
+        levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
+        levelDb.put(bytes(assetId), this.serialize(asset));
+        levelDb.close();
 
         mutex.unlock();
         return assetId;
@@ -46,16 +46,17 @@ public class AssetsStorage extends StorageSerializer<Asset> {
 
     public Asset getAsset(String assetId) throws IOException {
         mutex.lock();
-        this.levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
+        levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
 
-        Asset asset = this.deserialize(this.levelDb.get(bytes(assetId)));
+        Asset asset = this.deserialize(levelDb.get(bytes(assetId)));
         if (asset == null) {
-            mutex.unlock();
             // Error: this contractInstanceId does not exist
+            levelDb.close();
+            mutex.unlock();
             return null;
         }
 
-        this.levelDb.close();
+        levelDb.close();
         mutex.unlock();
         return asset;
     }
