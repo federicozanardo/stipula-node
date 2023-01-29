@@ -164,6 +164,11 @@ class Main {
             System.out.println("setup: seeding...");
             assetsStorage.seed();
             propertiesStorage.seed();
+        } else if (value.equals("no")) {
+            System.out.println("setup: no need of seeding process");
+        } else {
+            System.out.println("setup: error, value not correct");
+            System.exit(-1);
         }
     }
 }
