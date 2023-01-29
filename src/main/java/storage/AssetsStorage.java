@@ -2,14 +2,12 @@ package storage;
 
 import constants.Constants;
 import models.assets.Asset;
-import models.assets.AssetConfig;
 import models.assets.FungibleAsset;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
@@ -24,24 +22,17 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     }
 
     public void seed() throws IOException {
+
         FungibleAsset bitcoin = new FungibleAsset("Bitcoin", "BTC", 10000, 2);
-        String assetId = this.addAsset(bitcoin);
-        System.out.println("seed: assetId => " + assetId);
-    }
-
-    public String addAsset(AssetConfig assetConfig) throws IOException {
-        mutex.lock();
-
-        // TODO: check that the id is unique
-        String assetId = UUID.randomUUID().toString();
-        Asset asset = new Asset(assetId, assetConfig);
+        String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
+        Asset asset = new Asset(assetId, bitcoin);
 
         levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
         levelDb.put(bytes(assetId), this.serialize(asset));
         levelDb.close();
 
-        mutex.unlock();
-        return assetId;
+        System.out.println("seed: assetId => " + assetId);
+
     }
 
     public Asset getAsset(String assetId) throws IOException {

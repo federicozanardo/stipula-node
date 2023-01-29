@@ -1,0 +1,19 @@
+version: "3.3"
+services:
+  node:
+    container_name: "stipula-node"
+    image: stipula-node:v0.2.0
+    ports:
+      - 127.0.0.1:8080:8080
+      - 127.0.0.1:61000:61000
+    volumes:
+      - stipula-storage:/usr/app/storage/
+#      - stipula-storage:/usr/app/storage/assets/
+#      - stipula-storage:/usr/app/storage/contracts/
+#      - stipula-storage:/usr/app/storage/contract-instances/
+#      - stipula-storage:/usr/app/storage/properties/
+    environment:
+      - SEED=no
+
+volumes:
+  stipula-storage:

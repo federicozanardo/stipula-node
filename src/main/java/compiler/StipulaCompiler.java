@@ -1,6 +1,5 @@
 package compiler;
 
-import constants.Constants;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.contract.Contract;
@@ -59,7 +58,77 @@ public class StipulaCompiler extends Thread {
 
         System.out.println("StipulaCompiler: Compilation successful");
 
-        String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
+        // String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
+
+        String bytecode = "contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e\n" +
+                "fn agreement\n" +
+                "global:\n" +
+                "GINST addr Lender\n" +
+                "GINST addr Borrower\n" +
+                "GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n" +
+                "GINST float cost 2\n" +
+                "GINST time rent_time\n" +
+                "GINST int use_code\n" +
+                "args:\n" +
+                "PUSH addr :Lender\n" +
+                "GSTORE Lender\n" +
+                "PUSH addr :Borrower\n" +
+                "GSTORE Borrower\n" +
+                "PUSH float :cost\n" +
+                "GSTORE cost\n" +
+                "PUSH time :rent_time\n" +
+                "GSTORE rent_time\n" +
+                "start:\n" +
+                "HALT\n" +
+                "fn offer Lender Proposal\n" +
+                "args:\n" +
+                "PUSH int :z\n" +
+                "AINST int z\n" +
+                "ASTORE z\n" +
+                "start:\n" +
+                "ALOAD z\n" +
+                "GSTORE use_code\n" +
+                "HALT\n" +
+                "fn accept Borrower Using\n" +
+                "args:\n" +
+                "PUSH asset :y\n" +
+                "AINST asset y 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n" +
+                "ASTORE y\n" +
+                "start:\n" +
+                "ALOAD y\n" +
+                "GLOAD cost\n" +
+                "ISEQ\n" +
+                "JMPIF if_branch\n" +
+                "RAISE AMOUNT_NOT_EQUAL\n" +
+                "JMP end\n" +
+                "if_branch:\n" +
+                "ALOAD y\n" +
+                "GLOAD wallet\n" +
+                "DEPOSIT wallet\n" +
+                "PUSH time now\n" +
+                "GLOAD rent_time\n" +
+                "ADD\n" +
+                "TRIGGER accept_obl_1\n" +
+                "end:\n" +
+                "HALT\n" +
+                "fn end Borrower End\n" +
+                "start:\n" +
+                "PUSH float 100 2\n" +
+                "GLOAD wallet\n" +
+                "MUL\n" +
+                "GLOAD wallet\n" +
+                "GLOAD Lender\n" +
+                "WITHDRAW wallet\n" +
+                "HALT\n" +
+                "obligation accept_obl_1 End\n" +
+                "start:\n" +
+                "PUSH float 100 2\n" +
+                "GLOAD wallet\n" +
+                "MUL\n" +
+                "GLOAD wallet\n" +
+                "GLOAD Lender\n" +
+                "WITHDRAW wallet\n" +
+                "HALT";
 
         // Load the DFA
         Address lenderAddr;
@@ -128,47 +197,6 @@ public class StipulaCompiler extends Thread {
         System.out.println("StipulaCompiler:compile => " + this.contractToDeploy);
         return true;
     }
-
-    /*private void setupContract() throws NoSuchAlgorithmException {
-        String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
-
-        // Load the DFA
-        Address lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
-        Address borrowerAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB");
-
-        ArrayList<Address> authorizedParties1 = new ArrayList<Address>();
-        authorizedParties1.add(lenderAddr);
-        ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
-        authorizedParties2.add(borrowerAddr);
-
-        ArrayList<Pair<String, DfaState>> transitions = new ArrayList<>();
-        transitions.add(new Pair<String, DfaState>(
-                        "Inactive",
-                        new ContractCallByParty("Proposal", authorizedParties1)
-                )
-        );
-        transitions.add(new Pair<String, DfaState>(
-                        "Proposal",
-                        new ContractCallByParty("Using", authorizedParties2)
-                )
-        );
-        transitions.add(new Pair<String, DfaState>(
-                        "Using",
-                        new ContractCallByParty("End", authorizedParties2)
-                )
-        );
-
-        ArrayList<String> endStates = new ArrayList<>();
-        endStates.add("End");
-
-        Contract contract = new Contract(
-                "",
-                bytecode,
-                "Inactive",
-                endStates,
-                transitions
-        );
-    }*/
 
     private String readProgram(String pathname) {
         String bytecode = "";

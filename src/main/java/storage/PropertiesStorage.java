@@ -26,18 +26,34 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     }
 
     public void seed() throws IOException {
-        FloatType amount = new FloatType(1200, 2);
-        SingleUseSeal singleUseSeal = new SingleUseSeal(
-                "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac",
-                amount,
-                "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=" // borrowerAddress
-        );
 
-        String propertyId = UUID.randomUUID().toString();
+        String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
+        String borrowerAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
+        String propertyId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
+        FloatType amount = new FloatType(1200, 2);
+
+        SingleUseSeal singleUseSeal = new SingleUseSeal(assetId, amount, borrowerAddress);
         Property property = new Property(propertyId, singleUseSeal);
-        this.addFund("f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=", property);
+
+        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
+        ArrayList<Property> funds = null;
+
+        try {
+            funds = this.deserialize(levelDb.get(bytes(borrowerAddress)));
+        } catch (Exception exception) {
+            System.out.println("seed: This address does not have any asset saved in the storage");
+        }
+
+        if (funds == null) {
+            funds = new ArrayList<>();
+        }
+
+        funds.add(property);
+        levelDb.put(bytes(borrowerAddress), this.serialize(funds));
+        levelDb.close();
 
         System.out.println("seed: propertyId => " + propertyId);
+
     }
 
     public ArrayList<Property> getFunds(String address) throws IOException {
@@ -97,28 +113,6 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         levelDb.close();
         mutex.unlock();
         return fund;
-    }
-
-    public void addFund(String address, Property fund) throws IOException {
-        mutex.lock();
-
-        levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
-        ArrayList<Property> funds = null;
-
-        try {
-            funds = this.deserialize(levelDb.get(bytes(address)));
-        } catch (Exception exception) {
-            System.out.println("addFund: This address does not have any asset saved in the storage");
-        }
-
-        if (funds == null) {
-            funds = new ArrayList<>();
-        }
-
-        funds.add(fund);
-        levelDb.put(bytes(address), this.serialize(funds));
-        levelDb.close();
-        mutex.unlock();
     }
 
     public void addFunds(HashMap<String, SingleUseSeal> funds) throws IOException {
