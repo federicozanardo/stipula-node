@@ -24,11 +24,11 @@ public class ContractsStorage extends StorageSerializer<Contract> {
     public String addContract(Contract contract) throws IOException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
-        
+
         // TODO: check that the id is unique
         String contractId = UUID.randomUUID().toString();
         levelDb.put(bytes(contractId), this.serialize(contract));
-        
+
         levelDb.close();
         mutex.unlock();
         return contractId;

@@ -1,7 +1,5 @@
 package vm;
 
-import event.EventTrigger;
-import event.EventTriggerHandler;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
 import models.address.Address;
@@ -22,6 +20,8 @@ import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
 import storage.*;
 import vm.dfa.DeterministicFiniteAutomata;
+import vm.event.EventTrigger;
+import vm.event.EventTriggerHandler;
 import vm.types.AssetType;
 import vm.types.FloatType;
 import vm.types.TraceChange;

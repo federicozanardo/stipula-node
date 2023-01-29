@@ -1,4 +1,3 @@
-import event.EventTriggerHandler;
 import models.dto.responses.Response;
 import server.MessageServer;
 import shared.SharedMemory;
@@ -8,8 +7,7 @@ import storage.ContractsStorage;
 import storage.PropertiesStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
-
-import java.io.IOException;
+import vm.event.EventTriggerHandler;
 
 class Main {
     public static void main(String[] args) {

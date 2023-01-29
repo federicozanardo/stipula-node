@@ -1,4 +1,4 @@
-package event;
+package vm.event;
 
 import exceptions.queue.QueueOverflowException;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
