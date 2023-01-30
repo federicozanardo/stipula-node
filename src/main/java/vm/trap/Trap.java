@@ -99,7 +99,7 @@ public class Trap {
     }
 
     public boolean isEmptyStack() {
-        return !this.stack.isEmpty();
+        return this.stack.isEmpty();
     }
 
     public String printStack() {

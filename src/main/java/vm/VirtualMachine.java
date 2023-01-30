@@ -461,7 +461,7 @@ public class VirtualMachine extends Thread {
                 String[] instructions = script.split("\n");
 
                 System.out.println("loadAssetArguments: Start validating the script...");
-                ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions);
+                ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions, propertyFromStorage.getId());
 
                 // Execute the code
                 boolean result = vm.execute();

@@ -60,7 +60,7 @@ public class SmartContractVirtualMachine {
 
     public boolean execute() {
         while (isRunning) {
-            if (trap.isEmptyStack()) {
+            if (!trap.isEmptyStack()) {
                 haltProgramExecution();
                 break;
             }
@@ -165,7 +165,7 @@ public class SmartContractVirtualMachine {
             }
         }
 
-        if (trap.isEmptyStack()) {
+        if (!trap.isEmptyStack()) {
             System.out.println("\nErrors in the stack");
             System.out.println(trap.printStack());
             return false;

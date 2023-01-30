@@ -20,19 +20,21 @@ import static lib.crypto.Crypto.verify;
 
 public class ScriptVirtualMachine {
     private final String[] instructions;
+    private final String propertyId;
     private boolean isRunning = true;
     private int executionPointer = -1;
     private final Stack<Type> stack = new Stack<Type>(10);
     private final Trap trap;
 
-    public ScriptVirtualMachine(String[] instructions) {
+    public ScriptVirtualMachine(String[] instructions, String propertyId) {
         this.instructions = instructions;
+        this.propertyId = propertyId;
         this.trap = new Trap(0);
     }
 
     public boolean execute() throws Exception {
         while (isRunning) {
-            if (trap.isEmptyStack()) {
+            if (!trap.isEmptyStack()) {
                 haltProgramExecution();
                 break;
             }
@@ -43,6 +45,7 @@ public class ScriptVirtualMachine {
                 String[] instruction = singleInstruction.split(" ");
 
                 if (!(instruction.length == 1 && instruction[0].endsWith(":"))) {
+                    System.out.println("execute: instruction => " + instruction[0]);
                     switch (instruction[0]) {
                         case "PUSH":
                             this.pushOperation(instruction);
@@ -60,12 +63,7 @@ public class ScriptVirtualMachine {
                             this.checksigOperation(instruction);
                             break;
                         case "HALT":
-                            if ((instruction.length - 1) > 0) {
-                                trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-                                break;
-                            }
-                            // Terminate the execution
-                            this.haltProgramExecution();
+                            this.haltOperation(instruction);
                             break;
                         default:
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
@@ -77,6 +75,12 @@ public class ScriptVirtualMachine {
                 System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
                 throw new RuntimeException(error);
             }
+        }
+
+        if (!trap.isEmptyStack()) {
+            System.out.println("\nErrors in the stack");
+            System.out.println(trap.printStack());
+            return false;
         }
 
         if (stack.isEmpty()) {
@@ -103,12 +107,6 @@ public class ScriptVirtualMachine {
             return false;
         }
 
-        if (trap.isEmptyStack()) {
-            System.out.println("\nErrors in the stack");
-            System.out.println(trap.printStack());
-            return false;
-        }
-
         System.out.println("Final state of the execution below");
 
         System.out.println("\nGlobal state of the execution" +
@@ -123,6 +121,16 @@ public class ScriptVirtualMachine {
 
     private void haltProgramExecution() {
         isRunning = false;
+    }
+
+    private void haltOperation(String[] instruction) {
+        if ((instruction.length - 1) > 0) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
+        // Terminate the execution
+        this.haltProgramExecution();
     }
 
     private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
@@ -223,8 +231,9 @@ public class ScriptVirtualMachine {
         StrType publicKey = (StrType) second;
 
         // Verify the signature
-        BoolType result = new BoolType(verify("aaa111", signature.getValue(), getPublicKeyFromString(publicKey.getValue())));
+        BoolType result = new BoolType(verify(propertyId, signature.getValue(), getPublicKeyFromString(publicKey.getValue())));
 
         stack.push(result);
+        System.out.println("checksigOperation: stack => " + stack);
     }
 }
