@@ -2,7 +2,7 @@ version: "3.3"
 services:
   node:
     container_name: "stipula-node"
-    image: stipula-node:v0.2.0
+    image: stipula-node:v0.2.1
     ports:
       - 127.0.0.1:8080:8080
       - 127.0.0.1:61000:61000
