@@ -12,6 +12,7 @@ public class Trap {
     private final HashMap<TrapErrorCodes, String> errors = new HashMap<TrapErrorCodes, String>() {
         {
             this.put(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, "Asset ids do not match");
+            this.put(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, "The cryptographic algorithm requested does not exist");
             this.put(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, "The decimals of the two variables do not match");
             this.put(TrapErrorCodes.DIVISION_BY_ZERO, "Division by zero");
             this.put(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, "This error code does not exist");
@@ -40,6 +41,10 @@ public class Trap {
         this.offset = offset;
     }
 
+    /**
+     * @param errorCode
+     * @param line
+     */
     public void raiseError(TrapErrorCodes errorCode, int line) {
         if (!errors.containsKey(errorCode)) {
             this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line);
@@ -47,6 +52,11 @@ public class Trap {
         this.pushTrapError(errorCode, errors.get(errorCode), line);
     }
 
+    /**
+     * @param errorCode
+     * @param line
+     * @param instruction
+     */
     public void raiseError(TrapErrorCodes errorCode, int line, String instruction) {
         if (!errors.containsKey(errorCode)) {
             this.raiseError(TrapErrorCodes.ERROR_CODE_DOES_NOT_EXISTS, line, instruction);
@@ -54,55 +64,95 @@ public class Trap {
         this.pushTrapError(errorCode, errors.get(errorCode), line, instruction);
     }
 
+    /**
+     * @param errorCode
+     * @param errorMessage
+     * @param line
+     */
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line) {
         try {
-            this.stack
-                    .push(new StrType(errorCode.toString() +
-                            " at line " + (line + 1 + this.offset) +
-                            ": " + errorMessage));
+            stack.push(new StrType(errorCode.toString() +
+                    " at line " + (line + 1 + offset) +
+                    ": " + errorMessage));
         } catch (StackOverflowException error) {
-            System.exit(-1);
+            System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
+                    "\nerrorCode: " + errorCode +
+                    "\nerrorMessage: " + errorMessage +
+                    "\nline: " + line);
         }
     }
 
+    /**
+     * @param errorCode
+     * @param errorMessage
+     * @param line
+     */
     public void pushTrapError(String errorCode, String errorMessage, int line) {
         try {
-            this.stack
-                    .push(new StrType(errorCode +
-                            " at line " + (line + 1 + this.offset) +
-                            ": " + errorMessage));
+            stack.push(new StrType(errorCode +
+                    " at line " + (line + 1 + offset) +
+                    ": " + errorMessage));
         } catch (StackOverflowException error) {
-            System.exit(-1);
+            System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
+                    "\nerrorCode: " + errorCode +
+                    "\nerrorMessage: " + errorMessage +
+                    "\nline: " + line);
         }
     }
 
+    /**
+     * @param errorCode
+     * @param errorMessage
+     * @param line
+     * @param instruction
+     */
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, String instruction) {
         try {
-            this.stack.push(new StrType(errorCode.toString() +
-                    " at line " + (line + 1 + this.offset) +
+            stack.push(new StrType(errorCode.toString() +
+                    " at line " + (line + 1 + offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
         } catch (StackOverflowException error) {
-            System.exit(-1);
+            System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
+                    "\nerrorCode: " + errorCode +
+                    "\nerrorMessage: " + errorMessage +
+                    "\nline: " + line +
+                    "\ninstruction: " + instruction);
         }
     }
 
+    /**
+     * @param errorCode
+     * @param errorMessage
+     * @param line
+     * @param instruction
+     */
     public void pushTrapError(String errorCode, String errorMessage, int line, String instruction) {
         try {
-            this.stack.push(new StrType(errorCode +
-                    " at line " + (line + 1 + this.offset) +
+            stack.push(new StrType(errorCode +
+                    " at line " + (line + 1 + offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
         } catch (StackOverflowException error) {
-            System.exit(-1);
+            System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
+                    "\nerrorCode: " + errorCode +
+                    "\nerrorMessage: " + errorMessage +
+                    "\nline: " + line +
+                    "\ninstruction: " + instruction);
         }
     }
 
-    public boolean isEmptyStack() {
-        return this.stack.isEmpty();
+    /**
+     * @return
+     */
+    public boolean isStackEmpty() {
+        return stack.isEmpty();
     }
 
+    /**
+     * @return
+     */
     public String printStack() {
-        return this.stack.toString();
+        return stack.toString();
     }
 }

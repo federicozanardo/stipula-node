@@ -6,6 +6,11 @@ public enum TrapErrorCodes {
             return "ASSET_IDS_DOES_NOT_MATCH";
         }
     },
+    CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS {
+        public String toString() {
+            return "CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS";
+        }
+    },
     DECIMALS_DOES_NOT_MATCH {
         public String toString() {
             return "DECIMALS_DOES_NOT_MATCH";
