@@ -1,5 +1,6 @@
 package vm;
 
+import exceptions.message.MessageNotSupportedException;
 import exceptions.queue.QueueOverflowException;
 import exceptions.queue.QueueUnderflowException;
 import lib.datastructures.Pair;
@@ -30,7 +31,7 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(Thread thread, String threadNameToNotify, SignedMessage value) throws QueueOverflowException {
+    public void enqueue(Thread thread, String threadNameToNotify, SignedMessage value) throws QueueOverflowException, MessageNotSupportedException {
         Message message = value.getMessage();
 
         if (message instanceof AgreementCall || message instanceof FunctionCall) {
@@ -42,7 +43,7 @@ public class RequestQueue {
             functionCallRequests.enqueue(new Pair<>(thread, new Pair<>(threadNameToNotify, value)));
             mutex.unlock();
         } else {
-            throw new Error();
+            throw new MessageNotSupportedException("The only messages supported are AgreementCall and FunctionCall");
         }
     }
 
