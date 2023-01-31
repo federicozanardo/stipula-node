@@ -144,7 +144,7 @@ public class ScriptVirtualMachine {
         this.haltProgramExecution();
     }
 
-    private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
+    private void pushOperation(String[] instruction) throws StackOverflowException {
         if (this.argumentsAreLessThan(instruction, 2)) {
             return;
         }
