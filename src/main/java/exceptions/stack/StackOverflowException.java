@@ -1,13 +1,12 @@
 package exceptions.stack;
 
-
-import exceptions.trap.TrapException;
-import vm.trap.TrapErrorCodes;
-
-public class StackOverflowException extends TrapException {
+public class StackOverflowException extends Exception {
 
     public StackOverflowException() {
-        super(TrapErrorCodes.STACK_OVERFLOW);
+        super();
     }
 
+    public StackOverflowException(String message) {
+        super(message);
+    }
 }

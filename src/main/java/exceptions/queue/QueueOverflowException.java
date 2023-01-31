@@ -1,11 +1,12 @@
 package exceptions.queue;
 
-import vm.trap.TrapErrorCodes;
-
-public class QueueOverflowException extends QueueException {
+public class QueueOverflowException extends Exception {
 
     public QueueOverflowException() {
-        super(TrapErrorCodes.QUEUE_OVERFLOW);
+        super();
     }
 
+    public QueueOverflowException(String message) {
+        super(message);
+    }
 }
