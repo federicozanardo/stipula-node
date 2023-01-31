@@ -34,7 +34,7 @@ public class ScriptVirtualMachine {
 
     public boolean execute() throws Exception {
         while (isRunning) {
-            if (!trap.isEmptyStack()) {
+            if (!trap.isStackEmpty()) {
                 haltProgramExecution();
                 break;
             }
@@ -45,7 +45,6 @@ public class ScriptVirtualMachine {
                 String[] instruction = singleInstruction.split(" ");
 
                 if (!(instruction.length == 1 && instruction[0].endsWith(":"))) {
-                    System.out.println("execute: instruction => " + instruction[0]);
                     switch (instruction[0]) {
                         case "PUSH":
                             this.pushOperation(instruction);
@@ -69,41 +68,40 @@ public class ScriptVirtualMachine {
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
-            } catch (StackOverflowException | StackUnderflowException error) {
-                trap.raiseError(error.getCode(), executionPointer);
-            } catch (NoSuchAlgorithmException error) {
-                System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
-                throw new RuntimeException(error);
+            } catch (StackOverflowException error) {
+                trap.raiseError(TrapErrorCodes.STACK_OVERFLOW, executionPointer);
+            } catch (StackUnderflowException error) {
+                trap.raiseError(TrapErrorCodes.STACK_UNDERFLOW, executionPointer);
             }
         }
 
-        if (!trap.isEmptyStack()) {
-            System.out.println("\nErrors in the stack");
+        if (!trap.isStackEmpty()) {
+            System.out.println("\nexecute: Errors in the stack");
             System.out.println(trap.printStack());
             return false;
         }
 
         if (stack.isEmpty()) {
-            System.out.println("execute: Stack => The stack is empty");
+            System.out.println("execute: The stack is empty");
             return false;
         }
 
         Type value = stack.pop();
 
         if (!stack.isEmpty()) {
-            System.out.println("execute: Stack => There is more than one value in the stack");
+            System.out.println("execute: There is more than one value in the stack");
             return false;
         }
 
         if (!value.getType().equals("bool")) {
-            System.out.println("execute: Stack => The last value in the stack is not a boolean");
+            System.out.println("execute: The last value in the stack is not a boolean");
             return false;
         }
 
         BoolType boolVal = (BoolType) value;
 
         if (!boolVal.getValue()) {
-            System.out.println("execute: Stack => The funds can't be use. The script can't be unlocked");
+            System.out.println("execute: The funds can't be used. The script can't be unlocked");
             return false;
         }
 
@@ -111,10 +109,8 @@ public class ScriptVirtualMachine {
 
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + isRunning +
-                "\ni -> " + executionPointer +
-                "\ni (with offset) -> " + executionPointer +
-                "\nlength of the program -> " + instructions.length +
-                "\nlength of the program (with offset) -> " + instructions.length);
+                "\nexecutionPointer -> " + executionPointer +
+                "\nlength of the program -> " + instructions.length);
 
         return !isRunning;
     }
@@ -123,9 +119,24 @@ public class ScriptVirtualMachine {
         isRunning = false;
     }
 
-    private void haltOperation(String[] instruction) {
-        if ((instruction.length - 1) > 0) {
+    private boolean argumentsAreMoreThan(String[] instruction, int num) {
+        if ((instruction.length - 1) > num) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean argumentsAreLessThan(String[] instruction, int num) {
+        if ((instruction.length - 1) < num) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return true;
+        }
+        return false;
+    }
+
+    private void haltOperation(String[] instruction) {
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -134,13 +145,11 @@ public class ScriptVirtualMachine {
     }
 
     private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 2)) {
             return;
         }
 
-        if ((instruction.length - 1) > 2) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 2)) {
             return;
         }
 
@@ -156,19 +165,17 @@ public class ScriptVirtualMachine {
     }
 
     private void dupOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
-        Type first = stack.pop();
-        stack.push(first);
-        stack.push(first);
+        Type value = stack.pop();
+        stack.push(value);
+        stack.push(value);
     }
 
     private void sha256Operation(String[] instruction) throws StackUnderflowException, StackOverflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -191,8 +198,7 @@ public class ScriptVirtualMachine {
     }
 
     private void equalOperation(String[] instruction) throws StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -214,8 +220,7 @@ public class ScriptVirtualMachine {
     }
 
     private void checksigOperation(String[] instruction) throws Exception {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -234,6 +239,5 @@ public class ScriptVirtualMachine {
         BoolType result = new BoolType(verify(propertyId, signature.getValue(), getPublicKeyFromString(publicKey.getValue())));
 
         stack.push(result);
-        System.out.println("checksigOperation: stack => " + stack);
     }
 }
