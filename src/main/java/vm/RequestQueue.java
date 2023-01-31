@@ -24,6 +24,8 @@ public class RequestQueue {
     }
 
     /**
+     * This method enqueue a request received from a client.
+     *
      * @param thread
      * @param value
      * @throws QueueOverflowException
@@ -33,11 +35,11 @@ public class RequestQueue {
 
         if (message instanceof AgreementCall || message instanceof FunctionCall) {
             mutex.lock();
-            if (this.functionCallRequests.isFull()) {
+            if (functionCallRequests.isFull()) {
                 mutex.unlock();
                 throw new QueueOverflowException();
             }
-            this.functionCallRequests.enqueue(new Pair<>(thread, new Pair<>(threadNameToNotify, value)));
+            functionCallRequests.enqueue(new Pair<>(thread, new Pair<>(threadNameToNotify, value)));
             mutex.unlock();
         } else {
             throw new Error();
@@ -50,15 +52,17 @@ public class RequestQueue {
      */
     public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
-        if (this.triggerRequests.isFull()) {
+        if (triggerRequests.isFull()) {
             mutex.unlock();
             throw new QueueOverflowException();
         }
-        this.triggerRequests.enqueue(new Pair<>(null, new Pair<>(null, value)));
+        triggerRequests.enqueue(new Pair<>(null, new Pair<>(null, value)));
         mutex.unlock();
     }
 
     /**
+     * This method dequeue a request. It gives priority to the event trigger requests.
+     *
      * @return
      * @throws QueueUnderflowException
      */
@@ -66,18 +70,18 @@ public class RequestQueue {
         Pair<Thread, Pair<String, Object>> request;
         mutex.lock();
 
-        if (!this.triggerRequests.isEmpty()) {
-            request = this.triggerRequests.dequeue();
+        if (!triggerRequests.isEmpty()) {
+            request = triggerRequests.dequeue();
             mutex.unlock();
             return request;
         }
 
-        if (this.functionCallRequests.isEmpty()) {
+        if (functionCallRequests.isEmpty()) {
             mutex.unlock();
             throw new QueueUnderflowException();
         }
 
-        request = this.functionCallRequests.dequeue();
+        request = functionCallRequests.dequeue();
         mutex.unlock();
         return request;
     }
@@ -87,7 +91,6 @@ public class RequestQueue {
         return "RequestQueue{" +
                 "functionCallRequests=" + functionCallRequests +
                 ", triggerRequests=" + triggerRequests +
-                ", mutex=" + mutex +
                 '}';
     }
 }
