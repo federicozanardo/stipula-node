@@ -18,6 +18,9 @@ public class TraceChange {
         return value;
     }
 
+    /**
+     * @return true, if the value is changed,; false, otherwise.
+     */
     public boolean isChanged() {
         return isChanged;
     }

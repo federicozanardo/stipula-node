@@ -34,10 +34,16 @@ public class FloatType extends Type implements Serializable {
         return d.setScale(this.decimals, RoundingMode.CEILING);
     }
 
+    /**
+     * @return the float value as integer
+     */
     public Integer getInteger() {
         return value;
     }
 
+    /**
+     * @return the number of decimals for this value.
+     */
     public Integer getDecimals() {
         return decimals;
     }
