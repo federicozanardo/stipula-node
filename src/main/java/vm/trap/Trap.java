@@ -20,6 +20,8 @@ public class Trap {
             this.put(TrapErrorCodes.INCORRECT_TYPE, "Wrong type for this instruction");
             this.put(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, "Wrong type for this instruction or this type does not exist");
             this.put(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, "This instruction does not exist");
+            this.put(TrapErrorCodes.KEY_NOT_VALID, "The key provided is not valid");
+            this.put(TrapErrorCodes.KEY_SPECIFICATIONS_NOT_VALID, "The key specifications provided are not valid");
             this.put(TrapErrorCodes.LABEL_DOES_NOT_EXISTS, "This label does not exist in the code");
             this.put(TrapErrorCodes.LESS_THAN_ZERO, "The current value is less than zero");
             this.put(TrapErrorCodes.MISS_HALT_INSTRUCTION, "Last instruction must be HALT");
@@ -27,6 +29,7 @@ public class Trap {
             this.put(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, "There are not enough arguments for the current instruction");
             this.put(TrapErrorCodes.QUEUE_OVERFLOW, "Queue overflow");
             this.put(TrapErrorCodes.QUEUE_UNDERFLOW, "Queue underflow");
+            this.put(TrapErrorCodes.SIGNATURE_PROBLEMS, "The signature object is not initialized properly or the signature algorithm is unable to process the data provided");
             this.put(TrapErrorCodes.STACK_OVERFLOW, "Stack overflow");
             this.put(TrapErrorCodes.STACK_UNDERFLOW, "Stack underflow");
             this.put(TrapErrorCodes.TOO_MANY_ARGUMENTS, "There are too many arguments for the current instruction");

@@ -46,6 +46,16 @@ public enum TrapErrorCodes {
             return "INSTRUCTION_DOES_NOT_EXISTS";
         }
     },
+    KEY_NOT_VALID {
+        public String toString() {
+            return "KEY_NOT_VALID";
+        }
+    },
+    KEY_SPECIFICATIONS_NOT_VALID {
+        public String toString() {
+            return "KEY_SPECIFICATIONS_NOT_VALID";
+        }
+    },
     LABEL_DOES_NOT_EXISTS {
         public String toString() {
             return "LABEL_DOES_NOT_EXISTS";
@@ -79,6 +89,11 @@ public enum TrapErrorCodes {
     QUEUE_UNDERFLOW {
         public String toString() {
             return "QUEUE_UNDERFLOW";
+        }
+    },
+    SIGNATURE_PROBLEMS {
+        public String toString() {
+            return "SIGNATURE_PROBLEMS";
         }
     },
     STACK_OVERFLOW {
