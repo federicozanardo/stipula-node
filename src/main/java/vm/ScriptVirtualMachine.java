@@ -76,36 +76,36 @@ public class ScriptVirtualMachine {
         }
 
         if (!trap.isStackEmpty()) {
-            System.out.println("\nexecute: Errors in the stack");
+            System.out.println("\nScriptVirtualMachine: execute => Errors in the stack");
             System.out.println(trap.printStack());
             return false;
         }
 
         if (stack.isEmpty()) {
-            System.out.println("execute: The stack is empty");
+            System.out.println("ScriptVirtualMachine: execute => The stack is empty");
             return false;
         }
 
         Type value = stack.pop();
 
         if (!stack.isEmpty()) {
-            System.out.println("execute: There is more than one value in the stack");
+            System.out.println("ScriptVirtualMachine: execute => There is more than one value in the stack");
             return false;
         }
 
         if (!value.getType().equals("bool")) {
-            System.out.println("execute: The last value in the stack is not a boolean");
+            System.out.println("ScriptVirtualMachine: execute => The last value in the stack is not a boolean");
             return false;
         }
 
         BoolType boolVal = (BoolType) value;
 
         if (!boolVal.getValue()) {
-            System.out.println("execute: The funds can't be used. The script can't be unlocked");
+            System.out.println("ScriptVirtualMachine: execute => The funds can't be used. The script can't be unlocked");
             return false;
         }
 
-        System.out.println("execute: Final state of the execution below");
+        System.out.println("ScriptVirtualMachine: execute => Final state of the execution below");
 
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + isRunning +

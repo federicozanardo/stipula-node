@@ -165,23 +165,23 @@ public class SmartContractVirtualMachine {
         }
 
         if (!trap.isStackEmpty()) {
-            System.out.println("\nexecute: Errors in the stack");
+            System.out.println("\nSmartContractVirtualMachine: execute => Errors in the stack");
             System.out.println(trap.printStack());
             return false;
         }
 
-        System.out.println("execute: Final state of the execution below");
+        System.out.println("SmartContractVirtualMachine: execute => Final state of the execution below");
 
         if (stack.isEmpty()) {
-            System.out.println("execute: The stack is empty");
+            System.out.println("SmartContractVirtualMachine: execute => The stack is empty");
         } else {
-            System.out.println("execute: Stack => " + stack.toString());
+            System.out.println("SmartContractVirtualMachine: execute => Stack => " + stack.toString());
         }
 
         if (globalSpace.isEmpty()) {
-            System.out.println("\nexecute: The global space is empty");
+            System.out.println("\nSmartContractVirtualMachine: execute => The global space is empty");
         } else {
-            System.out.println("\nexecute: GlobalSpace");
+            System.out.println("\nSmartContractVirtualMachine: execute => GlobalSpace");
             for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
                 TraceChange value = entry.getValue();
                 if (value.getValue().getType().equals("addr")) {
@@ -197,18 +197,18 @@ public class SmartContractVirtualMachine {
         }
 
         if (argumentsSpace.isEmpty()) {
-            System.out.println("\nexecute: The argument space is empty");
+            System.out.println("\nSmartContractVirtualMachine: execute => The argument space is empty");
         } else {
-            System.out.println("\nexecute: ArgumentsSpace");
+            System.out.println("\nSmartContractVirtualMachine: execute => ArgumentsSpace");
             for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
         }
 
         if (dataSpace.isEmpty()) {
-            System.out.println("\nexecute: The data space is empty");
+            System.out.println("\nSmartContractVirtualMachine: execute => The data space is empty");
         } else {
-            System.out.println("\nexecute: DataSpace");
+            System.out.println("\nSmartContractVirtualMachine: execute => DataSpace");
             for (HashMap.Entry<String, Type> entry : dataSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
@@ -735,13 +735,6 @@ public class SmartContractVirtualMachine {
 
         Type value = stack.pop();
         dataSpace.put(variableName, value);
-
-        /*if (value.getType().equals("addr")) {
-            AddrType address = (AddrType) value;
-            dataSpace.put(variableName, new AddrType(new Address(address.getPublicKey())));
-        } else {
-            dataSpace.put(variableName, value);
-        }*/
     }
 
     private void andOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
@@ -1170,13 +1163,6 @@ public class SmartContractVirtualMachine {
         } else {
             Type value = stack.pop();
             argumentsSpace.put(variableName, value);
-
-            /*if (value.getType().equals("addr")) {
-                AddrType address = (AddrType) value;
-                argumentsSpace.put(variableName, new AddrType(new Address(address.getPublicKey())));
-            } else {
-                argumentsSpace.put(variableName, value);
-            }*/
         }
     }
 
@@ -1277,13 +1263,6 @@ public class SmartContractVirtualMachine {
         }
 
         globalSpace.put(variableName, new TraceChange(value, true));
-
-        /*if (value.getType().equals("addr")) {
-            AddrType address = (AddrType) value;
-            globalSpace.put(variableName, new TraceChange(new AddrType(new Address(address.getPublicKey())), true));
-        } else {
-            globalSpace.put(variableName, new TraceChange(value, true));
-        }*/
     }
 
     private void depositOperation(String[] instruction) throws StackUnderflowException {
@@ -1387,7 +1366,6 @@ public class SmartContractVirtualMachine {
                 addressVal.getAddress()
         );
         singleUseSealsToCreate.put(addressVal.getAddress(), singleUseSeal);
-        System.out.println("withdrawOperation: singleUseSealsToSend => " + singleUseSealsToCreate);
     }
 
     private void raiseOperation(String[] instruction) {
@@ -1435,9 +1413,5 @@ public class SmartContractVirtualMachine {
 
         EventTriggerRequest eventTriggerRequest = new EventTriggerRequest(obligationFunctionName, timeVal.getValue());
         eventTriggersToRequest.add(eventTriggerRequest);
-
-        System.out.println("triggerOperation: eventTriggersToRequest => " + eventTriggersToRequest);
-        System.out.println("triggerOperation: current timestamp => " + System.currentTimeMillis() / 1000);
-        System.out.println("triggerOperation: expire => " + eventTriggerRequest.getTime());
     }
 }
