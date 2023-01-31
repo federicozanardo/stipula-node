@@ -10,8 +10,8 @@ import vm.types.StrType;
 import vm.types.Type;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -32,7 +32,7 @@ public class ScriptVirtualMachine {
         this.trap = new Trap(0);
     }
 
-    public boolean execute() throws Exception {
+    public boolean execute() {
         while (isRunning) {
             if (!trap.isStackEmpty()) {
                 haltProgramExecution();
@@ -86,33 +86,38 @@ public class ScriptVirtualMachine {
             return false;
         }
 
-        Type value = stack.pop();
+        try {
+            Type value = stack.pop();
 
-        if (!stack.isEmpty()) {
-            System.out.println("ScriptVirtualMachine: execute => There is more than one value in the stack");
+            if (!stack.isEmpty()) {
+                System.out.println("ScriptVirtualMachine: execute => There is more than one value in the stack");
+                return false;
+            }
+
+            if (!value.getType().equals("bool")) {
+                System.out.println("ScriptVirtualMachine: execute => The last value in the stack is not a boolean");
+                return false;
+            }
+
+            BoolType boolVal = (BoolType) value;
+
+            if (!boolVal.getValue()) {
+                System.out.println("ScriptVirtualMachine: execute => The funds can't be used. The script can't be unlocked");
+                return false;
+            }
+
+            System.out.println("ScriptVirtualMachine: execute => Final state of the execution below");
+
+            System.out.println("\nGlobal state of the execution" +
+                    "\nrunning -> " + isRunning +
+                    "\nexecutionPointer -> " + executionPointer +
+                    "\nlength of the program -> " + instructions.length);
+
+            return !isRunning;
+        } catch (StackUnderflowException error) {
+            System.out.println("ScriptVirtualMachine: execute => Stack underflow");
             return false;
         }
-
-        if (!value.getType().equals("bool")) {
-            System.out.println("ScriptVirtualMachine: execute => The last value in the stack is not a boolean");
-            return false;
-        }
-
-        BoolType boolVal = (BoolType) value;
-
-        if (!boolVal.getValue()) {
-            System.out.println("ScriptVirtualMachine: execute => The funds can't be used. The script can't be unlocked");
-            return false;
-        }
-
-        System.out.println("ScriptVirtualMachine: execute => Final state of the execution below");
-
-        System.out.println("\nGlobal state of the execution" +
-                "\nrunning -> " + isRunning +
-                "\nexecutionPointer -> " + executionPointer +
-                "\nlength of the program -> " + instructions.length);
-
-        return !isRunning;
     }
 
     private void haltProgramExecution() {
@@ -174,7 +179,7 @@ public class ScriptVirtualMachine {
         stack.push(value);
     }
 
-    private void sha256Operation(String[] instruction) throws StackUnderflowException, StackOverflowException, NoSuchAlgorithmException {
+    private void sha256Operation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
@@ -188,13 +193,16 @@ public class ScriptVirtualMachine {
 
         StrType firstStr = (StrType) first;
 
-        // Compute the SHA256 hash
         Base64.Encoder encoder = Base64.getEncoder();
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try {
+            // Compute the SHA256 hash
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            StrType result = new StrType(encoder.encodeToString(digest.digest(firstStr.getValue().getBytes(StandardCharsets.UTF_8))));
 
-        StrType result = new StrType(encoder.encodeToString(digest.digest(firstStr.getValue().getBytes(StandardCharsets.UTF_8))));
-
-        stack.push(result);
+            stack.push(result);
+        } catch (NoSuchAlgorithmException e) {
+            trap.raiseError(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
+        }
     }
 
     private void equalOperation(String[] instruction) throws StackUnderflowException {
@@ -219,7 +227,7 @@ public class ScriptVirtualMachine {
         }
     }
 
-    private void checksigOperation(String[] instruction) throws Exception {
+    private void checksigOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
         if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
@@ -235,9 +243,22 @@ public class ScriptVirtualMachine {
         StrType signature = (StrType) first;
         StrType publicKey = (StrType) second;
 
-        // Verify the signature
-        BoolType result = new BoolType(verify(propertyId, signature.getValue(), getPublicKeyFromString(publicKey.getValue())));
+        try {
+            // Get the public key
+            PublicKey pubKey = getPublicKeyFromString(publicKey.getValue());
 
-        stack.push(result);
+            // Verify the signature
+            BoolType result = new BoolType(verify(propertyId, signature.getValue(), pubKey));
+
+            stack.push(result);
+        } catch (NoSuchAlgorithmException e) {
+            trap.raiseError(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
+        } catch (InvalidKeyException e) {
+            trap.raiseError(TrapErrorCodes.KEY_NOT_VALID, executionPointer, Arrays.toString(instruction));
+        } catch (InvalidKeySpecException e) {
+            trap.raiseError(TrapErrorCodes.KEY_SPECIFICATIONS_NOT_VALID, executionPointer, Arrays.toString(instruction));
+        } catch (SignatureException e) {
+            trap.raiseError(TrapErrorCodes.SIGNATURE_PROBLEMS, executionPointer, Arrays.toString(instruction));
+        }
     }
 }
