@@ -105,7 +105,7 @@ public class ScriptVirtualMachine {
             return false;
         }
 
-        System.out.println("Final state of the execution below");
+        System.out.println("execute: Final state of the execution below");
 
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + isRunning +

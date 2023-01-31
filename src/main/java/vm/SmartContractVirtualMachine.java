@@ -60,7 +60,7 @@ public class SmartContractVirtualMachine {
 
     public boolean execute() {
         while (isRunning) {
-            if (!trap.isEmptyStack()) {
+            if (!trap.isStackEmpty()) {
                 haltProgramExecution();
                 break;
             }
@@ -157,39 +157,31 @@ public class SmartContractVirtualMachine {
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
-            } catch (StackOverflowException | StackUnderflowException error) {
-                trap.raiseError(error.getCode(), executionPointer);
-            } catch (NoSuchAlgorithmException error) {
-                System.out.println("execute: Error while executing the code\nError: " + error.getMessage());
-                throw new RuntimeException(error);
+            } catch (StackOverflowException error) {
+                trap.raiseError(TrapErrorCodes.STACK_OVERFLOW, executionPointer);
+            } catch (StackUnderflowException error) {
+                trap.raiseError(TrapErrorCodes.STACK_UNDERFLOW, executionPointer);
             }
         }
 
-        if (!trap.isEmptyStack()) {
-            System.out.println("\nErrors in the stack");
+        if (!trap.isStackEmpty()) {
+            System.out.println("\nexecute: Errors in the stack");
             System.out.println(trap.printStack());
             return false;
         }
 
-        System.out.println("Final state of the execution below");
+        System.out.println("execute: Final state of the execution below");
 
         if (stack.isEmpty()) {
-            System.out.println("Stack: The stack is empty");
+            System.out.println("execute: The stack is empty");
         } else {
-            System.out.println("Stack");
-            while (!stack.isEmpty()) {
-                try {
-                    System.out.println("Value: " + stack.pop().getValue().toString());
-                } catch (StackUnderflowException error) {
-                    System.exit(-1);
-                }
-            }
+            System.out.println("execute: Stack => " + stack.toString());
         }
 
         if (globalSpace.isEmpty()) {
-            System.out.println("\nGlobalSpace: The global space is empty");
+            System.out.println("\nexecute: The global space is empty");
         } else {
-            System.out.println("\nGlobalSpace");
+            System.out.println("\nexecute: GlobalSpace");
             for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
                 TraceChange value = entry.getValue();
                 if (value.getValue().getType().equals("addr")) {
@@ -205,18 +197,18 @@ public class SmartContractVirtualMachine {
         }
 
         if (argumentsSpace.isEmpty()) {
-            System.out.println("\nArgumentsSpace: The argument space is empty");
+            System.out.println("\nexecute: The argument space is empty");
         } else {
-            System.out.println("\nArgumentsSpace");
+            System.out.println("\nexecute: ArgumentsSpace");
             for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
         }
 
         if (dataSpace.isEmpty()) {
-            System.out.println("\nDataSpace: The data space is empty");
+            System.out.println("\nexecute: The data space is empty");
         } else {
-            System.out.println("\nDataSpace");
+            System.out.println("\nexecute: DataSpace");
             for (HashMap.Entry<String, Type> entry : dataSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
@@ -224,8 +216,8 @@ public class SmartContractVirtualMachine {
 
         System.out.println("\nGlobal state of the execution" +
                 "\nrunning -> " + isRunning +
-                "\ni -> " + executionPointer +
-                "\ni (with offset) -> " + (executionPointer + offset) +
+                "\nexecutionPointer -> " + executionPointer +
+                "\nexecutionPointer (with offset) -> " + (executionPointer + offset) +
                 "\nlength of the program -> " + instructions.length +
                 "\nlength of the program (with offset) -> " + (instructions.length + offset));
 
@@ -236,11 +228,26 @@ public class SmartContractVirtualMachine {
         isRunning = false;
     }
 
+    private boolean argumentsAreMoreThan(String[] instruction, int num) {
+        if ((instruction.length - 1) > num) {
+            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean argumentsAreLessThan(String[] instruction, int num) {
+        if ((instruction.length - 1) < num) {
+            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+            return true;
+        }
+        return false;
+    }
+
     // Instructions
 
     private void haltOperation(String[] instruction) {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -248,9 +255,8 @@ public class SmartContractVirtualMachine {
         this.haltProgramExecution();
     }
 
-    private void pushOperation(String[] instruction) throws StackOverflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+    private void pushOperation(String[] instruction) throws StackOverflowException {
+        if (this.argumentsAreLessThan(instruction, 2) || this.argumentsAreMoreThan(instruction, 4)) {
             return;
         }
 
@@ -260,11 +266,6 @@ public class SmartContractVirtualMachine {
         }
 
         if (instruction.length - 1 > 3 && !instruction[1].equals("asset")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if (instruction.length - 1 > 4) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -294,7 +295,14 @@ public class SmartContractVirtualMachine {
                 stack.push(new StrType(value));
                 break;
             case "addr":
-                stack.push(new AddrType(new Address(value)));
+                AddrType addrType;
+                try {
+                    addrType = new AddrType(new Address(value));
+                    stack.push(addrType);
+                } catch (NoSuchAlgorithmException error) {
+                    trap.raiseError(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
+                    break;
+                }
                 break;
             case "float":
                 stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
@@ -316,8 +324,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void addOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -389,8 +396,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void subOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -458,8 +464,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void mulOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -538,8 +543,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void divOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -658,17 +662,11 @@ public class SmartContractVirtualMachine {
     }
 
     private void instOperation(String[] instruction) {
-        if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 2) || this.argumentsAreMoreThan(instruction, 3)) {
             return;
         }
 
         if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if (instruction.length - 1 > 3) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -710,13 +708,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void loadOperation(String[] instruction) throws StackOverflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -729,14 +721,8 @@ public class SmartContractVirtualMachine {
         stack.push(dataSpace.get(variableName));
     }
 
-    private void storeOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+    private void storeOperation(String[] instruction) throws StackUnderflowException {
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -748,18 +734,18 @@ public class SmartContractVirtualMachine {
         }
 
         Type value = stack.pop();
+        dataSpace.put(variableName, value);
 
-        if (value.getType().equals("addr")) {
+        /*if (value.getType().equals("addr")) {
             AddrType address = (AddrType) value;
             dataSpace.put(variableName, new AddrType(new Address(address.getPublicKey())));
         } else {
             dataSpace.put(variableName, value);
-        }
+        }*/
     }
 
     private void andOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -784,8 +770,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void orOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -810,8 +795,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void notOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -829,13 +813,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void jmpOperation(String[] instruction) {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -859,13 +837,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void jmpifOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -886,8 +858,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void iseqOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -962,8 +933,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void isltOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -1019,8 +989,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void isleOperation(String[] instruction) throws StackOverflowException, StackUnderflowException {
-        if ((instruction.length - 1) > 0) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 0)) {
             return;
         }
 
@@ -1071,8 +1040,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void ainstOperation(String[] instruction) {
-        if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 2)) {
             return;
         }
 
@@ -1086,8 +1054,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if (instruction.length - 1 > 4) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreMoreThan(instruction, 4)) {
             return;
         }
 
@@ -1139,13 +1106,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void aloadOperation(String[] instruction) throws StackOverflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1159,14 +1120,8 @@ public class SmartContractVirtualMachine {
         stack.push(argumentsSpace.get(variableName));
     }
 
-    private void astoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+    private void astoreOperation(String[] instruction) throws StackUnderflowException {
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1214,19 +1169,19 @@ public class SmartContractVirtualMachine {
             argumentsSpace.put(variableName, newValue);
         } else {
             Type value = stack.pop();
+            argumentsSpace.put(variableName, value);
 
-            if (value.getType().equals("addr")) {
+            /*if (value.getType().equals("addr")) {
                 AddrType address = (AddrType) value;
                 argumentsSpace.put(variableName, new AddrType(new Address(address.getPublicKey())));
             } else {
                 argumentsSpace.put(variableName, value);
-            }
+            }*/
         }
     }
 
     private void ginstOperation(String[] instruction) {
-        if ((instruction.length - 1) < 2) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 2) || this.argumentsAreMoreThan(instruction, 4)) {
             return;
         }
 
@@ -1236,11 +1191,6 @@ public class SmartContractVirtualMachine {
         }
 
         if (instruction.length - 1 > 3 && !instruction[1].equals("asset")) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if (instruction.length - 1 > 4) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1293,13 +1243,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void gloadOperation(String[] instruction) throws StackOverflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1313,14 +1257,8 @@ public class SmartContractVirtualMachine {
         stack.push(globalSpace.get(variableName).getValue());
     }
 
-    private void gstoreOperation(String[] instruction) throws StackUnderflowException, NoSuchAlgorithmException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+    private void gstoreOperation(String[] instruction) throws StackUnderflowException {
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1338,22 +1276,18 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if (value.getType().equals("addr")) {
+        globalSpace.put(variableName, new TraceChange(value, true));
+
+        /*if (value.getType().equals("addr")) {
             AddrType address = (AddrType) value;
             globalSpace.put(variableName, new TraceChange(new AddrType(new Address(address.getPublicKey())), true));
         } else {
             globalSpace.put(variableName, new TraceChange(value, true));
-        }
+        }*/
     }
 
     private void depositOperation(String[] instruction) throws StackUnderflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1399,13 +1333,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void withdrawOperation(String[] instruction) throws StackUnderflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1463,13 +1391,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void raiseOperation(String[] instruction) {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
@@ -1490,13 +1412,7 @@ public class SmartContractVirtualMachine {
     }
 
     private void triggerOperation(String[] instruction) throws StackUnderflowException {
-        if ((instruction.length - 1) < 1) {
-            trap.raiseError(TrapErrorCodes.NOT_ENOUGH_ARGUMENTS, executionPointer, Arrays.toString(instruction));
-            return;
-        }
-
-        if ((instruction.length - 1) > 1) {
-            trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
+        if (this.argumentsAreLessThan(instruction, 1) || this.argumentsAreMoreThan(instruction, 1)) {
             return;
         }
 
