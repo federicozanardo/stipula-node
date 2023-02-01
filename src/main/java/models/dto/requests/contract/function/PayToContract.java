@@ -19,18 +19,11 @@ public class PayToContract {
         return unlockScript;
     }
 
-    /*public boolean verify() {
-        BigDecimal zeroValue = new BigDecimal(0);
-        if (this.singleUseSeal.getAmount().getValue().compareTo(zeroValue) <= 0) {
-            return false;
-        }
-
-        BigDecimal supply = new BigDecimal(this.singleUseSeal.getAssetConfig().getSupply());
-        if (this.singleUseSeal.getAmount().getValue().compareTo(supply) > 0) {
-            return false;
-        }
-
-
-        return true;
-    }*/
+    @Override
+    public String toString() {
+        return "PayToContract{" +
+                "property=" + property +
+                ", unlockScript='" + unlockScript + '\'' +
+                '}';
+    }
 }

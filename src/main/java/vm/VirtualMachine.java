@@ -32,6 +32,7 @@ import vm.types.TraceChange;
 import vm.types.Type;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class VirtualMachine extends Thread {
             System.out.println("VirtualMachine: Ready to dequeue a value...");
             try {
                 request = this.queue.dequeue();
-                System.out.println("VirtualMachine: request => " + request);
+                System.out.println("VirtualMachine: Request received => " + request);
 
                 thread = request.getFirst();
                 packet = request.getSecond();
@@ -107,6 +108,7 @@ public class VirtualMachine extends Thread {
                         // Get the contract
                         contract = contractsStorage.getContract(agreementCall.getContractId());
 
+                        // Load the DFA
                         DeterministicFiniteAutomata stateMachine = new DeterministicFiniteAutomata(
                                 contract.getInitialState(),
                                 contract.getEndStates(),
@@ -431,8 +433,15 @@ public class VirtualMachine extends Thread {
                     // TODO: Error
                 }
 
+                // Check if the amount > 0
+                BigDecimal zeroValue = new BigDecimal(0);
+                if (singleUseSeal.getAmount().getValue().compareTo(zeroValue) <= 0) {
+                    // TODO: Error
+                }
+
                 // Check if the amount <= asset supply
-                if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
+                BigDecimal supply = new BigDecimal(asset.getAsset().getSupply());
+                if (singleUseSeal.getAmount().getValue().compareTo(supply) > 0) {
                     // TODO: Error
                 }
 
