@@ -90,27 +90,13 @@ public class ClientHandler extends Thread {
                     Message message = signedMessage.getMessage();
 
                     if (message instanceof DeployContract) {
-                        String threadName = this.sharedMemory.allocate();
-                        System.out.println("ClientHandler: threadName => " + threadName);
-
                         // Set up and start a compiler thread
-                        new StipulaCompiler(
-                                threadName,
-                                this,
-                                (DeployContract) message,
-                                sharedMemory,
-                                contractsStorage
-                        ).start();
+                        StipulaCompiler compiler = new StipulaCompiler((DeployContract) message, contractsStorage);
+                        String contractId = compiler.compile();
 
-                        // Wait a notification from the compiler thread
-                        synchronized (this) {
-                            this.wait();
-                        }
-
-                        System.out.println("ClientHandler: Notified from the compiler");
-
+                        // Prepare the response
                         System.out.println("ClientHandler: Prepare the response...");
-                        Response response = this.sharedMemory.get(Thread.currentThread().getName());
+                        Response response = new SuccessDataResponse(contractId);
                         String jsonResponse = "";
                         if (response instanceof SuccessDataResponse) {
                             jsonResponse = gson.toJson(response, SuccessDataResponse.class);
