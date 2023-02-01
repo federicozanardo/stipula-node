@@ -3,6 +3,7 @@ package server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
+import exceptions.message.MessageNotSupportedException;
 import exceptions.queue.QueueOverflowException;
 import models.contract.Property;
 import models.dto.requests.Message;
@@ -185,6 +186,8 @@ public class ClientHandler extends Thread {
                 inputClientStream.close();
             } catch (IOException | InterruptedException | QueueOverflowException error) {
                 System.out.println("ClientHandler: " + error);
+            } catch (MessageNotSupportedException e) {
+                throw new RuntimeException(e);
             }
         } else {
             System.out.println("ClientHandler: Error while getting the streams from the client socket");

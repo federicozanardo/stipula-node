@@ -255,7 +255,7 @@ public class VirtualMachine extends Thread {
                     System.out.println(instance.getGlobalVariables());
                     System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
 
-                    if (thread != null && whereToNotify != null) {
+                    /*if (thread != null && whereToNotify != null) {
                         if (this.sharedMemory.containsKey(whereToNotify)) {
                             System.out.println("VirtualMachine: response from Storage " + this.sharedMemory.get(whereToNotify));
 
@@ -273,7 +273,8 @@ public class VirtualMachine extends Thread {
                         } else {
                             System.out.println("VirtualMachine: Oh no! There is no reference in the shared space for this thread " + whereToNotify);
                         }
-                    }
+                    }*/
+                    sharedMemory.notifyThread(thread, whereToNotify, new SuccessDataResponse("ack from VirtualMachine"));
                 } else if (triggerRequest != null) {
                     System.out.println("VirtualMachine: just received a trigger request");
                     String contractId = triggerRequest.getContractId();
@@ -345,7 +346,6 @@ public class VirtualMachine extends Thread {
                 signedMessage = null;
                 triggerRequest = null;
             } catch (QueueUnderflowException error) {
-                // throw new RuntimeException(e);
                 try {
                     System.out.println("VirtualMachine: I'm waiting...");
                     synchronized (this) {

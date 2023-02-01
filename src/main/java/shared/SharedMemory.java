@@ -76,4 +76,32 @@ public class SharedMemory<T> {
 
         return keyName;
     }
+    
+    public void notifyThread(Thread thread, String key, T data) throws Exception {
+        if (thread == null) {
+            throw new Exception("notifyThread: Missing thread");
+        }
+
+        if (key == null || key.trim().equals("")) {
+            throw new Exception("notifyThread: Missing key");
+        }
+
+        if (data == null) {
+            throw new Exception("notifyThread: Missing data");
+        }
+
+        if (memory.containsKey(key)) {
+            // Update the memory
+            this.set(key, data);
+
+            // Notify the thread
+            System.out.println("notifyThread: Notifying the thread " + thread.getName() + "...");
+            synchronized (thread) {
+                thread.notify();
+            }
+            System.out.println("notifyThread: Thread notified");
+        } else {
+            throw new Exception("notifyThread: The key '" + key + "' is missing in the shared memory");
+        }
+    }
 }
