@@ -19,44 +19,32 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class StipulaCompiler extends Thread {
-    private final Thread clientHandler;
+public class StipulaCompiler {
     private final DeployContract contractToDeploy;
-    private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
 
-    public StipulaCompiler(
-            String name,
-            Thread clientHandler,
-            DeployContract contractToDeploy,
-            SharedMemory<Response> sharedMemory,
-            ContractsStorage contractsStorage
-    ) {
-        super(name);
-        this.clientHandler = clientHandler;
+    public StipulaCompiler(DeployContract contractToDeploy, ContractsStorage contractsStorage) {
         this.contractToDeploy = contractToDeploy;
-        this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
     }
 
-    @Override
-    public void run() {
-        boolean result = false;
+    public String compile() {
+        //this.setupContract();
 
-        System.out.println("StipulaCompiler: Compiling...");
-        try {
-            result = this.compile();
-        } catch (NoSuchAlgorithmException e) {
-            // TODO: Return a ErrorResponse: Error while compiling
-            // throw new RuntimeException(e);
-        }
+        System.out.println("compile: " + this.contractToDeploy);
 
-        if (!result) {
+        // boolean result = false;
+
+        System.out.println("compile: Compiling...");
+        // TODO: compile method
+        // TODO: Return a ErrorResponse: Error while compiling
+
+        /*if (!result) {
             // TODO: Return a ErrorResponse: Error while compiling
             return;
-        }
+        }*/
 
-        System.out.println("StipulaCompiler: Compilation successful");
+        System.out.println("compile: Compilation successful");
 
         // String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
 
@@ -155,17 +143,14 @@ public class StipulaCompiler extends Thread {
         transitions.add(new Pair<String, DfaState>("Using", new ContractCallByParty("End", authorizedParties2)));
         transitions.add(new Pair<String, DfaState>("Using", new ContractCallByEvent("End", "accept_obl_1")));
 
+        String initialState = "Inactive";
         ArrayList<String> endStates = new ArrayList<>();
         endStates.add("End");
 
-        Contract contract = new Contract(
-                "",
-                bytecode,
-                "Inactive",
-                endStates,
-                transitions
-        );
+        // Create the contract
+        Contract contract = new Contract(contractToDeploy.getSourceCode(), bytecode, initialState, endStates, transitions);
 
+        // Store the new contract
         String contractId;
         try {
             contractId = contractsStorage.addContract(contract);
@@ -173,29 +158,8 @@ public class StipulaCompiler extends Thread {
             throw new RuntimeException(e);
         }
 
-        System.out.println("StipulaCompiler: contractId = " + contractId);
-
-        if (this.sharedMemory.containsKey(this.clientHandler.getName())) {
-            this.sharedMemory.set(
-                    this.clientHandler.getName(),
-                    new SuccessDataResponse("ack from StipulaCompiler\nThe contract id is " + contractId)
-            );
-
-            System.out.println("StipulaCompiler: Now I'll notify the thread " + this.clientHandler.getName());
-            synchronized (this.clientHandler) {
-                this.clientHandler.notify();
-            }
-
-            System.out.println("StipulaCompiler: Bye bye!");
-        } else {
-            System.out.println("StipulaCompiler: Oh no! There is no reference in the shared space for this thread " + this.clientHandler.getName());
-        }
-    }
-
-    private boolean compile() throws NoSuchAlgorithmException {
-        //this.setupContract();
-        System.out.println("StipulaCompiler:compile => " + this.contractToDeploy);
-        return true;
+        System.out.println("compile: contractId = " + contractId);
+        return contractId;
     }
 
     private String readProgram(String pathname) {
