@@ -42,7 +42,6 @@ public class ClientConnection {
     }
 
     /**
-     *
      * @return
      */
     public SignedMessage getInputMessage() {
@@ -52,9 +51,9 @@ public class ClientConnection {
         try {
             json = inputClientStream.readUTF();
             signedMessage = gson.fromJson(json, SignedMessage.class);
-        } catch (IOException error) {
+        } catch (IOException exception) {
             System.out.println("getInputMessage: Error while getting the input from the client");
-            System.out.println("getInputMessage: " + error);
+            System.out.println("getInputMessage: " + exception);
         }
 
         return signedMessage;
@@ -76,8 +75,8 @@ public class ClientConnection {
         System.out.println("sendResponse: Sending response...");
         try {
             outputServerStream.writeUTF(json);
-        } catch (IOException error) {
-            System.out.println("sendResponse: " + error);
+        } catch (IOException exception) {
+            System.out.println("sendResponse: " + exception);
         }
         System.out.println("sendResponse: Response sent");
     }

@@ -57,7 +57,7 @@ public class ClientHandler extends Thread {
 
     @Override
     public void run() {
-        ClientConnection clientConnection = null;
+        ClientConnection clientConnection;
         try {
             clientConnection = new ClientConnection(socket, gson);
         } catch (IOException e) {
@@ -126,7 +126,7 @@ public class ClientHandler extends Thread {
                     // Send the response
                     Response response = this.sharedMemory.get(Thread.currentThread().getName());
                     clientConnection.sendResponse(response);
-                } catch (MessageNotSupportedException error) {
+                } catch (MessageNotSupportedException | QueueOverflowException exception) {
                     clientConnection.sendResponse(
                             new ErrorResponse(
                                     123,
@@ -141,8 +141,8 @@ public class ClientHandler extends Thread {
             System.out.println("ClientHandler: Closing the connection with the client...");
             clientConnection.close();
             System.out.println("ClientHandler: Client connection closed");
-        } catch (IOException | InterruptedException | QueueOverflowException error) {
-            System.out.println("ClientHandler: " + error);
+        } catch (IOException | InterruptedException exception) {
+            System.out.println("ClientHandler: " + exception);
         }
     }
 }

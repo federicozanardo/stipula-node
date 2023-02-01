@@ -77,7 +77,7 @@ public class Trap {
             stack.push(new StrType(errorCode.toString() +
                     " at line " + (line + 1 + offset) +
                     ": " + errorMessage));
-        } catch (StackOverflowException error) {
+        } catch (StackOverflowException exception) {
             System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
                     "\nerrorCode: " + errorCode +
                     "\nerrorMessage: " + errorMessage +
@@ -95,7 +95,7 @@ public class Trap {
             stack.push(new StrType(errorCode +
                     " at line " + (line + 1 + offset) +
                     ": " + errorMessage));
-        } catch (StackOverflowException error) {
+        } catch (StackOverflowException exception) {
             System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
                     "\nerrorCode: " + errorCode +
                     "\nerrorMessage: " + errorMessage +
@@ -115,7 +115,7 @@ public class Trap {
                     " at line " + (line + 1 + offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
-        } catch (StackOverflowException error) {
+        } catch (StackOverflowException exception) {
             System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
                     "\nerrorCode: " + errorCode +
                     "\nerrorMessage: " + errorMessage +
@@ -136,7 +136,7 @@ public class Trap {
                     " at line " + (line + 1 + offset) +
                     ": " + errorMessage
                     + "\nInstruction: " + instruction));
-        } catch (StackOverflowException error) {
+        } catch (StackOverflowException exception) {
             System.out.println("pushTrapError: Error while pushing a trap error in the stack" +
                     "\nerrorCode: " + errorCode +
                     "\nerrorMessage: " + errorMessage +

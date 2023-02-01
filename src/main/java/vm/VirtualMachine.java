@@ -330,7 +330,7 @@ public class VirtualMachine extends Thread {
                 // Reset variables
                 signedMessage = null;
                 triggerRequest = null;
-            } catch (QueueUnderflowException error) {
+            } catch (QueueUnderflowException exception) {
                 try {
                     System.out.println("VirtualMachine: I'm waiting...");
                     synchronized (this) {

@@ -68,9 +68,9 @@ public class ScriptVirtualMachine {
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
-            } catch (StackOverflowException error) {
+            } catch (StackOverflowException exception) {
                 trap.raiseError(TrapErrorCodes.STACK_OVERFLOW, executionPointer);
-            } catch (StackUnderflowException error) {
+            } catch (StackUnderflowException exception) {
                 trap.raiseError(TrapErrorCodes.STACK_UNDERFLOW, executionPointer);
             }
         }
@@ -114,7 +114,7 @@ public class ScriptVirtualMachine {
                     "\nlength of the program -> " + instructions.length);
 
             return !isRunning;
-        } catch (StackUnderflowException error) {
+        } catch (StackUnderflowException exception) {
             System.out.println("ScriptVirtualMachine: execute => Stack underflow");
             return false;
         }

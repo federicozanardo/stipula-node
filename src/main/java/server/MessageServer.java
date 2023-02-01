@@ -64,8 +64,8 @@ public class MessageServer implements Runnable {
 
             try {
                 server = new ServerSocket(port);
-            } catch (IOException error) {
-                System.out.println("MessageServer: " + error);
+            } catch (IOException exception) {
+                System.out.println("MessageServer: " + exception);
             }
 
             if (server != null) {
@@ -77,15 +77,15 @@ public class MessageServer implements Runnable {
 
                     try {
                         socket = server.accept();
-                    } catch (IOException error) {
-                        System.out.println("MessageServer: " + error);
+                    } catch (IOException exception) {
+                        System.out.println("MessageServer: " + exception);
                         System.out.println("MessageServer: Closing server connection...");
 
                         try {
                             server.close();
                             System.out.println("MessageServer: Server connection closed");
                         } catch (IOException e) {
-                            System.out.println("MessageServer: " + error);
+                            System.out.println("MessageServer: " + exception);
                             System.out.println("MessageServer: Error while closing server connection");
                             break;
                         }

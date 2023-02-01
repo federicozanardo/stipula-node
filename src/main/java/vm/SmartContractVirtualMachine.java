@@ -157,9 +157,9 @@ public class SmartContractVirtualMachine {
                             trap.raiseError(TrapErrorCodes.INSTRUCTION_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     }
                 }
-            } catch (StackOverflowException error) {
+            } catch (StackOverflowException exception) {
                 trap.raiseError(TrapErrorCodes.STACK_OVERFLOW, executionPointer);
-            } catch (StackUnderflowException error) {
+            } catch (StackUnderflowException exception) {
                 trap.raiseError(TrapErrorCodes.STACK_UNDERFLOW, executionPointer);
             }
         }
@@ -299,7 +299,7 @@ public class SmartContractVirtualMachine {
                 try {
                     addrType = new AddrType(new Address(value));
                     stack.push(addrType);
-                } catch (NoSuchAlgorithmException error) {
+                } catch (NoSuchAlgorithmException exception) {
                     trap.raiseError(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     break;
                 }
