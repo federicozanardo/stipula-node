@@ -17,8 +17,12 @@ import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import models.storage.PropertyUpdateData;
 import shared.SharedMemory;
-import storage.*;
+import storage.AssetsStorage;
+import storage.ContractInstancesStorage;
+import storage.ContractsStorage;
+import storage.PropertiesStorage;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.event.EventTrigger;
 import vm.event.EventTriggerHandler;
@@ -255,25 +259,6 @@ public class VirtualMachine extends Thread {
                     System.out.println(instance.getGlobalVariables());
                     System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
 
-                    /*if (thread != null && whereToNotify != null) {
-                        if (this.sharedMemory.containsKey(whereToNotify)) {
-                            System.out.println("VirtualMachine: response from Storage " + this.sharedMemory.get(whereToNotify));
-
-                            this.sharedMemory.set(
-                                    whereToNotify,
-                                    new SuccessDataResponse("ack from VirtualMachine")
-                            );
-
-                            System.out.println("VirtualMachine: Now I'll notify the thread " + thread.getName());
-                            synchronized (thread) {
-                                thread.notify();
-                            }
-
-                            System.out.println("VirtualMachine: Bye bye!");
-                        } else {
-                            System.out.println("VirtualMachine: Oh no! There is no reference in the shared space for this thread " + whereToNotify);
-                        }
-                    }*/
                     sharedMemory.notifyThread(thread, whereToNotify, new SuccessDataResponse("ack from VirtualMachine"));
                 } else if (triggerRequest != null) {
                     System.out.println("VirtualMachine: just received a trigger request");
@@ -434,10 +419,6 @@ public class VirtualMachine extends Thread {
                 }
 
                 SingleUseSeal singleUseSeal = property.getSingleUseSeal();
-
-                // TODO: Check if the single-use seal exists
-                // singleUseSeal.getId()
-
                 Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
 
                 if (asset == null) {
@@ -447,12 +428,12 @@ public class VirtualMachine extends Thread {
 
                 // Check if the decimals matches
                 if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
-                    // Error
+                    // TODO: Error
                 }
 
                 // Check if the amount <= asset supply
                 if (!(singleUseSeal.getAmount().getInteger() <= asset.getAsset().getSupply())) {
-                    // Error
+                    // TODO: Error
                 }
 
                 // Check if it is possible to unlock the script
@@ -486,9 +467,6 @@ public class VirtualMachine extends Thread {
                 PayToContract payToContract = entry.getValue();
                 SingleUseSeal singleUseSeal = payToContract.getProperty().getSingleUseSeal();
 
-                // TODO: Check if the single-use seal exists
-                // singleUseSeal.getId()
-
                 Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
 
                 AssetType value = new AssetType(
@@ -499,11 +477,9 @@ public class VirtualMachine extends Thread {
                         )
                 );
 
-                // All the checks are true, so add the argument
                 assetArguments.put(entry.getKey(), value);
             }
         }
-
         return assetArguments;
     }
 
