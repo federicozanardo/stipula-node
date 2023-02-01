@@ -1,4 +1,4 @@
-package storage;
+package models.storage;
 
 public class PropertyUpdateData {
     private final String propertyId;
