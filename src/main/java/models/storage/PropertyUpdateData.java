@@ -22,4 +22,13 @@ public class PropertyUpdateData {
     public String getUnlockScript() {
         return unlockScript;
     }
+
+    @Override
+    public String toString() {
+        return "PropertyUpdateData{" +
+                "propertyId='" + propertyId + '\'' +
+                ", contractInstanceId='" + contractInstanceId + '\'' +
+                ", unlockScript='" + unlockScript + '\'' +
+                '}';
+    }
 }

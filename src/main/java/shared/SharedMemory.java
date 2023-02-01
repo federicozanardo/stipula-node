@@ -1,6 +1,7 @@
 package shared;
 
 import java.util.HashMap;
+import java.util.MissingResourceException;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -13,70 +14,109 @@ public class SharedMemory<T> {
         this.mutex = new ReentrantLock();
     }
 
-    public String allocate() { // TODO: call it "allocate"?
+    /**
+     * @return
+     */
+    public String allocate() {
         mutex.lock();
 
         String key = this.generateKey();
-        this.memory.put(key, null);
+        memory.put(key, null);
 
         mutex.unlock();
         return key;
     }
 
+    /**
+     * @param key
+     * @return
+     */
     public boolean containsKey(String key) {
         mutex.lock();
-        boolean result = this.memory.containsKey(key);
+        boolean result = memory.containsKey(key);
         mutex.unlock();
         return result;
     }
 
+    /**
+     * @param key
+     * @return
+     */
     public T get(String key) {
         mutex.lock();
 
-        if (!this.memory.containsKey(key)) {
+        if (!memory.containsKey(key)) {
             mutex.unlock();
-            throw new Error();
+            throw new MissingResourceException(
+                    "There is no value for the key \"" + key + "\"",
+                    SharedMemory.class.getSimpleName(),
+                    key
+            );
         }
-        T value = this.memory.get(key);
+        T value = memory.get(key);
 
         mutex.unlock();
         return value;
     }
 
+    /**
+     * @param key
+     * @param value
+     */
     public void set(String key, T value) {
         mutex.lock();
 
-        if (!this.memory.containsKey(key)) {
+        if (!memory.containsKey(key)) {
             mutex.unlock();
-            throw new Error();
+            throw new MissingResourceException(
+                    "There is no value for the key \"" + key + "\"",
+                    SharedMemory.class.getSimpleName(),
+                    key
+            );
         }
 
-        this.memory.put(key, value);
+        memory.put(key, value);
         mutex.unlock();
     }
 
+    /**
+     * @param key
+     */
     public void delete(String key) {
         mutex.lock();
 
-        if (!this.memory.containsKey(key)) {
+        if (!memory.containsKey(key)) {
             mutex.unlock();
-            throw new Error();
+            throw new MissingResourceException(
+                    "There is no value for the key \"" + key + "\"",
+                    SharedMemory.class.getSimpleName(),
+                    key
+            );
         }
 
-        this.memory.remove(key);
+        memory.remove(key);
         mutex.unlock();
     }
 
+    /**
+     * @return
+     */
     private String generateKey() {
         String keyName = UUID.randomUUID().toString();
 
-        while (this.memory.containsKey(keyName)) {
+        while (memory.containsKey(keyName)) {
             keyName = UUID.randomUUID().toString();
         }
 
         return keyName;
     }
-    
+
+    /**
+     * @param thread
+     * @param key
+     * @param data
+     * @throws Exception
+     */
     public void notifyThread(Thread thread, String key, T data) throws Exception {
         if (thread == null) {
             throw new Exception("notifyThread: Missing thread");
