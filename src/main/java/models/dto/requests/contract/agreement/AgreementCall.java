@@ -31,18 +31,18 @@ public class AgreementCall extends Message {
 
     @Override
     public String toString() {
-        String str = "";
+        String str = "\nAgreementCall{\n";
 
-        str += contractId + "\n";
+        str += "contractId='" + contractId + "',\n";
 
         for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
-            str += entry.getKey() + ": " + entry.getValue() + "\n";
+            str += entry.getKey() + ": '" + entry.getValue() + "',\n";
         }
 
         for (HashMap.Entry<String, Address> entry : this.parties.entrySet()) {
-            str += entry.getKey() + ": " + entry.getValue().getPublicKey() + "\n";
+            str += entry.getKey() + ": '" + entry.getValue().getPublicKey() + "',\n";
         }
 
-        return str;
+        return str + "}\n";
     }
 }

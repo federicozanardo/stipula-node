@@ -1,5 +1,6 @@
 package models.dto.requests.contract.function;
 
+import models.address.Address;
 import models.dto.requests.Message;
 
 import java.util.HashMap;
@@ -46,5 +47,24 @@ public class FunctionCall extends Message {
 
     public void setAssetArguments(HashMap<String, PayToContract> assetArguments) {
         this.assetArguments = assetArguments;
+    }
+
+    @Override
+    public String toString() {
+        String str = "\nFunctionCall{\n";
+
+        str += "contractId='" + contractId + "',\n";
+        str += "contractInstanceId='" + contractInstanceId + "',\n";
+        str += "function='" + function + "',\n";
+
+        for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
+            str += entry.getKey() + ": '" + entry.getValue() + "',\n";
+        }
+
+        for (HashMap.Entry<String, PayToContract> entry : this.assetArguments.entrySet()) {
+            str += entry.getKey() + ": " + entry.getValue() + ",\n";
+        }
+
+        return str + "}\n";
     }
 }
