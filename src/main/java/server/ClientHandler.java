@@ -13,6 +13,7 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.property.GetPropertiesByAddress;
+import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
@@ -21,9 +22,6 @@ import storage.PropertiesStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -59,133 +57,92 @@ public class ClientHandler extends Thread {
 
     @Override
     public void run() {
-        DataInputStream inputClientStream = null;
-        DataOutputStream outputServerStream = null;
-
+        ClientConnection clientConnection = null;
         try {
-            // Take in input the client socket input stream
-            inputClientStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-            outputServerStream = new DataOutputStream(socket.getOutputStream());
-        } catch (IOException error) {
-            System.out.println("ClientHandler: " + error);
+            clientConnection = new ClientConnection(socket, gson);
+        } catch (IOException e) {
+            System.out.println("ClientHandler: Error while establishing the connection with the client");
+            return;
         }
 
-        if (inputClientStream != null && outputServerStream != null) {
-            try {
-                System.out.println("ClientHandler: Client accepted " + this.getName());
-                String json;
+        try {
+            System.out.println("ClientHandler: Client accepted " + this.getName());
 
-                // Read the message from the client socket
-                System.out.println("ClientHandler: Waiting for client input...");
-                SignedMessage signedMessage = null;
+            // Read the message from the client socket
+            System.out.println("ClientHandler: Waiting for client input...");
+            SignedMessage signedMessage;
+            signedMessage = clientConnection.getInputMessage();
+
+            if (signedMessage == null) {
+                // TODO: Send a response to notify that the thread received an wrong request
+                clientConnection.sendResponse(
+                        new ErrorResponse(
+                                123,
+                                "Error while getting the message"
+                        )
+                );
+                return;
+            }
+
+            // TODO: check signatures
+
+            Message message = signedMessage.getMessage();
+
+            if (message instanceof DeployContract) {
+                // Set up the compiler
+                StipulaCompiler compiler = new StipulaCompiler((DeployContract) message, contractsStorage);
+                String contractId = compiler.compile();
+
+                // Send the response
+                Response response = new SuccessDataResponse(contractId);
+                clientConnection.sendResponse(response);
+            } else if (message instanceof GetPropertiesByAddress) {
+                // Get all the properties associated to the address
+                GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
+                ArrayList<Property> properties = propertiesStorage.getFunds(getPropertiesByAddress.getAddress());
+
+                // Send the response
+                Response response = new SuccessDataResponse(properties.toString());
+                clientConnection.sendResponse(response);
+            } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                 try {
-                    json = inputClientStream.readUTF();
-                    signedMessage = gson.fromJson(json, SignedMessage.class);
-                } catch (IOException error) {
-                    System.out.println("ClientHandler: " + error);
-                }
+                    // Send a request to the queue manager
+                    this.requestQueue.enqueue(
+                            this,
+                            this.getName(),
+                            signedMessage
+                    );
 
-                if (signedMessage != null) {
-                    System.out.println("ClientHandler: Delegate the request of the client to a dedicated thread. Waiting...");
-
-                    Message message = signedMessage.getMessage();
-
-                    if (message instanceof DeployContract) {
-                        // Set up and start a compiler thread
-                        StipulaCompiler compiler = new StipulaCompiler((DeployContract) message, contractsStorage);
-                        String contractId = compiler.compile();
-
-                        // Prepare the response
-                        System.out.println("ClientHandler: Prepare the response...");
-                        Response response = new SuccessDataResponse(contractId);
-                        String jsonResponse = "";
-                        if (response instanceof SuccessDataResponse) {
-                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
-                        }
-
-                        System.out.println("ClientHandler: Sending response...");
-                        try {
-                            outputServerStream.writeUTF(jsonResponse);
-                        } catch (IOException error) {
-                            System.out.println("ClientHandler: " + error);
-                        }
-                    } else if (message instanceof GetPropertiesByAddress) {
-                        GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
-                        ArrayList<Property> properties = propertiesStorage.getFunds(getPropertiesByAddress.getAddress());
-
-                        System.out.println("ClientHandler: properties => " + properties);
-
-                        System.out.println("ClientHandler: Prepare the response...");
-                        Response response = new SuccessDataResponse(properties.toString());
-                        String jsonResponse = "";
-                        if (response instanceof SuccessDataResponse) {
-                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
-                        }
-
-                        System.out.println("ClientHandler: Sending response...");
-                        try {
-                            outputServerStream.writeUTF(jsonResponse);
-                        } catch (IOException error) {
-                            System.out.println("ClientHandler: " + error);
-                        }
-                    } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
-                        // Send a request to the queue manager
-                        this.requestQueue.enqueue(
-                                this,
-                                this.getName(),
-                                signedMessage
-                        );
-
-                        // Notify the virtual machine that a new request is ready to be fulfilled
-                        synchronized (this.virtualMachine) {
-                            this.virtualMachine.notify();
-                        }
-
-                        // Wait a notification from the virtual machine thread
-                        synchronized (this) {
-                            this.wait();
-                        }
-
-                        System.out.println("ClientHandler: Prepare the response...");
-                        Response response = this.sharedMemory.get(Thread.currentThread().getName());
-                        String jsonResponse = "";
-                        if (response instanceof SuccessDataResponse) {
-                            jsonResponse = gson.toJson(response, SuccessDataResponse.class);
-                        }
-
-                        System.out.println("ClientHandler: Sending response...");
-                        try {
-                            outputServerStream.writeUTF(jsonResponse);
-                        } catch (IOException error) {
-                            System.out.println("ClientHandler: " + error);
-                        }
-                    } else {
-                        // TODO: raise error. this is an invalid request.
+                    // Notify the virtual machine that a new request is ready to be fulfilled
+                    synchronized (this.virtualMachine) {
+                        this.virtualMachine.notify();
                     }
-                } else {
-                    // TODO: Send a response to notify that the thread received an wrong request
+
+                    // Wait a notification from the virtual machine thread
+                    synchronized (this) {
+                        this.wait();
+                    }
+
+                    // Send the response
+                    Response response = this.sharedMemory.get(Thread.currentThread().getName());
+                    clientConnection.sendResponse(response);
+                } catch (MessageNotSupportedException error) {
+                    clientConnection.sendResponse(
+                            new ErrorResponse(
+                                    123,
+                                    "Error while enqueuing the request"
+                            )
+                    );
                 }
-
-                System.out.println("ClientHandler: Response sent");
-                System.out.println("ClientHandler: Closing the connection with the client...");
-                socket.close();
-                inputClientStream.close();
-            } catch (IOException | InterruptedException | QueueOverflowException error) {
-                System.out.println("ClientHandler: " + error);
-            } catch (MessageNotSupportedException e) {
-                throw new RuntimeException(e);
+            } else {
+                clientConnection.sendResponse(new ErrorResponse(123, "This is not a valid message"));
             }
-        } else {
-            System.out.println("ClientHandler: Error while getting the streams from the client socket");
+
             System.out.println("ClientHandler: Closing the connection with the client...");
-
-            try {
-                socket.close();
-                System.out.println("ClientHandler: Client connection closed");
-            } catch (IOException error) {
-                System.out.println("ClientHandler: " + error);
-                System.out.println("ClientHandler: Error while closing the connection with the client");
-            }
+            clientConnection.close();
+            System.out.println("ClientHandler: Client connection closed");
+        } catch (IOException | InterruptedException | QueueOverflowException error) {
+            System.out.println("ClientHandler: " + error);
         }
     }
 }

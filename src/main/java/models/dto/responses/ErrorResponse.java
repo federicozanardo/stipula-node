@@ -4,8 +4,14 @@ public class ErrorResponse extends ResponseData {
     private final int errorCode;
     private final String errorMessage;
 
-    public ErrorResponse(Object data, int errorCode, String errorMessage) {
+    public ErrorResponse(int errorCode, String errorMessage, Object data) {
         super(false, data);
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+    }
+
+    public ErrorResponse(int errorCode, String errorMessage) {
+        super(false, null);
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
