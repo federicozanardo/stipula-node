@@ -65,6 +65,7 @@ public class MessageServer implements Runnable {
             try {
                 server = new ServerSocket(port);
             } catch (IOException exception) {
+                System.out.println("MessageServer: Error while starting the server");
                 System.out.println("MessageServer: " + exception);
             }
 
@@ -93,7 +94,7 @@ public class MessageServer implements Runnable {
 
                     if (socket != null && !server.isClosed()) {
                         System.out.println("MessageServer: New client");
-                        System.out.println("MessageServer: Delegating the client communication with a dedicated thread...");
+                        System.out.println("MessageServer: Delegating the client communication to a dedicated thread...");
 
                         String threadName = this.sharedMemory.allocate();
                         new ClientHandler(
