@@ -15,7 +15,9 @@ public class SharedMemory<T> {
     }
 
     /**
-     * @return
+     * This method allows to allocate a cell linked to a key.
+     *
+     * @return the key useful to access to the cell.
      */
     public String allocate() {
         mutex.lock();
@@ -28,19 +30,46 @@ public class SharedMemory<T> {
     }
 
     /**
-     * @param key
-     * @return
+     * Generate a random key.
+     *
+     * @return a random string that represents a key in the memory.
      */
-    public boolean containsKey(String key) {
-        mutex.lock();
-        boolean result = memory.containsKey(key);
-        mutex.unlock();
-        return result;
+    private String generateKey() {
+        String keyName = UUID.randomUUID().toString();
+
+        while (memory.containsKey(keyName)) {
+            keyName = UUID.randomUUID().toString();
+        }
+
+        return keyName;
     }
 
     /**
-     * @param key
-     * @return
+     * Deallocate a cell given a key.
+     *
+     * @param key: key that links to a specific cell.
+     */
+    public void deallocate(String key) {
+        mutex.lock();
+
+        if (!memory.containsKey(key)) {
+            mutex.unlock();
+            throw new MissingResourceException(
+                    "There is no value for the key '" + key + "'",
+                    SharedMemory.class.getSimpleName(),
+                    key
+            );
+        }
+
+        memory.remove(key);
+        mutex.unlock();
+    }
+
+    /**
+     * Get the content of a cell given the key.
+     *
+     * @param key: key that links to the cell.
+     * @return the data contained in the cell linked by the key.
      */
     public T get(String key) {
         mutex.lock();
@@ -60,62 +89,15 @@ public class SharedMemory<T> {
     }
 
     /**
-     * @param key
-     * @param value
-     */
-    public void set(String key, T value) {
-        mutex.lock();
-
-        if (!memory.containsKey(key)) {
-            mutex.unlock();
-            throw new MissingResourceException(
-                    "There is no value for the key \"" + key + "\"",
-                    SharedMemory.class.getSimpleName(),
-                    key
-            );
-        }
-
-        memory.put(key, value);
-        mutex.unlock();
-    }
-
-    /**
-     * @param key
-     */
-    public void delete(String key) {
-        mutex.lock();
-
-        if (!memory.containsKey(key)) {
-            mutex.unlock();
-            throw new MissingResourceException(
-                    "There is no value for the key \"" + key + "\"",
-                    SharedMemory.class.getSimpleName(),
-                    key
-            );
-        }
-
-        memory.remove(key);
-        mutex.unlock();
-    }
-
-    /**
-     * @return
-     */
-    private String generateKey() {
-        String keyName = UUID.randomUUID().toString();
-
-        while (memory.containsKey(keyName)) {
-            keyName = UUID.randomUUID().toString();
-        }
-
-        return keyName;
-    }
-
-    /**
-     * @param thread
-     * @param key
-     * @param data
-     * @throws Exception
+     * Write data in a cell, given a specific key, and notify a thread.
+     *
+     * @param thread: thread to notify.
+     * @param key: key linked to the cell.
+     * @param data: data to insert in the cell, given the key.
+     * @throws Exception: - if the thread is null or
+     *                    - if the key is null or empty or
+     *                    - if data is null.
+     * @throws MissingResourceException: if the key does not exist in the memory.
      */
     public void notifyThread(Thread thread, String key, T data) throws Exception {
         if (thread == null) {
@@ -130,9 +112,13 @@ public class SharedMemory<T> {
             throw new Exception("notifyThread: Missing data");
         }
 
+        mutex.lock();
+
+        // Check if the key exists
         if (memory.containsKey(key)) {
             // Update the memory
-            this.set(key, data);
+            memory.put(key, data);
+            mutex.unlock();
 
             // Notify the thread
             System.out.println("notifyThread: Notifying the thread " + thread.getName() + "...");
@@ -141,7 +127,12 @@ public class SharedMemory<T> {
             }
             System.out.println("notifyThread: Thread notified");
         } else {
-            throw new Exception("notifyThread: The key '" + key + "' is missing in the shared memory");
+            mutex.unlock();
+            throw new MissingResourceException(
+                    "The key '" + key + "' is missing in the shared memory",
+                    SharedMemory.class.getSimpleName(),
+                    key
+            );
         }
     }
 }
