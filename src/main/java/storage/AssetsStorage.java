@@ -1,6 +1,7 @@
 package storage;
 
 import constants.Constants;
+import exceptions.storage.AssetNotFoundException;
 import models.assets.Asset;
 import models.assets.FungibleAsset;
 import org.iq80.leveldb.DB;
@@ -22,7 +23,6 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     }
 
     public void seed() throws IOException {
-
         FungibleAsset bitcoin = new FungibleAsset("Bitcoin", "BTC", 10000, 2);
         String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
         Asset asset = new Asset(assetId, bitcoin);
@@ -32,19 +32,25 @@ public class AssetsStorage extends StorageSerializer<Asset> {
         levelDb.close();
 
         System.out.println("seed: assetId => " + assetId);
-
     }
 
-    public Asset getAsset(String assetId) throws IOException {
+    /**
+     * Get the asset information, given an asset id.
+     *
+     * @param assetId: id of the asset to find in the storage.
+     * @return the asset information.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws AssetNotFoundException: throws when the asset id is not referred to any asset saved in the storage.
+     */
+    public Asset getAsset(String assetId) throws IOException, AssetNotFoundException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
 
         Asset asset = this.deserialize(levelDb.get(bytes(assetId)));
         if (asset == null) {
-            // Error: this contractInstanceId does not exist
             levelDb.close();
             mutex.unlock();
-            return null;
+            throw new AssetNotFoundException(assetId);
         }
 
         levelDb.close();

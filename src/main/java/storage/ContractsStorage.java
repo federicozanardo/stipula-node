@@ -1,6 +1,7 @@
 package storage;
 
 import constants.Constants;
+import exceptions.storage.ContractNotFoundException;
 import models.contract.Contract;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
@@ -21,7 +22,14 @@ public class ContractsStorage extends StorageSerializer<Contract> {
         this.mutex = new ReentrantLock();
     }
 
-    public String addContract(Contract contract) throws IOException {
+    /**
+     * Save a new contract in the storage.
+     *
+     * @param contract: data of the contract to store.
+     * @return the id of the contract just saved.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     */
+    public String saveContract(Contract contract) throws IOException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
 
@@ -34,16 +42,23 @@ public class ContractsStorage extends StorageSerializer<Contract> {
         return contractId;
     }
 
-    public Contract getContract(String contractId) throws IOException {
+    /**
+     * Get the contract information, given a contract id.
+     *
+     * @param contractId: id of the contract to find in the storage.
+     * @return the contract information.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException: throws when the contract id is not referred to any contract saved in the storage.
+     */
+    public Contract getContract(String contractId) throws IOException, ContractNotFoundException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.CONTRACTS_PATH)), new Options());
 
         Contract contract = this.deserialize(levelDb.get(bytes(contractId)));
         if (contract == null) {
-            // Error: this contractInstanceId does not exist
             levelDb.close();
             mutex.unlock();
-            return null;
+            throw new ContractNotFoundException(contractId);
         }
 
         levelDb.close();
