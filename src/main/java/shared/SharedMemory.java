@@ -92,11 +92,11 @@ public class SharedMemory<T> {
      * Write data in a cell, given a specific key, and notify a thread.
      *
      * @param thread: thread to notify.
-     * @param key: key linked to the cell.
-     * @param data: data to insert in the cell, given the key.
-     * @throws Exception: - if the thread is null or
-     *                    - if the key is null or empty or
-     *                    - if data is null.
+     * @param key:    key linked to the cell.
+     * @param data:   data to insert in the cell, given the key.
+     * @throws Exception:                - if the thread is null or
+     *                                   - if the key is null or empty or
+     *                                   - if data is null.
      * @throws MissingResourceException: if the key does not exist in the memory.
      */
     public void notifyThread(Thread thread, String key, T data) throws Exception {
