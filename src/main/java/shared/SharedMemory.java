@@ -92,18 +92,18 @@ public class SharedMemory<T> {
      * Write data in a cell, given a specific key, and notify a thread.
      *
      * @param thread: thread to notify.
-     * @param key:    key linked to the cell.
      * @param data:   data to insert in the cell, given the key.
      * @throws Exception:                - if the thread is null or
      *                                   - if the key is null or empty or
      *                                   - if data is null.
      * @throws MissingResourceException: if the key does not exist in the memory.
      */
-    public void notifyThread(Thread thread, String key, T data) throws Exception {
+    public void notifyThread(Thread thread, T data) throws Exception {
         if (thread == null) {
             throw new Exception("notifyThread: Missing thread");
         }
 
+        String key = thread.getName();
         if (key == null || key.trim().equals("")) {
             throw new Exception("notifyThread: Missing key");
         }
@@ -115,18 +115,7 @@ public class SharedMemory<T> {
         mutex.lock();
 
         // Check if the key exists
-        if (memory.containsKey(key)) {
-            // Update the memory
-            memory.put(key, data);
-            mutex.unlock();
-
-            // Notify the thread
-            System.out.println("notifyThread: Notifying the thread " + thread.getName() + "...");
-            synchronized (thread) {
-                thread.notify();
-            }
-            System.out.println("notifyThread: Thread notified");
-        } else {
+        if (!memory.containsKey(key)) {
             mutex.unlock();
             throw new MissingResourceException(
                     "The key '" + key + "' is missing in the shared memory",
@@ -134,5 +123,16 @@ public class SharedMemory<T> {
                     key
             );
         }
+
+        // Update the memory
+        memory.put(key, data);
+        mutex.unlock();
+
+        // Notify the thread
+        System.out.println("notifyThread: Notifying the thread " + thread.getName() + "...");
+        synchronized (thread) {
+            thread.notify();
+        }
+        System.out.println("notifyThread: Thread notified");
     }
 }
