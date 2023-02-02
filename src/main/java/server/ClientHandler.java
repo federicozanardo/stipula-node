@@ -85,6 +85,13 @@ public class ClientHandler extends Thread {
             }
 
             // TODO: check signatures
+            if (signedMessage.getSignatures().size() == 0) {
+                // Error
+            }
+
+            if (signedMessage.getSignatures().size() > 1) {
+                // Error
+            }
 
             Message message = signedMessage.getMessage();
 
@@ -107,15 +114,11 @@ public class ClientHandler extends Thread {
             } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                 try {
                     // Send a request to the queue manager
-                    this.requestQueue.enqueue(
-                            this,
-                            this.getName(),
-                            signedMessage
-                    );
+                    requestQueue.enqueue(this, signedMessage);
 
                     // Notify the virtual machine that a new request is ready to be fulfilled
-                    synchronized (this.virtualMachine) {
-                        this.virtualMachine.notify();
+                    synchronized (virtualMachine) {
+                        virtualMachine.notify();
                     }
 
                     // Wait a notification from the virtual machine thread
@@ -124,7 +127,7 @@ public class ClientHandler extends Thread {
                     }
 
                     // Send the response
-                    Response response = this.sharedMemory.get(Thread.currentThread().getName());
+                    Response response = sharedMemory.get(Thread.currentThread().getName());
                     clientConnection.sendResponse(response);
                 } catch (MessageNotSupportedException | QueueOverflowException exception) {
                     clientConnection.sendResponse(
@@ -144,5 +147,8 @@ public class ClientHandler extends Thread {
         } catch (IOException | InterruptedException exception) {
             System.out.println("ClientHandler: " + exception);
         }
+
+        // Deallocate the cell from the shared memory
+        sharedMemory.deallocate(this.getName());
     }
 }
