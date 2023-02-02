@@ -93,11 +93,12 @@ public class MessageServer implements Runnable {
                     }
 
                     if (socket != null && !server.isClosed()) {
-                        System.out.println("MessageServer: New client");
-                        System.out.println("MessageServer: Delegating the client communication to a dedicated thread...");
+                        System.out.println("MessageServer: New client. Delegating the client communication to a dedicated thread...");
 
                         // Allocate a cell in the shared memory
                         String threadName = sharedMemory.allocate();
+
+                        // Create a new client handler
                         new ClientHandler(
                                 threadName,
                                 socket,
@@ -108,9 +109,6 @@ public class MessageServer implements Runnable {
                                 propertiesStorage,
                                 messageDeserializer
                         ).start();
-
-                        // Deallocate the cell from the shared memory
-                        sharedMemory.deallocate(threadName);
 
                         System.out.println("MessageServer: Client communication delegated");
                     }
