@@ -1,46 +1,60 @@
 package storage;
 
+
 import java.io.*;
 
 public class StorageSerializer<T> {
 
-    public byte[] serialize(T myObject) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
+    /**
+     * This method allows to serialize data.
+     *
+     * @param data: data to serialize.
+     * @return the data serialized, but if an error occurred, return null.
+     */
+    public byte[] serialize(T data) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ObjectOutputStream outputStream;
+
         try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(myObject);
-            out.flush();
-            return bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
+            outputStream = new ObjectOutputStream(byteArrayOutputStream);
+            outputStream.writeObject(data);
+            outputStream.flush();
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException exception) {
+            System.out.println("serialize: Error while serializing data");
         } finally {
             try {
-                bos.close();
+                byteArrayOutputStream.close();
             } catch (IOException ex) {
-                // TODO: ignore close exception
+                System.out.println("serialize: Error while closing the output stream");
             }
         }
         return null;
     }
 
+    /**
+     * This method allows to deserialize data.
+     *
+     * @param bytes: stream to deserialize.
+     * @return the data deserialized, but if an error occurred, return null.
+     */
     public T deserialize(byte[] bytes) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        ObjectInput in = null;
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+        ObjectInput objectInput = null;
+
         try {
-            in = new ObjectInputStream(bis);
-
-            return (T) in.readObject();
-
+            objectInput = new ObjectInputStream(byteArrayInputStream);
+            return (T) objectInput.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("deserialize: Error while deserializing data");
         } finally {
             try {
-                if (in != null) {
-                    in.close();
+                if (objectInput != null) {
+                    objectInput.close();
                 }
+                byteArrayInputStream.close();
             } catch (IOException ex) {
-                // TODO: ignore close exception
+                System.out.println("deserialize: Error while closing the input stream");
             }
         }
         return null;
