@@ -14,8 +14,8 @@ import models.dto.requests.event.EventTriggerSchedulingRequest;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
-    private final Queue<Pair<Thread, Pair<String, Object>>> functionCallRequests;
-    private final Queue<Pair<Thread, Pair<String, Object>>> triggerRequests;
+    private final Queue<Pair<Thread, Object>> functionCallRequests;
+    private final Queue<Pair<Thread, Object>> triggerRequests;
     private final ReentrantLock mutex;
 
     public RequestQueue() {
@@ -31,16 +31,18 @@ public class RequestQueue {
      * @param value
      * @throws QueueOverflowException
      */
-    public void enqueue(Thread thread, String threadNameToNotify, SignedMessage value) throws QueueOverflowException, MessageNotSupportedException {
+    public void enqueue(Thread thread, SignedMessage value) throws QueueOverflowException, MessageNotSupportedException {
         Message message = value.getMessage();
 
         if (message instanceof AgreementCall || message instanceof FunctionCall) {
             mutex.lock();
+
             if (functionCallRequests.isFull()) {
                 mutex.unlock();
                 throw new QueueOverflowException();
             }
-            functionCallRequests.enqueue(new Pair<>(thread, new Pair<>(threadNameToNotify, value)));
+
+            functionCallRequests.enqueue(new Pair<>(thread, value));
             mutex.unlock();
         } else {
             throw new MessageNotSupportedException("The only messages supported are AgreementCall and FunctionCall");
@@ -53,11 +55,13 @@ public class RequestQueue {
      */
     public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
+
         if (triggerRequests.isFull()) {
             mutex.unlock();
             throw new QueueOverflowException();
         }
-        triggerRequests.enqueue(new Pair<>(null, new Pair<>(null, value)));
+
+        triggerRequests.enqueue(new Pair<>(null, value));
         mutex.unlock();
     }
 
@@ -67,8 +71,8 @@ public class RequestQueue {
      * @return
      * @throws QueueUnderflowException
      */
-    public Pair<Thread, Pair<String, Object>> dequeue() throws QueueUnderflowException {
-        Pair<Thread, Pair<String, Object>> request;
+    public Pair<Thread, Object> dequeue() throws QueueUnderflowException {
+        Pair<Thread, Object> request;
         mutex.lock();
 
         if (!triggerRequests.isEmpty()) {
