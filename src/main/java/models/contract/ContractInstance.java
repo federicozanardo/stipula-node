@@ -9,40 +9,40 @@ import java.util.UUID;
 
 public class ContractInstance implements Serializable {
     private final String contractId;
-    private final String instanceId;
+    private final String contractInstanceId;
     private final DeterministicFiniteAutomata stateMachine;
-    private final HashMap<String, Type> globalVariables;
+    private final HashMap<String, Type> globalSpace;
 
     public ContractInstance(String contractId, DeterministicFiniteAutomata stateMachine) {
         this.contractId = contractId;
-        this.instanceId = UUID.randomUUID().toString();
+        this.contractInstanceId = UUID.randomUUID().toString();
         this.stateMachine = stateMachine;
-        this.globalVariables = new HashMap<>();
+        this.globalSpace = new HashMap<>();
     }
 
     public String getContractId() {
         return contractId;
     }
 
-    public String getInstanceId() {
-        return instanceId;
+    public String getContractInstanceId() {
+        return contractInstanceId;
     }
 
     public DeterministicFiniteAutomata getStateMachine() {
         return stateMachine;
     }
 
-    public HashMap<String, Type> getGlobalVariables() {
-        return globalVariables;
+    public HashMap<String, Type> getGlobalSpace() {
+        return globalSpace;
     }
 
     @Override
     public String toString() {
         return "ContractInstance{" +
                 "contractId='" + contractId + '\'' +
-                ", instanceId='" + instanceId + '\'' +
+                ", contractInstanceId='" + contractInstanceId + '\'' +
                 ", stateMachine=" + stateMachine +
-                ", globalVariables=" + globalVariables +
+                ", globalSpace=" + globalSpace +
                 '}';
     }
 }
