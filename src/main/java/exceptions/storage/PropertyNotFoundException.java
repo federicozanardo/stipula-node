@@ -5,7 +5,9 @@ public class PropertyNotFoundException extends Exception {
         super();
     }
 
-    public PropertyNotFoundException(String propertyId) {
-        super("The property with id = " + propertyId + " does not exist in the storage");
+    public PropertyNotFoundException(String address, String propertyId) {
+        super("The property with id = " + propertyId +
+                ", associated to the address = " + address +
+                ", does not exist in the storage");
     }
 }
