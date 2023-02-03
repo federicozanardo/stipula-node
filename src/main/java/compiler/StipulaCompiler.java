@@ -150,7 +150,7 @@ public class StipulaCompiler {
         // Store the new contract
         String contractId;
         try {
-            contractId = contractsStorage.addContract(contract);
+            contractId = contractsStorage.saveContract(contract);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
