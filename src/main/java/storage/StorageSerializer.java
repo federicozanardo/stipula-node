@@ -39,6 +39,10 @@ public class StorageSerializer<T> {
      * @return the data deserialized, but if an error occurred, return null.
      */
     public T deserialize(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
         ObjectInput objectInput = null;
 
