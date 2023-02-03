@@ -1,6 +1,8 @@
 package storage;
 
 import constants.Constants;
+import exceptions.storage.PropertiesNotFoundException;
+import exceptions.storage.PropertyNotFoundException;
 import models.contract.Property;
 import models.contract.SingleUseSeal;
 import org.iq80.leveldb.DB;
@@ -26,7 +28,6 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     }
 
     public void seed() throws IOException {
-
         String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
         String borrowerAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
         String propertyId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
@@ -56,36 +57,50 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
 
     }
 
-    public ArrayList<Property> getFunds(String address) throws IOException {
+    /**
+     * This method allows to get the funds associated to a given address.
+     *
+     * @param address: it is needed in order to search the funds associated.
+     * @return the funds associated to the address.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
+     */
+    public ArrayList<Property> getFunds(String address) throws IOException, PropertiesNotFoundException {
         mutex.lock();
-
         levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
-        ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
+        ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
         if (funds == null) {
-            // Error: this contractInstanceId does not exist
             levelDb.close();
             mutex.unlock();
-            return null;
+            throw new PropertiesNotFoundException(address);
         }
 
         levelDb.close();
         mutex.unlock();
-        System.out.println("getFunds: mutex.isLocked() => " + mutex.isLocked());
         return funds;
     }
 
-    public Property getFund(String address, String propertyId) throws IOException {
+    /**
+     * This method allows to get a specific property, given an address.
+     *
+     * @param address: the address associated to the property to obtain.
+     * @param propertyId: the id of the specific property to obtain.
+     * @return the fund associated to the address.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
+     * @throws PropertyNotFoundException: throws when the property id is not referred to the given address or to any property saved in the storage.
+     */
+    public Property getFund(String address, String propertyId) throws IOException, PropertiesNotFoundException, PropertyNotFoundException {
         mutex.lock();
 
         levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
 
         if (funds == null) {
-            // Error: this contractInstanceId does not exist
             levelDb.close();
             mutex.unlock();
-            return null;
+            throw new PropertiesNotFoundException(address);
         }
 
         int i = 0;
@@ -104,10 +119,9 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         }
 
         if (!found) {
-            // Error
             levelDb.close();
             mutex.unlock();
-            return null;
+            throw new PropertyNotFoundException(address, propertyId);
         }
 
         levelDb.close();
@@ -115,21 +129,25 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         return fund;
     }
 
+    /**
+     * This method allows to add new funds.
+     *
+     * @param funds: the funds to be stored.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     */
     public void addFunds(HashMap<String, SingleUseSeal> funds) throws IOException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
 
         for (HashMap.Entry<String, SingleUseSeal> entry : funds.entrySet()) {
             String address = entry.getKey();
-            ArrayList<Property> currentFunds = null;
+            ArrayList<Property> currentFunds;
 
-            try {
-                currentFunds = this.deserialize(levelDb.get(bytes(address)));
-            } catch (Exception exception) {
-                System.out.println("addFund: This address does not have any asset saved in the storage");
-            }
+            // Try to get the funds associate to the address
+            currentFunds = this.deserialize(levelDb.get(bytes(address)));
 
             if (currentFunds == null) {
+                System.out.println("addFund: This address does not have any asset saved in the storage");
                 currentFunds = new ArrayList<>();
             }
 
@@ -140,32 +158,36 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
             levelDb.put(bytes(address), this.serialize(currentFunds));
         }
 
-        for (HashMap.Entry<String, SingleUseSeal> entry : funds.entrySet()) {
-            ArrayList<Property> currentFunds = this.deserialize(levelDb.get(bytes(entry.getKey())));
-            System.out.println("addFunds: currentFunds => " + currentFunds);
-        }
-
         levelDb.close();
         mutex.unlock();
     }
 
+    /**
+     * This method allows to make spent a property.
+     *
+     * @param address: the address associated to the property to make spent.
+     * @param propertyId: the id of the specific property to make spent.
+     * @param contractInstanceId: id of the contract instance to find in the storage.
+     * @param unlockScript: the first part of the script that can prove the spendability of the property.
+     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
+     * @throws PropertyNotFoundException: throws when the property id is not referred to the given address or to any property saved in the storage.
+     */
     public void makePropertySpent(
             String address,
             String propertyId,
             String contractInstanceId,
             String unlockScript
-    ) throws Exception {
+    ) throws IOException, PropertiesNotFoundException, PropertyNotFoundException {
         mutex.lock();
 
         levelDb = factory.open(new File(String.valueOf(Constants.PROPERTIES_PATH)), new Options());
         ArrayList<Property> funds = this.deserialize(levelDb.get(bytes(address)));
-        System.out.println("makePropertySpent: currentFunds => " + funds);
 
         if (funds == null) {
-            // Error: this contractInstanceId does not exist
             levelDb.close();
             mutex.unlock();
-            throw new Exception("Impossible to find the funds given the following address => " + address);
+            throw new PropertiesNotFoundException(address);
         }
 
         int i = 0;
@@ -182,11 +204,9 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
         }
 
         if (!found) {
-            // Error
             levelDb.close();
             mutex.unlock();
-            throw new Exception("Impossible to find the funds given the following address => " + address +
-                    " and the propertyId => " + propertyId);
+            throw new PropertyNotFoundException(address, propertyId);
         }
 
         // Update the property
@@ -195,8 +215,6 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
 
         // Save
         levelDb.put(bytes(address), this.serialize(funds));
-        System.out.println("makePropertySpent: updatedFunds => " + funds);
-
         levelDb.close();
         mutex.unlock();
     }
