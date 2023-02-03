@@ -47,7 +47,7 @@ public class ContractsStorage extends StorageSerializer<Contract> {
      *
      * @param contractId: id of the contract to find in the storage.
      * @return the contract information.
-     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws IOException:               throws when an error occur while opening or closing the connection with the storage.
      * @throws ContractNotFoundException: throws when the contract id is not referred to any contract saved in the storage.
      */
     public Contract getContract(String contractId) throws IOException, ContractNotFoundException {

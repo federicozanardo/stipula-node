@@ -67,7 +67,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
      * This method allows to store the global space in the storage.
      *
      * @param contractInstance: instance of the contract in which store the new global space values.
-     * @param updates: new global space values to store.
+     * @param updates:          new global space values to store.
      * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
      */
     public void storeGlobalSpace(ContractInstance contractInstance, HashMap<String, TraceChange> updates) throws IOException {
@@ -80,9 +80,9 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
         for (HashMap.Entry<String, TraceChange> entry : updates.entrySet()) {
             String variableName = entry.getKey();
             TraceChange value = entry.getValue();
-            
+
             if (contractInstance.getGlobalSpace().containsKey(variableName)) {
-                System.out.println("storeGlobalSpace: This is a new variable to store\n" + 
+                System.out.println("storeGlobalSpace: This is a new variable to store\n" +
                         "variable name: " + variableName + "\n" +
                         "value: " + value + "\n");
             } else {

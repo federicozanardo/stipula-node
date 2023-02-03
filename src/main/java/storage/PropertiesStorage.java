@@ -62,7 +62,7 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
      *
      * @param address: it is needed in order to search the funds associated.
      * @return the funds associated to the address.
-     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
      * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
      */
     public ArrayList<Property> getFunds(String address) throws IOException, PropertiesNotFoundException {
@@ -84,12 +84,12 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     /**
      * This method allows to get a specific property, given an address.
      *
-     * @param address: the address associated to the property to obtain.
+     * @param address:    the address associated to the property to obtain.
      * @param propertyId: the id of the specific property to obtain.
      * @return the fund associated to the address.
-     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
      * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
-     * @throws PropertyNotFoundException: throws when the property id is not referred to the given address or to any property saved in the storage.
+     * @throws PropertyNotFoundException:   throws when the property id is not referred to the given address or to any property saved in the storage.
      */
     public Property getFund(String address, String propertyId) throws IOException, PropertiesNotFoundException, PropertyNotFoundException {
         mutex.lock();
@@ -165,13 +165,13 @@ public class PropertiesStorage extends StorageSerializer<ArrayList<Property>> {
     /**
      * This method allows to make spent a property.
      *
-     * @param address: the address associated to the property to make spent.
-     * @param propertyId: the id of the specific property to make spent.
+     * @param address:            the address associated to the property to make spent.
+     * @param propertyId:         the id of the specific property to make spent.
      * @param contractInstanceId: id of the contract instance to find in the storage.
-     * @param unlockScript: the first part of the script that can prove the spendability of the property.
-     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @param unlockScript:       the first part of the script that can prove the spendability of the property.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
      * @throws PropertiesNotFoundException: throws when there are no funds associated to the given address.
-     * @throws PropertyNotFoundException: throws when the property id is not referred to the given address or to any property saved in the storage.
+     * @throws PropertyNotFoundException:   throws when the property id is not referred to the given address or to any property saved in the storage.
      */
     public void makePropertySpent(
             String address,

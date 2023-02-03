@@ -39,7 +39,7 @@ public class AssetsStorage extends StorageSerializer<Asset> {
      *
      * @param assetId: id of the asset to find in the storage.
      * @return the asset information.
-     * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
+     * @throws IOException:            throws when an error occur while opening or closing the connection with the storage.
      * @throws AssetNotFoundException: throws when the asset id is not referred to any asset saved in the storage.
      */
     public Asset getAsset(String assetId) throws IOException, AssetNotFoundException {
