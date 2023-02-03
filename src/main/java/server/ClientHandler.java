@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
 import exceptions.message.MessageNotSupportedException;
 import exceptions.queue.QueueOverflowException;
+import exceptions.storage.PropertiesNotFoundException;
 import models.contract.Property;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
@@ -106,10 +107,21 @@ public class ClientHandler extends Thread {
             } else if (message instanceof GetPropertiesByAddress) {
                 // Get all the properties associated to the address
                 GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
-                ArrayList<Property> properties = propertiesStorage.getFunds(getPropertiesByAddress.getAddress());
+                String address = getPropertiesByAddress.getAddress();
+                Response response;
+
+                try {
+                    ArrayList<Property> properties = propertiesStorage.getFunds(address);
+
+                    // Prepare the response
+                    response = new SuccessDataResponse(properties.toString());
+
+                } catch (PropertiesNotFoundException exception) {
+                    // Prepare the response
+                    response = new ErrorResponse(123, "There are no funds associated to the address = " + address);
+                }
 
                 // Send the response
-                Response response = new SuccessDataResponse(properties.toString());
                 clientConnection.sendResponse(response);
             } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                 try {
@@ -130,12 +142,7 @@ public class ClientHandler extends Thread {
                     Response response = sharedMemory.get(Thread.currentThread().getName());
                     clientConnection.sendResponse(response);
                 } catch (MessageNotSupportedException | QueueOverflowException exception) {
-                    clientConnection.sendResponse(
-                            new ErrorResponse(
-                                    123,
-                                    "Error while enqueuing the request"
-                            )
-                    );
+                    clientConnection.sendResponse(new ErrorResponse(123, "Error while enqueuing the request"));
                 }
             } else {
                 clientConnection.sendResponse(new ErrorResponse(123, "This is not a valid message"));
