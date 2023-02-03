@@ -45,8 +45,10 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param line
+     * Raise a trap error.
+     *
+     * @param errorCode: code of the error that was thrown.
+     * @param line:      line number where the error was thrown.
      */
     public void raiseError(TrapErrorCodes errorCode, int line) {
         if (!errors.containsKey(errorCode)) {
@@ -56,9 +58,11 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param line
-     * @param instruction
+     * Raise a trap error.
+     *
+     * @param errorCode:   code of the error that was thrown.
+     * @param line:        line number where the error was thrown.
+     * @param instruction: instruction that caused the exception to be thrown.
      */
     public void raiseError(TrapErrorCodes errorCode, int line, String instruction) {
         if (!errors.containsKey(errorCode)) {
@@ -68,9 +72,11 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param errorMessage
-     * @param line
+     * Push a trap error in the stack.
+     *
+     * @param errorCode:    code of the error that was thrown.
+     * @param errorMessage: message associated to the error.
+     * @param line:         line number where the error was thrown.
      */
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line) {
         try {
@@ -86,9 +92,11 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param errorMessage
-     * @param line
+     * Push a trap error in the stack.
+     *
+     * @param errorCode:    code of the error that was thrown.
+     * @param errorMessage: message associated to the error.
+     * @param line:         line number where the error was thrown.
      */
     public void pushTrapError(String errorCode, String errorMessage, int line) {
         try {
@@ -104,10 +112,12 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param errorMessage
-     * @param line
-     * @param instruction
+     * Push a trap error in the stack.
+     *
+     * @param errorCode:    code of the error that was thrown.
+     * @param errorMessage: message associated to the error.
+     * @param line:         line number where the error was thrown.
+     * @param instruction:  instruction that caused the exception to be thrown.
      */
     private void pushTrapError(TrapErrorCodes errorCode, String errorMessage, int line, String instruction) {
         try {
@@ -125,10 +135,12 @@ public class Trap {
     }
 
     /**
-     * @param errorCode
-     * @param errorMessage
-     * @param line
-     * @param instruction
+     * Push a trap error in the stack.
+     *
+     * @param errorCode:    code of the error that was thrown.
+     * @param errorMessage: message associated to the error.
+     * @param line:         line number where the error was thrown.
+     * @param instruction:  instruction that caused the exception to be thrown.
      */
     public void pushTrapError(String errorCode, String errorMessage, int line, String instruction) {
         try {
@@ -146,15 +158,14 @@ public class Trap {
     }
 
     /**
-     * @return
+     * This method return the status of the stack.
+     *
+     * @return true, if the stack is empty; false, otherwise.
      */
     public boolean isStackEmpty() {
         return stack.isEmpty();
     }
 
-    /**
-     * @return
-     */
     public String printStack() {
         return stack.toString();
     }

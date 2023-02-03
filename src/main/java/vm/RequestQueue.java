@@ -10,6 +10,7 @@ import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
+import vm.event.EventTrigger;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,9 +28,10 @@ public class RequestQueue {
     /**
      * This method enqueue a request received from a client.
      *
-     * @param thread
-     * @param value
-     * @throws QueueOverflowException
+     * @param thread: the thread that enqueued the request.
+     * @param value:  value to be enqueued.
+     * @throws QueueOverflowException:       throws when the current value exceed the queue space limit.
+     * @throws MessageNotSupportedException: throws if the message is different from {@link AgreementCall} and {@link FunctionCall}.
      */
     public void enqueue(Thread thread, SignedMessage value) throws QueueOverflowException, MessageNotSupportedException {
         Message message = value.getMessage();
@@ -50,8 +52,10 @@ public class RequestQueue {
     }
 
     /**
-     * @param value
-     * @throws QueueOverflowException
+     * This method enqueue a request received from a {@link EventTrigger}.
+     *
+     * @param value: value to be enqueued.
+     * @throws QueueOverflowException: throws when the current value exceed the queue space limit.
      */
     public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
@@ -68,8 +72,8 @@ public class RequestQueue {
     /**
      * This method dequeue a request. It gives priority to the event trigger requests.
      *
-     * @return
-     * @throws QueueUnderflowException
+     * @return the request dequeued from the queue.
+     * @throws QueueUnderflowException: throws when someone tries to dequeue an empty queue.
      */
     public Pair<Thread, Object> dequeue() throws QueueUnderflowException {
         Pair<Thread, Object> request;

@@ -35,7 +35,7 @@ public class FloatType extends Type implements Serializable {
     }
 
     /**
-     * @return the float value as integer
+     * @return the float value as integer.
      */
     public Integer getInteger() {
         return value;
