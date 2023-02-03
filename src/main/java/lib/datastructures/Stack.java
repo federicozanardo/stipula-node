@@ -18,7 +18,7 @@ public class Stack<T> {
     int top = -1;
 
     /**
-     * Variable to store size of the stack.
+     * Maximum dimension of the stack.
      */
     int size;
 
@@ -30,8 +30,8 @@ public class Stack<T> {
     /**
      * Push an element into the stack.
      *
-     * @param value
-     * @throws StackOverflowException
+     * @param value: value to be pushed in the stack.
+     * @throws StackOverflowException: throws when the current value exceed the stack space limit.
      */
     public void push(T value) throws StackOverflowException {
         // Check if the stack is full
@@ -54,7 +54,8 @@ public class Stack<T> {
     /**
      * Return the last element and remove it from the stack.
      *
-     * @return
+     * @return the last element from the stack.
+     * @throws StackUnderflowException: throws when someone tries to pop a value from an empty stack.
      */
     public T pop() throws StackUnderflowException {
         // Check if the stack is empty
@@ -72,8 +73,7 @@ public class Stack<T> {
     /**
      * Check if stack is empty or not.
      *
-     * @return true, if the stack is empty;
-     * false, otherwise.
+     * @return true, if the stack is empty; false, otherwise.
      */
     public boolean isEmpty() {
         return top == -1;
@@ -84,16 +84,12 @@ public class Stack<T> {
     /**
      * Check if stack is full or not.
      *
-     * @return true, if the stack is full;
-     * false, otherwise.
+     * @return true, if the stack is full; false, otherwise.
      */
     public boolean isFull() {
         return top == size - 1;
     }
 
-    /**
-     * Print the stack.
-     */
     @Override
     public String toString() {
         return "Stack{" +

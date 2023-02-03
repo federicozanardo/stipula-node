@@ -7,22 +7,22 @@ import java.util.ArrayList;
 
 public class Queue<T> {
     /**
-     * Data structure used to represent the stack.
+     * Data structure used to represent the queue.
      */
     ArrayList<T> Q;
 
     /**
-     *
+     * Maximum dimension of the queue.
      */
     int length;
 
     /**
-     *
+     * Pointer to the first element of the queue.
      */
     int head = 0;
 
     /**
-     *
+     * Pointer to the last element of the queue.
      */
     int tail = 0;
 
@@ -32,7 +32,9 @@ public class Queue<T> {
     }
 
     /**
-     * @param value
+     * Enqueue a value in the queue.
+     *
+     * @param value: value to be enqueued.
      */
     public void enqueue(T value) throws QueueOverflowException {
         if (this.isFull()) {
@@ -48,7 +50,9 @@ public class Queue<T> {
     }
 
     /**
-     * @return
+     * Dequque a value from the queue.
+     *
+     * @return the value dequeued from the queue.
      */
     public T dequeue() throws QueueUnderflowException {
         if (this.isEmpty()) {
@@ -66,10 +70,20 @@ public class Queue<T> {
 
     // Other methods
 
+    /**
+     * Check if the queue is full or not.
+     *
+     * @return true, if the queue is full; otherwise, false;
+     */
     public boolean isFull() {
         return head == (tail + 1) || (head == 1 && tail == length);
     }
 
+    /**
+     * Check if the queue is empty or not.
+     *
+     * @return  true, if the queue is empty; otherwise, false;
+     */
     public boolean isEmpty() {
         return head == tail;
     }
