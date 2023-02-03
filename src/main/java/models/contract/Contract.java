@@ -5,18 +5,20 @@ import vm.dfa.DfaState;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Contract implements Serializable {
     private final String sourceCode;
     private final String bytecode;
     private final String initialState;
-    private final ArrayList<String> endStates;
+    private final HashSet<String> endStates;
     private final ArrayList<Pair<String, DfaState>> transitions;
 
     public Contract(String sourceCode,
                     String bytecode,
                     String initialState,
-                    ArrayList<String> endStates,
+                    HashSet<String> endStates,
                     ArrayList<Pair<String, DfaState>> transitions
     ) {
         this.sourceCode = sourceCode;
@@ -38,7 +40,7 @@ public class Contract implements Serializable {
         return initialState;
     }
 
-    public ArrayList<String> getEndStates() {
+    public HashSet<String> getEndStates() {
         return endStates;
     }
 

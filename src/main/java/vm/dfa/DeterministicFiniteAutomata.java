@@ -5,15 +5,17 @@ import models.address.Address;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DeterministicFiniteAutomata implements Serializable {
-    private final ArrayList<String> endStates;
+    private final HashSet<String> endStates;
     private String currentState;
     private final ArrayList<Pair<String, DfaState>> transitions;
 
     public DeterministicFiniteAutomata(
             String initialState,
-            ArrayList<String> endStates,
+            HashSet<String> endStates,
             ArrayList<Pair<String, DfaState>> transitions
     ) {
         this.currentState = initialState;
@@ -21,6 +23,13 @@ public class DeterministicFiniteAutomata implements Serializable {
         this.transitions = transitions;
     }
 
+    /**
+     * Check if the given state is the next state of the current state, given a party.
+     *
+     * @param nextState: state to check if it is the next state of the current state.
+     * @param party: the party that made the request.
+     * @return true, if the given state is the next state of the current state; false, otherwise.
+     */
     public boolean isNextState(String nextState, Address party) {
         int i = 0;
         boolean found = false;
@@ -52,6 +61,13 @@ public class DeterministicFiniteAutomata implements Serializable {
         return found;
     }
 
+    /**
+     * Check if the given state is the next state of the current state, given an obligation function name.
+     *
+     * @param nextState: state to check if it is the next state of the current state.
+     * @param obligationFunctionName: obligation to call.
+     * @return true, if the given state is the next state of the current state; false, otherwise.
+     */
     public boolean isNextState(String nextState, String obligationFunctionName) {
         int i = 0;
         boolean found = false;
@@ -81,26 +97,54 @@ public class DeterministicFiniteAutomata implements Serializable {
         return found;
     }
 
+    /**
+     * Update the state machine.
+     *
+     * @param nextState: the next state of the current state.
+     * @param party: the party that made the request.
+     */
     public void nextState(String nextState, Address party) {
         if (this.isNextState(nextState, party)) {
             this.currentState = nextState;
         }
     }
 
+    /**
+     * Update the state machine.
+     *
+     * @param nextState: the next state of the current state.
+     * @param obligationFunctionName: obligation to call.
+     */
     public void nextState(String nextState, String obligationFunctionName) {
         if (this.isNextState(nextState, obligationFunctionName)) {
             this.currentState = nextState;
         }
     }
 
+    /**
+     * Check if the current state belongs to the end-states set.
+     *
+     * @return true, if the current state belongs to the end-states set; false otherwise.
+     */
     public boolean isCurrentStateEndState() {
         return this.endStates.contains(this.currentState);
     }
 
+    /**
+     * Check if the state, given in input, belongs to the end-states set.
+     *
+     * @param state: the state to check if it belongs to the end-states set.
+     * @return true, if the given state belongs to the end-states set; false otherwise.
+     */
     public boolean isEndState(String state) {
         return this.endStates.contains(state);
     }
 
+    /**
+     * Return the current state of the state machine.
+     *
+     * @return the current state.
+     */
     public String getCurrentState() {
         return currentState;
     }

@@ -14,7 +14,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class StipulaCompiler {
     private final DeployContract contractToDeploy;
@@ -141,7 +143,7 @@ public class StipulaCompiler {
         transitions.add(new Pair<String, DfaState>("Using", new ContractCallByEvent("End", "accept_obl_1")));
 
         String initialState = "Inactive";
-        ArrayList<String> endStates = new ArrayList<>();
+        HashSet<String> endStates = new HashSet<>();
         endStates.add("End");
 
         // Create the contract
