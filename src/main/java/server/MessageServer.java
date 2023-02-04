@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class MessageServer implements Runnable {
+public class MessageServer extends Thread {
     private final int port;
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
@@ -34,6 +34,7 @@ public class MessageServer implements Runnable {
             ContractsStorage contractsStorage,
             PropertiesStorage propertiesStorage
     ) {
+        super(MessageServer.class.getSimpleName());
         this.port = port;
         this.requestQueue = requestQueue;
         this.virtualMachine = virtualMachine;
