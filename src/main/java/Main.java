@@ -43,16 +43,13 @@ class Main {
         );
 
         // Set up the server
-        Thread server = new Thread(
-                new MessageServer(
-                        61000,
-                        requestQueue,
-                        virtualMachine,
-                        sharedMemory,
-                        contractsStorage,
-                        propertiesStorage
-                ),
-                "Message server"
+        MessageServer server = new MessageServer(
+                61000,
+                requestQueue,
+                virtualMachine,
+                sharedMemory,
+                contractsStorage,
+                propertiesStorage
         );
 
         // Start the virtual machine
