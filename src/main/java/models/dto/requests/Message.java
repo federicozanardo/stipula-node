@@ -1,20 +1,20 @@
 package models.dto.requests;
 
 public class Message {
-    private final String className;
+    private final String type;
 
-    public Message(String className) {
-        this.className = className;
+    public Message(String type) {
+        this.type = type;
     }
 
-    public String getClassName() {
-        return className;
+    public String getType() {
+        return type;
     }
 
     @Override
     public String toString() {
         return "Message{" +
-                "className='" + className + '\'' +
+                "type='" + type + '\'' +
                 '}';
     }
 }

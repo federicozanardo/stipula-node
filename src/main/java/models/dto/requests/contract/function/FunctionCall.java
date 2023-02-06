@@ -1,69 +1,40 @@
 package models.dto.requests.contract.function;
 
 import models.dto.requests.Message;
+import models.dto.requests.contract.FunctionArgument;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 
 public class FunctionCall extends Message {
-    private final String contractId;
     private final String contractInstanceId;
-    private final String function;
-    private HashMap<String, String> arguments;
-    private HashMap<String, PayToContract> assetArguments;
+    private final String functionName;
+    private final ArrayList<FunctionArgument> arguments;
 
-    public FunctionCall(String contractId, String contractInstanceId, String function) {
+    public FunctionCall(String contractInstanceId, String function, ArrayList<FunctionArgument> arguments) {
         super(FunctionCall.class.getSimpleName());
-        this.contractId = contractId;
         this.contractInstanceId = contractInstanceId;
-        this.function = function;
-        this.arguments = new HashMap<>();
-        this.assetArguments = new HashMap<>();
-    }
-
-    public String getContractId() {
-        return contractId;
+        this.functionName = function;
+        this.arguments = arguments;
     }
 
     public String getContractInstanceId() {
         return contractInstanceId;
     }
 
-    public String getFunction() {
-        return function;
+    public String getFunctionName() {
+        return functionName;
     }
 
-    public HashMap<String, String> getArguments() {
+    public ArrayList<FunctionArgument> getArguments() {
         return arguments;
-    }
-
-    public HashMap<String, PayToContract> getAssetArguments() {
-        return assetArguments;
-    }
-
-    public void setArguments(HashMap<String, String> arguments) {
-        this.arguments = arguments;
-    }
-
-    public void setAssetArguments(HashMap<String, PayToContract> assetArguments) {
-        this.assetArguments = assetArguments;
     }
 
     @Override
     public String toString() {
-        String str = "\nFunctionCall{\n";
-
-        str += "contractId='" + contractId + "',\n";
-        str += "contractInstanceId='" + contractInstanceId + "',\n";
-        str += "function='" + function + "',\n";
-
-        for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
-            str += entry.getKey() + ": '" + entry.getValue() + "',\n";
-        }
-
-        for (HashMap.Entry<String, PayToContract> entry : this.assetArguments.entrySet()) {
-            str += entry.getKey() + ": " + entry.getValue() + ",\n";
-        }
-
-        return str + "}\n";
+        return "FunctionCall{" +
+                "contractInstanceId='" + contractInstanceId + '\'' +
+                ", functionName='" + functionName + '\'' +
+                ", arguments=" + arguments +
+                '}';
     }
 }

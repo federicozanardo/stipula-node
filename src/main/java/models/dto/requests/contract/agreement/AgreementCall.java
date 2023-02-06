@@ -2,15 +2,17 @@ package models.dto.requests.contract.agreement;
 
 import models.address.Address;
 import models.dto.requests.Message;
+import models.dto.requests.contract.FunctionArgument;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class AgreementCall extends Message {
     private final String contractId;
-    private final HashMap<String, String> arguments;
+    private final ArrayList<FunctionArgument> arguments;
     private final HashMap<String, Address> parties;
 
-    public AgreementCall(String contractId, HashMap<String, String> arguments, HashMap<String, Address> parties) {
+    public AgreementCall(String contractId, ArrayList<FunctionArgument> arguments, HashMap<String, Address> parties) {
         super(AgreementCall.class.getSimpleName());
         this.contractId = contractId;
         this.arguments = arguments;
@@ -21,7 +23,7 @@ public class AgreementCall extends Message {
         return contractId;
     }
 
-    public HashMap<String, String> getArguments() {
+    public ArrayList<FunctionArgument> getArguments() {
         return arguments;
     }
 
@@ -31,18 +33,10 @@ public class AgreementCall extends Message {
 
     @Override
     public String toString() {
-        String str = "\nAgreementCall{\n";
-
-        str += "contractId='" + contractId + "',\n";
-
-        for (HashMap.Entry<String, String> entry : this.arguments.entrySet()) {
-            str += entry.getKey() + ": '" + entry.getValue() + "',\n";
-        }
-
-        for (HashMap.Entry<String, Address> entry : this.parties.entrySet()) {
-            str += entry.getKey() + ": '" + entry.getValue().getPublicKey() + "',\n";
-        }
-
-        return str + "}\n";
+        return "AgreementCall{" +
+                "contractId='" + contractId + '\'' +
+                ", arguments=" + arguments +
+                ", parties=" + parties +
+                '}';
     }
 }
