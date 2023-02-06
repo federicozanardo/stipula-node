@@ -1,22 +1,17 @@
 package compiler;
 
-import lib.datastructures.Pair;
-import models.address.Address;
+import lib.datastructures.Triple;
 import models.contract.Contract;
 import models.dto.requests.contract.deploy.DeployContract;
 import storage.ContractsStorage;
-import vm.dfa.ContractCallByEvent;
-import vm.dfa.ContractCallByParty;
-import vm.dfa.DfaState;
+import vm.dfa.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
 
 public class StipulaCompiler {
     private final DeployContract contractToDeploy;
@@ -48,7 +43,7 @@ public class StipulaCompiler {
         // String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
 
         String bytecode = "contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e\n" +
-                "fn agreement\n" +
+                "fn agreement Lender,Borrower Inactive float,time\n" +
                 "global:\n" +
                 "GINST addr Lender\n" +
                 "GINST addr Borrower\n" +
@@ -67,7 +62,7 @@ public class StipulaCompiler {
                 "GSTORE rent_time\n" +
                 "start:\n" +
                 "HALT\n" +
-                "fn offer Lender Proposal\n" +
+                "fn Inactive Lender offer Proposal int\n" +
                 "args:\n" +
                 "PUSH int :z\n" +
                 "AINST int z\n" +
@@ -76,7 +71,7 @@ public class StipulaCompiler {
                 "ALOAD z\n" +
                 "GSTORE use_code\n" +
                 "HALT\n" +
-                "fn accept Borrower Using\n" +
+                "fn Proposal Borrower accept Using asset\n" +
                 "args:\n" +
                 "PUSH asset :y\n" +
                 "AINST asset y 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n" +
@@ -98,7 +93,7 @@ public class StipulaCompiler {
                 "TRIGGER accept_obl_1\n" +
                 "end:\n" +
                 "HALT\n" +
-                "fn end Borrower End\n" +
+                "fn Using Borrower end End\n" +
                 "start:\n" +
                 "PUSH float 100 2\n" +
                 "GLOAD wallet\n" +
@@ -107,7 +102,7 @@ public class StipulaCompiler {
                 "GLOAD Lender\n" +
                 "WITHDRAW wallet\n" +
                 "HALT\n" +
-                "obligation accept_obl_1 End\n" +
+                "obligation Using accept_obl_1 End\n" +
                 "start:\n" +
                 "PUSH float 100 2\n" +
                 "GLOAD wallet\n" +
@@ -117,37 +112,44 @@ public class StipulaCompiler {
                 "WITHDRAW wallet\n" +
                 "HALT";
 
-        // Load the DFA
-        Address lenderAddr;
-        try {
-            lenderAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCo/GjVKS+3gAA55+kko41yINdOcCLQMSBQyuTTkKHE1mhu/TgOpivM0wLPsSga8hQMr3+v3aR0IF/vfCRf6SdiXmWx/jflmEXtnT6fkGcnV6dGNUpHWXSpwUIDt0N88jfnEqekx4S+KDCKg99sGEeHeT65fKS8lB0gjHMt9AOriwIDAQAB");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        Address borrowerAddr;
-        try {
-            borrowerAddr = new Address("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDErzzgD2ZslZxciFAiX3/ot7lrkZDw4148jFZrsDZPE6CVs9xXFSHGgy/mFvIFLXhnChO6Nyd2be3lbgeavLMCMVUiTStXr117Km17keWpb3sItkKKsLFBOcIIU8XXowI/OhzQN2XPZYESHgjdQ5vwEj2YyueiS7WKP94YWz/pswIDAQAB");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        // Create an DFA instance
 
-        ArrayList<Address> authorizedParties1 = new ArrayList<Address>();
-        authorizedParties1.add(lenderAddr);
-        ArrayList<Address> authorizedParties2 = new ArrayList<Address>();
-        authorizedParties2.add(borrowerAddr);
+        // Set the arguments for each function
+        ArrayList<String> offerArgs = new ArrayList<>();
+        offerArgs.add("int");
+        ArrayList<String> acceptArgs = new ArrayList<>();
+        acceptArgs.add("asset");
+        ArrayList<String> endArgs = new ArrayList<>();
 
-        ArrayList<Pair<String, DfaState>> transitions = new ArrayList<>();
-        transitions.add(new Pair<String, DfaState>("Inactive", new ContractCallByParty("Proposal", authorizedParties1)));
-        transitions.add(new Pair<String, DfaState>("Proposal", new ContractCallByParty("Using", authorizedParties2)));
-        transitions.add(new Pair<String, DfaState>("Using", new ContractCallByParty("End", authorizedParties2)));
-        transitions.add(new Pair<String, DfaState>("Using", new ContractCallByEvent("End", "accept_obl_1")));
+        // Set the DFA transitions
+        ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions = new ArrayList<>();
+        transitions.add(new Triple<DfaState, DfaState, TransitionData>(
+                new DfaState("Inactive"),
+                new DfaState("Proposal"),
+                new ContractCallByParty("offer", "Lender", offerArgs)));
+        transitions.add(new Triple<DfaState, DfaState, TransitionData>(
+                new DfaState("Proposal"),
+                new DfaState("Using"),
+                new ContractCallByParty("accept", "Borrower", acceptArgs)));
+        transitions.add(new Triple<DfaState, DfaState, TransitionData>(
+                new DfaState("Using"),
+                new DfaState("End"),
+                new ContractCallByParty("end", "Borrower", endArgs)));
+        transitions.add(new Triple<DfaState, DfaState, TransitionData>(
+                new DfaState("Using"),
+                new DfaState("End"),
+                new ContractCallByEvent("accept_obl_1")));
 
-        String initialState = "Inactive";
-        HashSet<String> endStates = new HashSet<>();
-        endStates.add("End");
+        // Set the initial state
+        DfaState initialState = new DfaState("Inactive");
+
+        // Set the final state
+        HashSet<DfaState> acceptanceStates = new HashSet<>();
+        acceptanceStates.add(new DfaState("End"));
+        FinalStates finalStates = new FinalStates(acceptanceStates, null);
 
         // Create the contract
-        Contract contract = new Contract(contractToDeploy.getSourceCode(), bytecode, initialState, endStates, transitions);
+        Contract contract = new Contract(contractToDeploy.getSourceCode(), bytecode, initialState, finalStates, transitions);
 
         // Store the new contract
         String contractId;
