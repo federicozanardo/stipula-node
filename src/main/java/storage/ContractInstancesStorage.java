@@ -11,6 +11,7 @@ import vm.types.Type;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
@@ -25,19 +26,22 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     }
 
     /**
-     * Store a new instance of a contract.
+     * Store a new contract instance.
      *
      * @param contractInstance: the new instance of the contract to save in the storage.
      * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
      */
-    public void createContractInstance(ContractInstance contractInstance) throws IOException {
+    public String saveContractInstance(ContractInstance contractInstance) throws IOException {
         mutex.lock();
-
         levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
-        levelDb.put(bytes(contractInstance.getContractInstanceId()), this.serialize(contractInstance));
-        levelDb.close();
 
+        // TODO: check that the id is unique
+        String contractInstanceId = UUID.randomUUID().toString();
+        levelDb.put(bytes(contractInstanceId), this.serialize(contractInstance));
+
+        levelDb.close();
         mutex.unlock();
+        return contractInstanceId;
     }
 
     /**
@@ -66,13 +70,22 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     /**
      * This method allows to store the global space in the storage.
      *
-     * @param contractInstance: instance of the contract in which store the new global space values.
-     * @param updates:          new global space values to store.
+     * @param contractInstanceId: id of the contract instance in which store the new global space values.
+     * @param updates:            new global space values to store.
      * @throws IOException: throws when an error occur while opening or closing the connection with the storage.
      */
-    public void storeGlobalSpace(ContractInstance contractInstance, HashMap<String, TraceChange> updates) throws IOException {
+    public void storeGlobalSpace(String contractInstanceId, HashMap<String, TraceChange> updates)
+            throws IOException,
+            ContractInstanceNotFoundException {
         mutex.lock();
         levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+
+        ContractInstance contractInstance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
+        if (contractInstance == null) {
+            levelDb.close();
+            mutex.unlock();
+            throw new ContractInstanceNotFoundException(contractInstanceId);
+        }
 
         System.out.println("storeGlobalSpace: contractInstance => " + contractInstance.getGlobalSpace());
         System.out.println("storeGlobalSpace: => updates " + updates);
@@ -97,7 +110,7 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
             }
         }
 
-        levelDb.put(bytes(contractInstance.getContractInstanceId()), this.serialize(contractInstance));
+        levelDb.put(bytes(contractInstanceId), this.serialize(contractInstance));
 
         levelDb.close();
         mutex.unlock();

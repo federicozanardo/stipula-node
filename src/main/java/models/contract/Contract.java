@@ -1,30 +1,30 @@
 package models.contract;
 
-import lib.datastructures.Pair;
+import lib.datastructures.Triple;
 import vm.dfa.DfaState;
+import vm.dfa.FinalStates;
+import vm.dfa.TransitionData;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Contract implements Serializable {
     private final String sourceCode;
     private final String bytecode;
-    private final String initialState;
-    private final HashSet<String> endStates;
-    private final ArrayList<Pair<String, DfaState>> transitions;
+    private final DfaState initialState;
+    private final FinalStates finalStates;
+    private final ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions;
 
     public Contract(String sourceCode,
                     String bytecode,
-                    String initialState,
-                    HashSet<String> endStates,
-                    ArrayList<Pair<String, DfaState>> transitions
+                    DfaState initialState,
+                    FinalStates finalStates,
+                    ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions
     ) {
         this.sourceCode = sourceCode;
         this.bytecode = bytecode;
         this.initialState = initialState;
-        this.endStates = endStates;
+        this.finalStates = finalStates;
         this.transitions = transitions;
     }
 
@@ -36,15 +36,26 @@ public class Contract implements Serializable {
         return bytecode;
     }
 
-    public String getInitialState() {
+    public DfaState getInitialState() {
         return initialState;
     }
 
-    public HashSet<String> getEndStates() {
-        return endStates;
+    public FinalStates getFinalStates() {
+        return finalStates;
     }
 
-    public ArrayList<Pair<String, DfaState>> getTransitions() {
+    public ArrayList<Triple<DfaState, DfaState, TransitionData>> getTransitions() {
         return transitions;
+    }
+
+    @Override
+    public String toString() {
+        return "Contract{" +
+                "sourceCode='" + sourceCode + '\'' +
+                ", bytecode='" + bytecode + '\'' +
+                ", initialState=" + initialState +
+                ", finalStates=" + finalStates +
+                ", transitions=" + transitions +
+                '}';
     }
 }

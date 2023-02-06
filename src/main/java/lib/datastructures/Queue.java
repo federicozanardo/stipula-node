@@ -82,7 +82,7 @@ public class Queue<T> {
     /**
      * Check if the queue is empty or not.
      *
-     * @return  true, if the queue is empty; otherwise, false;
+     * @return true, if the queue is empty; otherwise, false;
      */
     public boolean isEmpty() {
         return head == tail;
