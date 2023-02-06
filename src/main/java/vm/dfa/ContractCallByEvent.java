@@ -1,10 +1,9 @@
 package vm.dfa;
 
-public class ContractCallByEvent extends DfaState {
+public class ContractCallByEvent extends TransitionData {
     private final String obligationFunctionName;
 
-    public ContractCallByEvent(String name, String obligationFunctionName) {
-        super(name);
+    public ContractCallByEvent(String obligationFunctionName) {
         this.obligationFunctionName = obligationFunctionName;
     }
 

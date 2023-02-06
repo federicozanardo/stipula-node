@@ -1,25 +1,37 @@
 package vm.dfa;
 
-import models.address.Address;
-
 import java.util.ArrayList;
 
-public class ContractCallByParty extends DfaState {
-    private final ArrayList<Address> authorizedParties;
+public class ContractCallByParty extends TransitionData {
+    private final String functionName;
+    private final String party;
+    private final ArrayList<String> arguments;
 
-    public ContractCallByParty(String name, ArrayList<Address> authorizedParties) {
-        super(name);
-        this.authorizedParties = authorizedParties;
+    public ContractCallByParty(String functionName, String party, ArrayList<String> arguments) {
+        super();
+        this.functionName = functionName;
+        this.party = party;
+        this.arguments = arguments;
     }
 
-    public ArrayList<Address> getAuthorizedParties() {
-        return authorizedParties;
+    public String getFunctionName() {
+        return functionName;
+    }
+
+    public String getParty() {
+        return party;
+    }
+
+    public ArrayList<String> getArguments() {
+        return arguments;
     }
 
     @Override
     public String toString() {
         return "ContractCallByParty{" +
-                "authorizedParties=" + authorizedParties +
+                "functionName='" + functionName + '\'' +
+                ", party=" + party +
+                ", arguments=" + arguments +
                 '}';
     }
 }

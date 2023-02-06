@@ -1,55 +1,83 @@
 package vm.dfa;
 
-import lib.datastructures.Pair;
-import models.address.Address;
+import lib.datastructures.Triple;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 public class DeterministicFiniteAutomata implements Serializable {
-    private final HashSet<String> endStates;
-    private String currentState;
-    private final ArrayList<Pair<String, DfaState>> transitions;
+    private DfaState currentState;
+    private final DfaState initialState;
+    private final FinalStates finalStates;
+    private final ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions;
 
     public DeterministicFiniteAutomata(
-            String initialState,
-            HashSet<String> endStates,
-            ArrayList<Pair<String, DfaState>> transitions
+            DfaState initialState,
+            FinalStates finalStates,
+            ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions
     ) {
+        this.initialState = initialState;
         this.currentState = initialState;
-        this.endStates = endStates;
+        this.finalStates = finalStates;
         this.transitions = transitions;
     }
 
     /**
      * Check if the given state is the next state of the current state, given a party.
      *
-     * @param nextState: state to check if it is the next state of the current state.
-     * @param party: the party that made the request.
+     * @param party:              the party that made the request.
+     * @param functionName:       the name of the function called.
+     * @param candidateNextState: state to check if it is the next state of the current state.
+     * @param argumentTypes:      the argument types of the function called.
      * @return true, if the given state is the next state of the current state; false, otherwise.
      */
-    public boolean isNextState(String nextState, Address party) {
+    public boolean isNextState(String party, String functionName, DfaState candidateNextState, ArrayList<String> argumentTypes) {
+        /**
+         * To verify if candidateNextState is effectively the next state of the current state, there is the need to match:
+         * - function name
+         * - party that made the function call
+         * - arguments of the function
+         */
+
         int i = 0;
         boolean found = false;
 
-        while (i < this.transitions.size() && !found) {
-            Pair<String, DfaState> state = this.transitions.get(i);
+        while (i < transitions.size() && !found) {
+            Triple<DfaState, DfaState, TransitionData> transition = transitions.get(i);
+            DfaState sourceState = transition.getFirst();
+            DfaState destinationState = transition.getSecond();
 
             // Look only at ContractCallByParty objects
-            if (state.getSecond() instanceof ContractCallByParty) {
-                // Find the source state
-                if (this.currentState.equals(state.getFirst())) {
+            if (transition.getThird() instanceof ContractCallByParty) {
+                ContractCallByParty callByParty = (ContractCallByParty) transition.getThird();
 
-                    // Check if it is the correct destination state
-                    if (state.getSecond().getName().equals(nextState)) {
-                        ContractCallByParty callByParty = (ContractCallByParty) state.getSecond();
+                // Check if the party can call the function
+                if (callByParty.getParty().equals(party)) {
 
-                        // Check if the request has been made by an authorized party
-                        for (Address authorizedParty : callByParty.getAuthorizedParties()) {
-                            if (authorizedParty.getAddress().equals(party.getAddress())) {
-                                found = true;
+                    // Check function name
+                    if (callByParty.getFunctionName().equals(functionName)) {
+
+                        // Check if the source state matches with the current state
+                        if (currentState.getName().equals(sourceState.getName())) {
+
+                            // Check if it is the correct destination state
+                            if (destinationState.getName().equals(candidateNextState.getName())) {
+
+                                // Check arguments
+                                int j = 0;
+                                boolean areAllArgumentsCorrect = true;
+
+                                while (j < callByParty.getArguments().size() && areAllArgumentsCorrect) {
+                                    String argument = callByParty.getArguments().get(j);
+                                    if (!argumentTypes.get(j).equals(argument)) {
+                                        areAllArgumentsCorrect = false;
+                                    }
+                                    j++;
+                                }
+
+                                if (areAllArgumentsCorrect) {
+                                    found = true;
+                                }
                             }
                         }
                     }
@@ -64,28 +92,31 @@ public class DeterministicFiniteAutomata implements Serializable {
     /**
      * Check if the given state is the next state of the current state, given an obligation function name.
      *
-     * @param nextState: state to check if it is the next state of the current state.
      * @param obligationFunctionName: obligation to call.
+     * @param candidateNextState:     state to check if it is the next state of the current state.
      * @return true, if the given state is the next state of the current state; false, otherwise.
      */
-    public boolean isNextState(String nextState, String obligationFunctionName) {
+    public boolean isNextState(String obligationFunctionName, DfaState candidateNextState) {
         int i = 0;
         boolean found = false;
 
-        while (i < this.transitions.size() && !found) {
-            Pair<String, DfaState> state = this.transitions.get(i);
+        while (i < transitions.size() && !found) {
+            Triple<DfaState, DfaState, TransitionData> transition = transitions.get(i);
+            DfaState sourceState = transition.getFirst();
+            DfaState destinationState = transition.getSecond();
 
             // Look only at ContractCallByEvent objects
-            if (state.getSecond() instanceof ContractCallByEvent) {
-                // Find the source state
-                if (this.currentState.equals(state.getFirst())) {
+            if (transition.getThird() instanceof ContractCallByEvent) {
+                ContractCallByEvent callByEvent = (ContractCallByEvent) transition.getThird();
 
-                    // Check if it is the correct destination state
-                    if (state.getSecond().getName().equals(nextState)) {
-                        ContractCallByEvent callByEvent = (ContractCallByEvent) state.getSecond();
+                // Check if the request has been made by the correct obligation (check function name)
+                if (callByEvent.getObligationFunctionName().equals(obligationFunctionName)) {
 
-                        // Check if the request has been made by the correct obligation
-                        if (callByEvent.getObligationFunctionName().equals(obligationFunctionName)) {
+                    // Check if the source state matches with the current state
+                    if (currentState.getName().equals(sourceState.getName())) {
+
+                        // Check if it is the correct destination state
+                        if (destinationState.getName().equals(candidateNextState.getName())) {
                             found = true;
                         }
                     }
@@ -100,25 +131,107 @@ public class DeterministicFiniteAutomata implements Serializable {
     /**
      * Update the state machine.
      *
-     * @param nextState: the next state of the current state.
-     * @param party: the party that made the request.
+     * @param party:         the party that made the request.
+     * @param functionName:  the name of the function called.
+     * @param argumentTypes: the argument types of the function called.
      */
-    public void nextState(String nextState, Address party) {
-        if (this.isNextState(nextState, party)) {
-            this.currentState = nextState;
+    public void nextState(String party, String functionName, ArrayList<String> argumentTypes) {
+        int i = 0;
+        boolean found = false;
+
+        while (i < transitions.size() && !found) {
+            Triple<DfaState, DfaState, TransitionData> transition = transitions.get(i);
+            DfaState sourceState = transition.getFirst();
+            DfaState destinationState = transition.getSecond();
+
+            // Look only at ContractCallByParty objects
+            if (transition.getThird() instanceof ContractCallByParty) {
+                ContractCallByParty callByParty = (ContractCallByParty) transition.getThird();
+
+                // Check if the party can call the function
+                if (callByParty.getParty().equals(party)) {
+
+                    // Check function name
+                    if (callByParty.getFunctionName().equals(functionName)) {
+
+                        // Find the source state
+                        if (currentState.getName().equals(sourceState.getName())) {
+
+                            // Check arguments
+                            int j = 0;
+                            boolean areAllArgumentsCorrect = true;
+
+                            while (j < callByParty.getArguments().size() && areAllArgumentsCorrect) {
+                                String argument = callByParty.getArguments().get(j);
+                                if (!argumentTypes.get(j).equals(argument)) {
+                                    areAllArgumentsCorrect = false;
+                                }
+                                j++;
+                            }
+
+                            // Update the current state with the destination state
+                            if (areAllArgumentsCorrect) {
+                                found = true;
+                                currentState = destinationState;
+                            }
+                        }
+                    }
+                }
+            }
+            i++;
         }
     }
 
     /**
      * Update the state machine.
      *
-     * @param nextState: the next state of the current state.
      * @param obligationFunctionName: obligation to call.
      */
-    public void nextState(String nextState, String obligationFunctionName) {
-        if (this.isNextState(nextState, obligationFunctionName)) {
-            this.currentState = nextState;
+    public void nextState(String obligationFunctionName) {
+        int i = 0;
+        boolean found = false;
+
+        while (i < transitions.size() && !found) {
+            Triple<DfaState, DfaState, TransitionData> transition = transitions.get(i);
+            DfaState sourceState = transition.getFirst();
+            DfaState destinationState = transition.getSecond();
+
+            // Look only at ContractCallByEvent objects
+            if (transition.getThird() instanceof ContractCallByEvent) {
+                ContractCallByEvent callByEvent = (ContractCallByEvent) transition.getThird();
+
+                // Check if the request has been made by the correct obligation (check function name)
+                if (callByEvent.getObligationFunctionName().equals(obligationFunctionName)) {
+
+                    // Find the source state
+                    if (currentState.getName().equals(sourceState.getName())) {
+
+                        // Update the current state with the destination state
+                        found = true;
+                        currentState = destinationState;
+                    }
+                }
+            }
+            i++;
         }
+    }
+
+    /**
+     * Return the current state of the state machine.
+     *
+     * @return the current state.
+     */
+    public DfaState getCurrentState() {
+        return currentState;
+    }
+
+    /**
+     * Return the initial state of the state machine.
+     *
+     * @return the initial state.
+     */
+    public DfaState getInitialState() {
+        return initialState;
     }
 
     /**
@@ -127,7 +240,7 @@ public class DeterministicFiniteAutomata implements Serializable {
      * @return true, if the current state belongs to the end-states set; false otherwise.
      */
     public boolean isCurrentStateEndState() {
-        return this.endStates.contains(this.currentState);
+        return finalStates.isStateInFinalStates(currentState);
     }
 
     /**
@@ -136,24 +249,16 @@ public class DeterministicFiniteAutomata implements Serializable {
      * @param state: the state to check if it belongs to the end-states set.
      * @return true, if the given state belongs to the end-states set; false otherwise.
      */
-    public boolean isEndState(String state) {
-        return this.endStates.contains(state);
-    }
-
-    /**
-     * Return the current state of the state machine.
-     *
-     * @return the current state.
-     */
-    public String getCurrentState() {
-        return currentState;
+    public boolean isEndState(DfaState state) {
+        return finalStates.isStateInFinalStates(state);
     }
 
     @Override
     public String toString() {
         return "DeterministicFiniteAutomata{" +
-                "endState='" + endStates + '\'' +
-                ", currentState='" + currentState + '\'' +
+                "currentState=" + currentState +
+                ", initialState=" + initialState +
+                ", finalStates=" + finalStates +
                 ", transitions=" + transitions +
                 '}';
     }
