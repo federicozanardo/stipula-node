@@ -1,18 +1,22 @@
 package models.dto.requests.contract.function;
 
-import models.contract.Property;
-
 public class PayToContract {
-    private final Property property;
+    private final String propertyId;
+    private final String address;
     private final String unlockScript;
 
-    public PayToContract(Property property, String unlockScript) {
-        this.property = property;
+    public PayToContract(String propertyId, String address, String unlockScript) {
+        this.propertyId = propertyId;
+        this.address = address;
         this.unlockScript = unlockScript;
     }
 
-    public Property getProperty() {
-        return property;
+    public String getPropertyId() {
+        return propertyId;
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     public String getUnlockScript() {
@@ -22,7 +26,8 @@ public class PayToContract {
     @Override
     public String toString() {
         return "PayToContract{" +
-                "property=" + property +
+                "propertyId='" + propertyId + '\'' +
+                ", address='" + address + '\'' +
                 ", unlockScript='" + unlockScript + '\'' +
                 '}';
     }
