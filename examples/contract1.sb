@@ -1,5 +1,6 @@
 contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e
-fn agreement
+//fn agreement
+fn agreement Lender,Borrower Inactive float,time
 global:
 GINST addr Lender
 GINST addr Borrower
@@ -18,7 +19,8 @@ PUSH time :rent_time
 GSTORE rent_time
 start:
 HALT
-fn offer Lender Proposal
+//fn offer Lender Proposal
+fn Inactive Lender offer Proposal int
 args:
 PUSH int :z
 AINST int z
@@ -27,7 +29,8 @@ start:
 ALOAD z
 GSTORE use_code
 HALT
-fn accept Borrower Using
+//fn accept Borrower Using
+fn Proposal Borrower accept Using asset
 args:
 // PUSH asset 100 2 iop890
 PUSH asset :y
@@ -53,7 +56,8 @@ ADD
 TRIGGER accept_obl_1
 end:
 HALT
-fn end Borrower End
+//fn end Borrower End
+fn Using Borrower end End
 start:
 // start withdraw
 // start expression
@@ -67,7 +71,7 @@ WITHDRAW wallet
 // end withdraw
 HALT
 // obligation function
-obligation accept_obl_1 End
+obligation Using accept_obl_1 End
 start:
 // start withdraw
 // start expression
