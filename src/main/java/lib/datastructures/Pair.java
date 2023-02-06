@@ -2,16 +2,16 @@ package lib.datastructures;
 
 import java.io.Serializable;
 
-public class Pair<T, V> implements Serializable {
-    private final T first;
+public class Pair<K, V> implements Serializable {
+    private final K first;
     private final V second;
 
-    public Pair(T first, V second) {
+    public Pair(K first, V second) {
         this.first = first;
         this.second = second;
     }
 
-    public T getFirst() {
+    public K getFirst() {
         return first;
     }
 
