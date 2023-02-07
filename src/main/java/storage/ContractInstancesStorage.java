@@ -88,26 +88,12 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
             throw new ContractInstanceNotFoundException(contractInstanceId);
         }
 
-        System.out.println("storeGlobalSpace: contractInstance => " + contractInstance.getGlobalSpace());
-        System.out.println("storeGlobalSpace: => updates " + updates);
-
         for (HashMap.Entry<String, TraceChange> entry : updates.entrySet()) {
             String variableName = entry.getKey();
             TraceChange value = entry.getValue();
 
-            if (contractInstance.getGlobalSpace().containsKey(variableName)) {
-                System.out.println("storeGlobalSpace: This is a new variable to store\n" +
-                        "variable name: " + variableName + "\n" +
-                        "value: " + value + "\n");
-            } else {
-                if (value.isChanged()) {
-                    Type currentValue = contractInstance.getGlobalSpace().get(variableName);
-                    System.out.println("storeGlobalSpace: This variable has changed value\n" +
-                            "variable name: " + variableName + "\n" +
-                            "current value: " + currentValue + "\n" +
-                            "new value: " + value.getValue() + "\n");
-                    contractInstance.getGlobalSpace().put(variableName, value.getValue());
-                }
+            if (value.isChanged()) {
+                contractInstance.getGlobalSpace().put(variableName, value.getValue());
             }
         }
 
@@ -118,12 +104,14 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     }
 
     /**
-     * @param contractInstanceId
-     * @param partyName
-     * @param functionName
-     * @param argumentsTypes
-     * @throws IOException
-     * @throws ContractInstanceNotFoundException
+     * Store the updates of the state machine when a function has been called.
+     *
+     * @param contractInstanceId: id of the contract instance to find in the storage.
+     * @param partyName:          the party that made the request.
+     * @param functionName:       the name of the function called.
+     * @param argumentsTypes:     the argument types of the function called.
+     * @throws IOException:                       throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractInstanceNotFoundException: throws when the contract instance required does not exist in the storage.
      */
     public void storeStateMachine(String contractInstanceId, String partyName, String functionName, ArrayList<String> argumentsTypes)
             throws IOException,
@@ -146,10 +134,12 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
     }
 
     /**
-     * @param contractInstanceId
-     * @param obligationFunctionName
-     * @throws IOException
-     * @throws ContractInstanceNotFoundException
+     * Store the updates of the state machine when an obligation function has been called.
+     *
+     * @param contractInstanceId:     id of the contract instance to find in the storage.
+     * @param obligationFunctionName: the name of the obligation function called.
+     * @throws IOException:                       throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractInstanceNotFoundException: throws when the contract instance required does not exist in the storage.
      */
     public void storeStateMachine(String contractInstanceId, String obligationFunctionName)
             throws IOException,
