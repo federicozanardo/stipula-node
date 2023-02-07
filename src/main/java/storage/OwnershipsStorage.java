@@ -61,8 +61,8 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
      *
      * @param address: it is needed in order to search the funds associated.
      * @return the funds associated to the address.
-     * @throws IOException:                throws when an error occur while opening or closing the connection with the storage.
-     * @throws OwnershipsNotFoundException : throws when there are no funds associated to the given address.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws OwnershipsNotFoundException: throws when there are no funds associated to the given address.
      */
     public ArrayList<Ownership> getFunds(String address) throws IOException, OwnershipsNotFoundException {
         mutex.lock();
@@ -83,12 +83,12 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
     /**
      * This method allows to get a specific ownership, given an address.
      *
-     * @param address:    the address associated to the ownership to obtain.
+     * @param address:     the address associated to the ownership to obtain.
      * @param ownershipId: the id of the specific ownership to obtain.
      * @return the fund associated to the address.
-     * @throws IOException:                throws when an error occur while opening or closing the connection with the storage.
-     * @throws OwnershipsNotFoundException : throws when there are no funds associated to the given address.
-     * @throws OwnershipNotFoundException  :   throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws OwnershipsNotFoundException: throws when there are no funds associated to the given address.
+     * @throws OwnershipNotFoundException:  throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
      */
     public Ownership getFund(String address, String ownershipId)
             throws IOException,
@@ -171,9 +171,9 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
      * @param ownershipId:        the id of the specific ownership to make spent.
      * @param contractInstanceId: id of the contract instance to find in the storage.
      * @param unlockScript:       the first part of the script that can prove the spendability of the ownership.
-     * @throws IOException:                throws when an error occur while opening or closing the connection with the storage.
-     * @throws OwnershipsNotFoundException : throws when there are no funds associated to the given address.
-     * @throws OwnershipNotFoundException  :   throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws OwnershipsNotFoundException: throws when there are no funds associated to the given address.
+     * @throws OwnershipNotFoundException:  throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
      */
     public void makeOwnershipSpent(
             String address,

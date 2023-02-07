@@ -185,7 +185,7 @@ public class DeterministicFiniteAutomata implements Serializable {
     /**
      * Update the state machine.
      *
-     * @param obligationFunctionName: obligation to call.
+     * @param obligationFunctionName: the name of the obligation function called.
      */
     public void nextState(String obligationFunctionName) {
         int i = 0;
