@@ -228,12 +228,9 @@ public class VirtualMachine extends Thread {
                         ArrayList<PayToContract> propertiesToUpdate = new ArrayList<>();
 
                         if (message instanceof FunctionCall) {
-                            FunctionCall functionCall = (FunctionCall) message;
-
-                            System.out.println("VirtualMachine: functionCall" + functionCall);
                             // Properties validation
+                            FunctionCall functionCall = (FunctionCall) message;
                             propertiesToUpdate = validateProperties(address, functionCall);
-                            //throw new Error("Not all the properties are valid");
                         }
 
                         // Load arguments
@@ -288,12 +285,10 @@ public class VirtualMachine extends Thread {
                                     this
                             );
                             eventTriggerHandler.addTask(eventTrigger);
-                            System.out.println("VirtualMachine: add trigger => " + eventTrigger);
                         }
 
                         // Update the properties/single-use seals
                         for (PayToContract propertyToUpdate : propertiesToUpdate) {
-                            System.out.println("VirtualMachine: address => " + propertyToUpdate.getAddress());
                             propertiesStorage.makePropertySpent(
                                     propertyToUpdate.getAddress(),
                                     propertyToUpdate.getPropertyId(),
@@ -302,10 +297,11 @@ public class VirtualMachine extends Thread {
                             );
                         }
 
-                        System.out.println("VirtualMachine: Updating the global store...");
+                        // Update the global space of the contract instance
                         if (vm.getGlobalSpace().isEmpty()) {
                             System.out.println("There is nothing to save in the global store");
                         } else {
+                            System.out.println("VirtualMachine: Updating the global store...");
                             contractInstancesStorage.storeGlobalSpace(contractInstanceId, vm.getGlobalSpace());
                             System.out.println("VirtualMachine: Global store updated");
                         }
@@ -365,10 +361,11 @@ public class VirtualMachine extends Thread {
                         // Go to the next state
                         contractInstancesStorage.storeStateMachine(contractInstanceId, obligationFunctionName);
 
-                        System.out.println("VirtualMachine: Updating the global store...");
+                        // Update the global space of the contract instance
                         if (vm.getGlobalSpace().isEmpty()) {
                             System.out.println("There is nothing to save in the global store");
                         } else {
+                            System.out.println("VirtualMachine: Updating the global store...");
                             contractInstancesStorage.storeGlobalSpace(contractInstanceId, vm.getGlobalSpace());
                             System.out.println("VirtualMachine: Global store updated");
                         }
@@ -597,9 +594,18 @@ public class VirtualMachine extends Thread {
 
         if (message instanceof AgreementCall) {
             AgreementCall agreementCall = (AgreementCall) message;
-            arguments.addAll(agreementCall.getArguments());
+            ArrayList<FunctionArgument> agreementCallArguments = agreementCall.getArguments();
+            HashMap<String, Address> parties = agreementCall.getParties();
 
-            for (HashMap.Entry<String, Address> entry : agreementCall.getParties().entrySet()) {
+            for (FunctionArgument argument : agreementCallArguments) {
+                if (argument.getType().equals("asset")) {
+                    throw new RuntimeException("Assets cannot be accepted by the agreement function");
+                } else {
+                    arguments.add(argument);
+                }
+            }
+
+            for (HashMap.Entry<String, Address> entry : parties.entrySet()) {
                 arguments.add(new FunctionArgument("addr", entry.getKey(), entry.getValue().getPublicKey()));
             }
         } else {
