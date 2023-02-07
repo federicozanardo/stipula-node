@@ -1,4 +1,4 @@
-package models.dto.requests.contract.function;
+package models.contract;
 
 public class PayToContract {
     private final String propertyId;

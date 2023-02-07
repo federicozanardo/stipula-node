@@ -2,7 +2,7 @@ package models.dto.requests.contract;
 
 import exceptions.UnsupportedTypeException;
 import lib.datastructures.Triple;
-import models.dto.requests.contract.function.PayToContract;
+import models.contract.PayToContract;
 
 public class FunctionArgument {
     // Triple<variable_type, variable_name, variable_value> argument;
