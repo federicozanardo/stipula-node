@@ -597,11 +597,13 @@ public class VirtualMachine extends Thread {
             ArrayList<FunctionArgument> agreementCallArguments = agreementCall.getArguments();
             HashMap<String, Address> parties = agreementCall.getParties();
 
-            for (FunctionArgument argument : agreementCallArguments) {
-                if (argument.getType().equals("asset")) {
-                    throw new RuntimeException("Assets cannot be accepted by the agreement function");
+            for (FunctionArgument functionArgument : agreementCallArguments) {
+                if (functionArgument.getType().equals("asset")) {
+                    throw new RuntimeException("Assets cannot be accepted by the agreement function as arguments");
+                } else if (functionArgument.getType().equals("addr")) {
+                    throw new RuntimeException("Addresses cannot be accepted by the agreement function as arguments");
                 } else {
-                    arguments.add(argument);
+                    arguments.add(functionArgument);
                 }
             }
 
@@ -651,6 +653,8 @@ public class VirtualMachine extends Thread {
 
                     String argumentValue = value.getValue().getInteger() + " " + value.getValue().getDecimals() + " " + value.getAssetId();
                     arguments.add(new FunctionArgument(type, variableName, argumentValue));
+                } else if (functionArgument.getType().equals("addr")) {
+                    throw new RuntimeException("Addresses cannot be accepted by the agreement function as arguments");
                 } else {
                     arguments.add(functionArgument);
                 }
