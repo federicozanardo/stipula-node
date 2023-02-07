@@ -1,8 +1,8 @@
 package vm;
 
-import exceptions.message.MessageNotSupportedException;
-import exceptions.queue.QueueOverflowException;
-import exceptions.queue.QueueUnderflowException;
+import exceptions.datastructures.queue.QueueOverflowException;
+import exceptions.datastructures.queue.QueueUnderflowException;
+import exceptions.models.dto.requests.MessageNotSupportedException;
 import lib.datastructures.Pair;
 import lib.datastructures.Queue;
 import models.dto.requests.Message;

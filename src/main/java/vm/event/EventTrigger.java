@@ -1,6 +1,6 @@
 package vm.event;
 
-import exceptions.queue.QueueOverflowException;
+import exceptions.datastructures.queue.QueueOverflowException;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
 import vm.RequestQueue;
 

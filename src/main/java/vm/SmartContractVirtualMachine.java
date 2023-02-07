@@ -1,7 +1,7 @@
 package vm;
 
-import exceptions.stack.StackOverflowException;
-import exceptions.stack.StackUnderflowException;
+import exceptions.datastructures.stack.StackOverflowException;
+import exceptions.datastructures.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
 import models.contract.SingleUseSeal;

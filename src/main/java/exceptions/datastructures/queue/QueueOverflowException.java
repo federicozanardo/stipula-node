@@ -1,4 +1,4 @@
-package exceptions.queue;
+package exceptions.datastructures.queue;
 
 public class QueueOverflowException extends Exception {
     public QueueOverflowException() {

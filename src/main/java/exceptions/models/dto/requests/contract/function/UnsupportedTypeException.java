@@ -1,4 +1,4 @@
-package exceptions;
+package exceptions.models.dto.requests.contract.function;
 
 public class UnsupportedTypeException extends Exception {
     public UnsupportedTypeException() {

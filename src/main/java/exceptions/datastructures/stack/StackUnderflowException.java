@@ -1,4 +1,4 @@
-package exceptions.stack;
+package exceptions.datastructures.stack;
 
 public class StackUnderflowException extends Exception {
     public StackUnderflowException() {

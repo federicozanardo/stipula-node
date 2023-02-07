@@ -1,7 +1,7 @@
 package lib.datastructures;
 
-import exceptions.stack.StackOverflowException;
-import exceptions.stack.StackUnderflowException;
+import exceptions.datastructures.stack.StackOverflowException;
+import exceptions.datastructures.stack.StackUnderflowException;
 
 import java.util.ArrayList;
 

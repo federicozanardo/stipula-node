@@ -1,6 +1,6 @@
 package models.dto.requests.contract;
 
-import exceptions.UnsupportedTypeException;
+import exceptions.models.dto.requests.contract.function.UnsupportedTypeException;
 import lib.datastructures.Triple;
 import models.contract.PayToContract;
 

@@ -1,7 +1,7 @@
 package lib.datastructures;
 
-import exceptions.queue.QueueOverflowException;
-import exceptions.queue.QueueUnderflowException;
+import exceptions.datastructures.queue.QueueOverflowException;
+import exceptions.datastructures.queue.QueueUnderflowException;
 
 import java.util.ArrayList;
 
