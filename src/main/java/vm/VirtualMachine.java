@@ -1,29 +1,32 @@
 package vm;
 
-import exceptions.queue.QueueUnderflowException;
+import exceptions.datastructures.queue.QueueUnderflowException;
+import exceptions.models.dto.requests.contract.function.UnsupportedTypeException;
+import exceptions.storage.AssetNotFoundException;
+import exceptions.storage.ContractNotFoundException;
+import exceptions.storage.PropertiesNotFoundException;
+import exceptions.storage.PropertyNotFoundException;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.assets.Asset;
-import models.contract.Contract;
-import models.contract.ContractInstance;
-import models.contract.Property;
-import models.contract.SingleUseSeal;
+import models.contract.*;
 import models.dto.requests.Message;
 import models.dto.requests.SignedMessage;
+import models.dto.requests.contract.FunctionArgument;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.contract.function.PayToContract;
 import models.dto.requests.event.EventTriggerRequest;
 import models.dto.requests.event.EventTriggerSchedulingRequest;
+import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
-import models.storage.PropertyUpdateData;
 import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
 import storage.PropertiesStorage;
 import vm.dfa.DeterministicFiniteAutomata;
+import vm.dfa.DfaState;
 import vm.event.EventTrigger;
 import vm.event.EventTriggerHandler;
 import vm.types.AssetType;
@@ -34,6 +37,8 @@ import vm.types.Type;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,237 +73,286 @@ public class VirtualMachine extends Thread {
 
     @Override
     public void run() {
-        Pair<Thread, Pair<String, Object>> request;
-        Pair<String, Object> packet;
+        Pair<Thread, Object> request;
         Thread thread;
-        String whereToNotify;
-        SignedMessage signedMessage = null;
-        EventTriggerSchedulingRequest triggerRequest = null;
+        SignedMessage signedMessage;
+        EventTriggerSchedulingRequest triggerRequest;
+        boolean errorInStateMachine;
 
         while (true) {
+            // Reset variables
+            signedMessage = null;
+            triggerRequest = null;
+            errorInStateMachine = false;
+            HashMap<String, TraceChange> globalSpace = new HashMap<>();
+
             System.out.println("VirtualMachine: Ready to dequeue a value...");
             try {
                 request = this.queue.dequeue();
                 System.out.println("VirtualMachine: Request received => " + request);
 
                 thread = request.getFirst();
-                packet = request.getSecond();
-                whereToNotify = packet.getFirst();
 
-                if (packet.getSecond() instanceof SignedMessage) {
-                    signedMessage = (SignedMessage) packet.getSecond();
-                } else if (packet.getSecond() instanceof EventTriggerSchedulingRequest) {
-                    triggerRequest = (EventTriggerSchedulingRequest) packet.getSecond();
+                if (request.getSecond() instanceof SignedMessage) {
+                    signedMessage = (SignedMessage) request.getSecond();
+                } else if (request.getSecond() instanceof EventTriggerSchedulingRequest) {
+                    triggerRequest = (EventTriggerSchedulingRequest) request.getSecond();
                 } else {
-                    // Error
+                    System.out.println("VirtualMachine: Request not valid");
+                    sharedMemory.notifyThread(thread, new ErrorResponse(123, "Request not valid"));
                 }
 
                 if (signedMessage != null) {
                     Message message = signedMessage.getMessage();
-                    Contract contract;
-                    ContractInstance instance;
-                    String nextState = "";
-                    Address address = null;
 
-                    // Load the function
-                    String rawBytecode;
-                    if (message instanceof AgreementCall) {
-                        AgreementCall agreementCall = (AgreementCall) message;
-
-                        // Get the contract
-                        contract = contractsStorage.getContract(agreementCall.getContractId());
-
-                        // Load the DFA
-                        DeterministicFiniteAutomata stateMachine = new DeterministicFiniteAutomata(
-                                contract.getInitialState(),
-                                contract.getEndStates(),
-                                contract.getTransitions()
-                        );
-
-                        // Create a new instance of the contract
-                        instance = new ContractInstance(agreementCall.getContractId(), stateMachine);
-                        contractInstancesStorage.createContractInstance(instance);
-                        System.out.println("VirtualMachine: contractInstanceId = " + instance.getInstanceId());
-
-                        rawBytecode = this.loadFunction(agreementCall.getContractId(), "agreement");
-                        System.out.println("VirtualMachine: Function\n" + rawBytecode);
+                    if (!(message instanceof AgreementCall) && !(message instanceof FunctionCall)) {
+                        System.out.println("VirtualMachine: Message not valid");
+                        sharedMemory.notifyThread(thread, new ErrorResponse(123, "Message not valid"));
                     } else {
-                        FunctionCall functionCall = (FunctionCall) message;
+                        Contract contract;
+                        ContractInstance contractInstance;
+                        DfaState nextState;
+                        Address address = null;
+                        String functionName = "";
+                        String contractId;
+                        String contractInstanceId;
 
-                        if (signedMessage.getSignatures().size() == 0) {
-                            // Error
+                        String partyName = "";
+                        ArrayList<String> argumentsTypes = new ArrayList<>();
+                        String rawBytecode = "";
+
+                        // Load the function
+                        if (message instanceof AgreementCall) {
+                            AgreementCall agreementCall = (AgreementCall) message;
+                            contractId = agreementCall.getContractId();
+                            HashMap<String, Address> parties = agreementCall.getParties();
+                            ArrayList<FunctionArgument> arguments = agreementCall.getArguments();
+
+                            // Get the contract
+                            contract = contractsStorage.getContract(contractId);
+
+                            // Create an instance of a DFA
+                            DeterministicFiniteAutomata deterministicFiniteAutomata = new DeterministicFiniteAutomata(
+                                    contract.getInitialState(),
+                                    contract.getFinalStates(),
+                                    contract.getTransitions()
+                            );
+
+                            // Create a new instance of the contract
+                            contractInstance = new ContractInstance(contractId, deterministicFiniteAutomata, parties);
+
+                            try {
+                                contractInstanceId = contractInstancesStorage.saveContractInstance(contractInstance);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                            System.out.println("VirtualMachine: contractInstanceId = " + contractInstanceId);
+
+                            // Get the party names
+                            ArrayList<String> partiesNames = new ArrayList<>();
+                            for (Map.Entry<String, Address> entry : parties.entrySet()) {
+                                partiesNames.add(entry.getKey());
+                            }
+
+                            // Get the destination state
+                            DfaState initialState = contract.getInitialState();
+
+                            // Get the types of the arguments
+                            for (FunctionArgument argument : arguments) {
+                                argumentsTypes.add(argument.getType());
+                            }
+
+                            rawBytecode = this.loadAgreementFunction(contractId, partiesNames, initialState, argumentsTypes);
+                            System.out.println("VirtualMachine: Function\n" + rawBytecode);
+                        } else {
+                            FunctionCall functionCall = (FunctionCall) message;
+                            functionName = functionCall.getFunctionName();
+                            contractInstanceId = functionCall.getContractInstanceId();
+                            ArrayList<FunctionArgument> arguments = functionCall.getArguments();
+
+                            // Get the instance of the contract
+                            contractInstance = contractInstancesStorage.getContractInstance(contractInstanceId);
+
+                            // Get the contract id
+                            contractId = contractInstance.getContractId();
+
+                            // Get the types of the arguments
+                            for (FunctionArgument argument : arguments) {
+                                argumentsTypes.add(argument.getType());
+                            }
+
+                            // Get the address of the party
+                            Map.Entry<String, String> first = signedMessage.getSignatures().entrySet().iterator().next();
+                            String publicKeyParty = first.getKey();
+                            address = new Address(publicKeyParty);
+
+                            // Get the name of the party from the address
+                            for (HashMap.Entry<String, Address> entry : contractInstance.getParties().entrySet()) {
+                                if (entry.getValue().getAddress().equals(address.getAddress())) {
+                                    partyName = entry.getKey();
+                                }
+                            }
+
+                            if (partyName != null) {
+                                // Get the current state and the 'candidate' next state
+                                DfaState currentState = contractInstance.getStateMachine().getCurrentState();
+                                nextState = getNextStateFromCommonFunction(contractId, currentState, partyName, functionName, argumentsTypes);
+
+                                // Check if the next state is correct
+                                if (!contractInstance.getStateMachine().isNextState(partyName, functionName, nextState, argumentsTypes)) {
+                                    errorInStateMachine = true;
+                                    System.out.println("VirtualMachine: This function cannot be called in the current state");
+                                    System.out.println("VirtualMachine: Party name => " + partyName);
+                                    System.out.println("VirtualMachine: Function name => " + functionName);
+                                    System.out.println("VirtualMachine: Argument types => " + argumentsTypes);
+                                    System.out.println("VirtualMachine: Current state => " + currentState);
+                                    System.out.println("VirtualMachine: Next state => " + nextState);
+                                    System.exit(-1);
+                                    sharedMemory.notifyThread(thread, new ErrorResponse(123, "This function cannot be called in the current state"));
+                                } else {
+                                    System.out.println("VirtualMachine: nextState: " + nextState);
+                                }
+
+                                rawBytecode = loadCommonFunction(contractId, currentState, partyName, functionName, nextState, argumentsTypes);
+                                System.out.println("VirtualMachine: Function\n" + rawBytecode);
+                            } else {
+                                sharedMemory.notifyThread(thread, new ErrorResponse(123, "Impossible to find the party in the contract instance"));
+                            }
                         }
 
-                        if (signedMessage.getSignatures().size() > 1) {
-                            // Error
+                        /*if (errorInStateMachine) {
+
+                        }*/
+
+                        ArrayList<PayToContract> propertiesToUpdate = new ArrayList<>();
+
+                        if (message instanceof FunctionCall) {
+                            FunctionCall functionCall = (FunctionCall) message;
+
+                            System.out.println("VirtualMachine: functionCall" + functionCall);
+                            // Properties validation
+                            propertiesToUpdate = validateProperties(address, functionCall);
+                            //throw new Error("Not all the properties are valid");
                         }
 
-                        Map.Entry<String, String> first = signedMessage.getSignatures().entrySet().iterator().next();
-                        String publicKeyParty = first.getKey();
+                        // Load arguments
+                        ArrayList<FunctionArgument> arguments = loadArguments(message);
 
-                        address = new Address(publicKeyParty);
-
-                        instance = contractInstancesStorage.getContractInstance(functionCall.getContractInstanceId());
-
-                        nextState = getNextStateFromFunction(functionCall.getContractId(), functionCall.getFunction());
-                        System.out.println("VirtualMachine: nextState: " + nextState);
-
-                        rawBytecode = loadFunction(functionCall.getContractId(), functionCall.getFunction());
-                        System.out.println("VirtualMachine: Function\n" + rawBytecode);
-                    }
-
-                    // Load arguments
-                    HashMap<String, String> arguments = loadArguments(message);
-
-                    // Load asset arguments
-                    HashMap<String, AssetType> assetArguments = new HashMap<>();
-                    HashMap<String, PropertyUpdateData> propertiesToUpdate = new HashMap<>();
-
-                    if (message instanceof FunctionCall) {
-                        // Properties validation
-                        if (!validateProperties(address, (FunctionCall) message)) {
-                            throw new Error("Not all the properties are valid");
-                        }
-
-                        // (Effectively) Load asset arguments
-                        assetArguments = loadAssetArguments((FunctionCall) message);
-
-                        propertiesToUpdate = getPropertiesToUpdate(address, (FunctionCall) message);
-                    }
-
-                    // Load the bytecode
-                    String bytecode;
-                    if (message instanceof AgreementCall) {
+                        // Load the bytecode
+                        String bytecode;
                         bytecode = loadBytecode(rawBytecode, arguments);
                         System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
-                    } else {
-                        bytecode = loadBytecode(rawBytecode, arguments, assetArguments);
-                        System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
-                    }
 
-                    String[] instructions = bytecode.split("\n");
+                        String[] instructions = bytecode.split("\n");
 
-                    // Check if the state is correct
-                    if (message instanceof FunctionCall && !instance.getStateMachine().isNextState(nextState, address)) {
-                        // Error
-                        System.out.println("VirtualMachine: Error in the state machine");
-                        System.out.println("VirtualMachine: Current state => " + instance.getStateMachine().getCurrentState());
-                        System.out.println("VirtualMachine: Next state => " + nextState);
-                        System.out.println(address);
-                        System.exit(-1);
-                    }
+                        // Set up the virtual machine
+                        SmartContractVirtualMachine vm;
 
-                    // Set up the virtual machine
-                    SmartContractVirtualMachine vm;
+                        if (message instanceof AgreementCall) {
+                            vm = new SmartContractVirtualMachine(instructions, offset);
+                        } else {
+                            // Load global space
+                            for (HashMap.Entry<String, Type> entry : contractInstance.getGlobalSpace().entrySet()) {
+                                globalSpace.put(entry.getKey(), new TraceChange(entry.getValue()));
+                            }
 
-                    if (message instanceof AgreementCall) {
-                        vm = new SmartContractVirtualMachine(instructions, offset);
-                    } else {
-                        // Load global storage
-                        HashMap<String, TraceChange> global = new HashMap<>();
-
-                        for (HashMap.Entry<String, Type> entry : instance.getGlobalVariables().entrySet()) {
-                            global.put(entry.getKey(), new TraceChange(entry.getValue()));
+                            vm = new SmartContractVirtualMachine(instructions, offset, globalSpace);
                         }
 
-                        vm = new SmartContractVirtualMachine(instructions, offset, global);
+                        // Execute the code
+                        boolean result = vm.execute();
+
+                        if (!result) {
+                            System.out.println("VirtualMachine: Error while executing the function");
+                            return;
+                        }
+
+                        if (message instanceof FunctionCall) {
+                            // Go to the next state
+                            contractInstancesStorage.storeStateMachine(contractInstanceId, partyName, functionName, argumentsTypes);
+                        }
+
+                        // Set up trigger events
+                        for (EventTriggerRequest eventTriggerRequest : vm.getEventTriggersToRequest()) {
+                            EventTriggerSchedulingRequest eventTriggerSchedulingRequest =
+                                    new EventTriggerSchedulingRequest(
+                                            eventTriggerRequest,
+                                            contractId,
+                                            contractInstanceId
+                                    );
+                            EventTrigger eventTrigger = new EventTrigger(
+                                    eventTriggerSchedulingRequest,
+                                    eventTriggerHandler,
+                                    queue,
+                                    this
+                            );
+                            eventTriggerHandler.addTask(eventTrigger);
+                            System.out.println("VirtualMachine: add trigger => " + eventTrigger);
+                        }
+
+                        // Update the properties/single-use seals
+                        for (PayToContract propertyToUpdate : propertiesToUpdate) {
+                            System.out.println("VirtualMachine: address => " + propertyToUpdate.getAddress());
+                            propertiesStorage.makePropertySpent(
+                                    propertyToUpdate.getAddress(),
+                                    propertyToUpdate.getPropertyId(),
+                                    contractInstanceId,
+                                    propertyToUpdate.getUnlockScript()
+                            );
+                        }
+
+                        System.out.println("VirtualMachine: Updating the global store...");
+                        if (vm.getGlobalSpace().isEmpty()) {
+                            System.out.println("There is nothing to save in the global store");
+                        } else {
+                            contractInstancesStorage.storeGlobalSpace(contractInstanceId, vm.getGlobalSpace());
+                            System.out.println("VirtualMachine: Global store updated");
+                        }
+
+                        // Store the new single-use seals produced by the contract execution
+                        HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
+                        propertiesStorage.addFunds(singleUseSealsToSend);
+
+                        sharedMemory.notifyThread(thread, new SuccessDataResponse("ack from VirtualMachine"));
                     }
-
-                    // Execute the code
-                    boolean result = vm.execute();
-
-                    if (!result) {
-                        System.out.println("VirtualMachine: Error while executing the function");
-                        return;
-                    }
-
-                    // Go to the next state
-                    instance.getStateMachine().nextState(nextState, address);
-                    System.out.println("VirtualMachine: current state = " + instance.getStateMachine().getCurrentState());
-
-                    // Set up trigger events
-                    for (EventTriggerRequest eventTriggerRequest : vm.getEventTriggersToRequest()) {
-                        EventTriggerSchedulingRequest eventTriggerSchedulingRequest =
-                                new EventTriggerSchedulingRequest(
-                                        eventTriggerRequest,
-                                        instance.getContractId(),
-                                        instance.getInstanceId()
-                                );
-                        EventTrigger eventTrigger = new EventTrigger(
-                                eventTriggerSchedulingRequest,
-                                eventTriggerHandler,
-                                queue,
-                                this
-                        );
-                        eventTriggerHandler.addTask(eventTrigger);
-                        System.out.println("VirtualMachine: add trigger => " + eventTrigger);
-                    }
-
-                    // Update the properties/single-use seals
-                    for (HashMap.Entry<String, PropertyUpdateData> entry : propertiesToUpdate.entrySet()) {
-                        PropertyUpdateData data = entry.getValue();
-                        System.out.println("VirtualMachine: address => " + entry.getKey());
-                        propertiesStorage.makePropertySpent(
-                                entry.getKey(),
-                                data.getPropertyId(),
-                                data.getContractInstanceId(),
-                                data.getUnlockScript()
-                        );
-                    }
-
-                    System.out.println("VirtualMachine: Updating the global store...");
-                    if (vm.getGlobalSpace().isEmpty()) {
-                        System.out.println("There is nothing to save in the global store");
-                    } else {
-                        contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
-                        System.out.println("VirtualMachine: Global store updated");
-                    }
-
-                    HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
-                    propertiesStorage.addFunds(singleUseSealsToSend);
-
-                    System.out.println("GLOBALSPACE");
-                    System.out.println(instance.getGlobalVariables());
-                    System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
-
-                    sharedMemory.notifyThread(thread, whereToNotify, new SuccessDataResponse("ack from VirtualMachine"));
                 } else if (triggerRequest != null) {
                     System.out.println("VirtualMachine: just received a trigger request");
                     String contractId = triggerRequest.getContractId();
                     String contractInstanceId = triggerRequest.getContractInstanceId();
                     String obligationFunctionName = triggerRequest.getRequest().getObligationFunctionName();
 
-                    ContractInstance instance = contractInstancesStorage.getContractInstance(contractInstanceId);
-                    String nextState = getNextStateFromFunction(contractId, obligationFunctionName);
+                    // Get the instance of the contract from the storage
+                    ContractInstance contractInstance = contractInstancesStorage.getContractInstance(contractInstanceId);
 
-                    String rawBytecode = loadFunction(contractId, obligationFunctionName);
-                    System.out.println("VirtualMachine: Function\n" + rawBytecode);
-
-                    String bytecode = loadBytecode(rawBytecode, new HashMap<String, String>());
-                    System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
-
-                    String[] instructions = bytecode.split("\n");
+                    // Get the current state and the 'candidate' next state
+                    DfaState currentState = contractInstance.getStateMachine().getCurrentState();
+                    DfaState nextState = getNextStateFromObligationFunction(contractId, currentState, obligationFunctionName);
 
                     // Check if the state is correct
-                    if (!instance.getStateMachine().isNextState(nextState, obligationFunctionName)) {
-                        // Warning
-                        System.out.println("VirtualMachine: Error in the state machine");
-                        System.out.println("VirtualMachine: Current state => " + instance.getStateMachine().getCurrentState());
+                    if (!contractInstance.getStateMachine().isNextState(obligationFunctionName, nextState)) {
+                        System.out.println("VirtualMachine: This function cannot be called in the current state");
+                        System.out.println("VirtualMachine: Obligation function name => " + obligationFunctionName);
+                        System.out.println("VirtualMachine: Current state => " + currentState);
                         System.out.println("VirtualMachine: Next state => " + nextState);
-                        System.out.println(obligationFunctionName);
-                        // System.exit(-1);
                     } else {
+                        String rawBytecode = loadObligationFunction(contractId, currentState, obligationFunctionName, nextState);
+                        System.out.println("VirtualMachine: Function\n" + rawBytecode);
+
+                        String bytecode = loadBytecode(rawBytecode, new ArrayList<>()); // FIXME
+                        System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
+
+                        String[] instructions = bytecode.split("\n");
+
                         // Set up the virtual machine
                         SmartContractVirtualMachine vm;
 
-                        // Load global storage
-                        HashMap<String, TraceChange> global = new HashMap<>();
-
-                        for (HashMap.Entry<String, Type> entry : instance.getGlobalVariables().entrySet()) {
-                            global.put(entry.getKey(), new TraceChange(entry.getValue()));
+                        // Load global space
+                        for (HashMap.Entry<String, Type> entry : contractInstance.getGlobalSpace().entrySet()) {
+                            globalSpace.put(entry.getKey(), new TraceChange(entry.getValue()));
                         }
 
-                        vm = new SmartContractVirtualMachine(instructions, offset, global);
+                        vm = new SmartContractVirtualMachine(instructions, offset, globalSpace);
 
                         // Execute the code
                         boolean result = vm.execute();
@@ -309,29 +363,21 @@ public class VirtualMachine extends Thread {
                         }
 
                         // Go to the next state
-                        instance.getStateMachine().nextState(nextState, obligationFunctionName);
-                        System.out.println("VirtualMachine: current state = " + instance.getStateMachine().getCurrentState());
+                        contractInstancesStorage.storeStateMachine(contractInstanceId, obligationFunctionName);
 
                         System.out.println("VirtualMachine: Updating the global store...");
                         if (vm.getGlobalSpace().isEmpty()) {
                             System.out.println("There is nothing to save in the global store");
                         } else {
-                            contractInstancesStorage.storeGlobalStorage(vm.getGlobalSpace(), instance);
+                            contractInstancesStorage.storeGlobalSpace(contractInstanceId, vm.getGlobalSpace());
                             System.out.println("VirtualMachine: Global store updated");
                         }
 
+                        // Store the new single-use seals produced by the contract execution
                         HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
                         propertiesStorage.addFunds(singleUseSealsToSend);
-
-                        System.out.println("GLOBALSPACE");
-                        System.out.println(instance.getGlobalVariables());
-                        System.out.println(contractInstancesStorage.getContractInstance(instance.getInstanceId()).getGlobalVariables());
                     }
                 }
-
-                // Reset variables
-                signedMessage = null;
-                triggerRequest = null;
             } catch (QueueUnderflowException exception) {
                 try {
                     System.out.println("VirtualMachine: I'm waiting...");
@@ -351,7 +397,23 @@ public class VirtualMachine extends Thread {
         }
     }
 
-    private String loadFunction(String contractId, String function) throws IOException {
+    // '*' means optional
+    // fn agreement <parties>       <destination_state> <type_args*>
+    private String loadAgreementFunction(
+            String contractId,
+            ArrayList<String> parties,
+            DfaState destinationState,
+            ArrayList<String> typeArguments
+    ) throws IOException, ContractNotFoundException {
+        if (parties == null) {
+            throw new NullPointerException("Impossible to load the agreement function without the parties of the contract");
+        }
+
+        // TODO: check if it is an error to accept more than 3 parties
+        if (parties.size() < 2 /*|| parties.size() > 3*/) {
+            throw new RuntimeException("Number of parties is not legit"); // FIXME: create a custom error and write a better error message
+        }
+
         String bytecodeFunction = "";
         boolean isFunctionStarted = false;
         boolean isFunctionEnded = false;
@@ -361,7 +423,7 @@ public class VirtualMachine extends Thread {
         String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
 
-        System.out.println("loadFunction: Loading the function...");
+        System.out.println("loadAgreementFunction: Loading the function...");
         for (int i = 0; i < instructions.length && !isFunctionEnded; i++) {
             String[] instruction = instructions[i].trim().split(" ");
 
@@ -369,7 +431,154 @@ public class VirtualMachine extends Thread {
                 bytecodeFunction += instructions[i].trim() + "\n";
             }
 
-            if ((instruction[0].equals("fn") || instruction[0].equals("obligation")) && instruction[1].equals(function)) {
+            if (instruction[0].equals("fn") && instruction[1].equals("agreement")) {
+                // Check the parties
+                boolean arePartiesCorrect = true;
+
+                String[] partiesFromFunction = instruction[2].split(",");
+                if (partiesFromFunction.length == parties.size()) {
+                    for (int j = 0; j < partiesFromFunction.length; j++) {
+                        String partyFromFunction = partiesFromFunction[j];
+
+                        if (!parties.contains(partyFromFunction)) {
+                            arePartiesCorrect = false;
+                        }
+                    }
+                }
+
+                if (arePartiesCorrect) {
+                    // Check the destination state
+                    if (instruction[3].equals(destinationState.getName())) {
+                        if (instruction.length == 5 && typeArguments != null) {
+                            // Check the arguments types
+                            boolean areArgumentsTypesCorrect = true;
+                            String[] typeArgsFromFunction = instruction[4].split(",");
+
+                            if (typeArgsFromFunction.length == typeArguments.size()) {
+                                // Check the arguments types
+                                for (int j = 0; j < typeArgsFromFunction.length; j++) {
+                                    String typeArgFromFunction = typeArgsFromFunction[j];
+
+                                    if (!typeArgFromFunction.equals(typeArguments.get(j))) {
+                                        areArgumentsTypesCorrect = false;
+                                    }
+                                }
+
+                                if (areArgumentsTypesCorrect) {
+                                    isFunctionStarted = true;
+                                    offset = i + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (instruction[0].equals("HALT") && isFunctionStarted) {
+                isFunctionEnded = true;
+            }
+        }
+        System.out.println("loadAgreementFunction: Function loaded");
+
+        return bytecodeFunction;
+    }
+
+    // '*' means optional
+    // fn <source_state> <party> <function_name> <destination_state> <type_args*>
+    private String loadCommonFunction(
+            String contractId,
+            DfaState sourceState,
+            String party,
+            String functionName,
+            DfaState destinationState,
+            ArrayList<String> argumentTypes
+    ) throws IOException, ContractNotFoundException {
+        String bytecodeFunction = "";
+        boolean isFunctionStarted = false;
+        boolean isFunctionEnded = false;
+
+        // Load all the bytecode
+        Contract contract = contractsStorage.getContract(contractId);
+        String bytecode = contract.getBytecode();
+        String[] instructions = bytecode.split("\n");
+
+        System.out.println("loadCommonFunction: Loading the function...");
+        for (int i = 0; i < instructions.length && !isFunctionEnded; i++) {
+            String[] instruction = instructions[i].trim().split(" ");
+
+            if (isFunctionStarted) {
+                bytecodeFunction += instructions[i].trim() + "\n";
+            }
+
+            if (instruction[0].equals("fn") &&
+                    instruction[1].equals(sourceState.getName()) &&
+                    instruction[2].equals(party) &&
+                    instruction[3].equals(functionName) &&
+                    instruction[4].equals(destinationState.getName())
+            ) {
+                if (instruction.length == 6 && argumentTypes != null && argumentTypes.size() > 0) {
+                    // Check the arguments types
+                    boolean areArgumentTypesCorrect = true;
+                    String[] argumentTypesFromFunction = instruction[5].split(",");
+
+                    if (argumentTypesFromFunction.length == argumentTypes.size()) {
+                        // Check the arguments types
+                        for (int j = 0; j < argumentTypesFromFunction.length; j++) {
+                            String argumentTypeFromFunction = argumentTypesFromFunction[j];
+                            if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
+                                areArgumentTypesCorrect = false;
+                            }
+                        }
+
+                        if (areArgumentTypesCorrect) {
+                            isFunctionStarted = true;
+                            offset = i + 1;
+                        }
+                    }
+                } else {
+                    isFunctionStarted = true;
+                    offset = i + 1;
+                }
+            }
+
+            if (instruction[0].equals("HALT") && isFunctionStarted) {
+                isFunctionEnded = true;
+            }
+        }
+        System.out.println("loadCommonFunction: Function loaded");
+
+        return bytecodeFunction;
+    }
+
+    // obligation <source_state> <obligation_function_name> <destination_state>
+    private String loadObligationFunction(
+            String contractId,
+            DfaState sourceState,
+            String obligationFunctionName,
+            DfaState destinationState
+    ) throws IOException, ContractNotFoundException {
+        String bytecodeFunction = "";
+        boolean isFunctionStarted = false;
+        boolean isFunctionEnded = false;
+
+        // Load all the bytecode
+        Contract contract = contractsStorage.getContract(contractId);
+        String bytecode = contract.getBytecode();
+        String[] instructions = bytecode.split("\n");
+
+        System.out.println("loadObligationFunction: Loading the obligation function...");
+        for (int i = 0; i < instructions.length && !isFunctionEnded; i++) {
+            String[] instruction = instructions[i].trim().split(" ");
+
+            if (isFunctionStarted) {
+                bytecodeFunction += instructions[i].trim() + "\n";
+            }
+
+            if (instruction[0].equals("obligation") &&
+                    instruction[1].equals(sourceState.getName()) &&
+                    instruction[2].equals(obligationFunctionName) &&
+                    instruction[3].equals(destinationState.getName())
+            ) {
                 isFunctionStarted = true;
                 offset = i + 1;
             }
@@ -378,214 +587,278 @@ public class VirtualMachine extends Thread {
                 isFunctionEnded = true;
             }
         }
-        System.out.println("loadFunction: Function loaded");
+        System.out.println("loadObligationFunction: Obligation function loaded");
 
         return bytecodeFunction;
     }
 
-    private HashMap<String, String> loadArguments(Message message) {
-        HashMap<String, String> arguments = new HashMap<>();
+    private ArrayList<FunctionArgument> loadArguments(Message message) throws UnsupportedTypeException, AssetNotFoundException, IOException, PropertyNotFoundException, PropertiesNotFoundException {
+        ArrayList<FunctionArgument> arguments = new ArrayList<>();
 
         if (message instanceof AgreementCall) {
             AgreementCall agreementCall = (AgreementCall) message;
-            arguments.putAll(agreementCall.getArguments());
+            arguments.addAll(agreementCall.getArguments());
 
             for (HashMap.Entry<String, Address> entry : agreementCall.getParties().entrySet()) {
-                arguments.put(entry.getKey(), entry.getValue().getPublicKey());
+                arguments.add(new FunctionArgument("addr", entry.getKey(), entry.getValue().getPublicKey()));
             }
         } else {
             FunctionCall functionCall = (FunctionCall) message;
-            arguments.putAll(functionCall.getArguments());
-        }
+            ArrayList<FunctionArgument> functionCallArguments = functionCall.getArguments();
 
+            for (FunctionArgument functionArgument : functionCallArguments) {
+                if (functionArgument.getType().equals("asset") && (functionArgument.getValue() instanceof PayToContract)) {
+                    String type = functionArgument.getType();
+                    String variableName = functionArgument.getVariableName();
+                    PayToContract payToContract = (PayToContract) functionArgument.getValue();
+                    String propertyId = payToContract.getPropertyId();
+                    String address = payToContract.getAddress();
+
+                    // Try to get the property from the storage
+                    Property propertyFromStorage = propertiesStorage.getFund(address, propertyId);
+                    if (propertyFromStorage == null) {
+                        // TODO: Error: the property does not exist in the storage
+                        System.out.println("validateProperties: the property does not exist in the storage");
+                        throw new RuntimeException();
+                    }
+
+                    if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
+                        // TODO: Error: the property has been spent
+                        System.out.println("validateProperties: the property has been spent");
+                        throw new RuntimeException();
+                    }
+
+                    // Get the single-use seal
+                    SingleUseSeal singleUseSeal = propertyFromStorage.getSingleUseSeal();
+                    String assetId = singleUseSeal.getAssetId();
+
+                    // Get the asset
+                    Asset asset = assetsStorage.getAsset(assetId);
+
+                    AssetType value = new AssetType(
+                            asset.getId(),
+                            new FloatType(
+                                    singleUseSeal.getAmount().getInteger(),
+                                    singleUseSeal.getAmount().getDecimals()
+                            )
+                    );
+
+                    String argumentValue = value.getValue().getInteger() + " " + value.getValue().getDecimals() + " " + value.getAssetId();
+                    arguments.add(new FunctionArgument(type, variableName, argumentValue));
+                } else {
+                    arguments.add(functionArgument);
+                }
+            }
+        }
         return arguments;
     }
 
-    private boolean validateProperties(Address address, FunctionCall functionCall) throws Exception {
-        if (!functionCall.getAssetArguments().isEmpty()) {
-            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                PayToContract payToContract = entry.getValue();
-                Property property = payToContract.getProperty();
+    private String loadBytecode(String rawBytecode, ArrayList<FunctionArgument> arguments) {
+        String bytecode = "";
+        String substitution = "";
+        String[] instructions = rawBytecode.split("\n");
 
-                Property propertyFromStorage = propertiesStorage.getFund(address.getAddress(), property.getId());
-                if (propertyFromStorage == null) {
-                    // TODO: Error: the property does not exist in the storage
-                    System.out.println("validateProperties: the property does not exist in the storage");
-                    return false;
+        System.out.println("loadBytecode: Loading the bytecode...");
+        for (int i = 0; i < instructions.length; i++) {
+            String[] instruction = instructions[i].trim().split(" ");
+            System.out.println("loadBytecode: instruction = " + Arrays.toString(instruction));
+
+            // Check if the last element of the instruction starts with ':'
+            if (instruction[instruction.length - 1].charAt(0) == ':') {
+                int j = 0;
+                boolean wasArgumentFound = false;
+
+                while (j < arguments.size() && !wasArgumentFound) {
+                    FunctionArgument argument = arguments.get(j);
+
+                    if (argument.getVariableName().equals(instruction[instruction.length - 1].substring(1))) {
+                        wasArgumentFound = true;
+
+                        for (int k = 0; k < instruction.length - 1; k++) {
+                            substitution += instruction[k] + " ";
+                        }
+
+                        substitution += argument.getValue();
+
+                        bytecode += substitution + "\n";
+                        substitution = "";
+                    } else {
+                        j++;
+                    }
                 }
-
-                if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
-                    // TODO: Error: the property has been spent
-                    System.out.println("validateProperties: the property has been spent");
-                    return false;
-                }
-
-                SingleUseSeal singleUseSeal = property.getSingleUseSeal();
-                Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
-
-                if (asset == null) {
-                    // TODO: Error
-                    return false;
-                }
-
-                // Check if the decimals matches
-                if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
-                    // TODO: Error
-                }
-
-                // Check if the amount > 0
-                BigDecimal zeroValue = new BigDecimal(0);
-                if (singleUseSeal.getAmount().getValue().compareTo(zeroValue) <= 0) {
-                    // TODO: Error
-                }
-
-                // Check if the amount <= asset supply
-                BigDecimal supply = new BigDecimal(asset.getAsset().getSupply());
-                if (singleUseSeal.getAmount().getValue().compareTo(supply) > 0) {
-                    // TODO: Error
-                }
-
-                // Check if it is possible to unlock the script
-                String script = payToContract.getUnlockScript() + singleUseSeal.getLockScript();
-                System.out.println("loadAssetArguments: Script to validate\n" + script);
-                String[] instructions = script.split("\n");
-
-                System.out.println("loadAssetArguments: Start validating the script...");
-                ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions, propertyFromStorage.getId());
-
-                // Execute the code
-                boolean result = vm.execute();
-
-                if (!result) {
-                    System.out.println("loadAssetArguments: Error while executing the function");
-                    return false;
-                }
-
-                System.out.println("loadAssetArguments: Script validated");
+            } else {
+                bytecode += instructions[i].trim() + "\n";
             }
         }
+        System.out.println("loadBytecode: Bytecode loaded\n");
 
-        return true;
+        return bytecode;
     }
 
-    private HashMap<String, AssetType> loadAssetArguments(FunctionCall functionCall) throws Exception {
-        HashMap<String, AssetType> assetArguments = new HashMap<>();
+    private ArrayList<PayToContract> validateProperties(Address address, FunctionCall functionCall) throws Exception {
+        ArrayList<PayToContract> propertiesToUpdate = new ArrayList<>();
+        ArrayList<FunctionArgument> arguments = functionCall.getArguments();
 
-        if (!functionCall.getAssetArguments().isEmpty()) {
-            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                PayToContract payToContract = entry.getValue();
-                SingleUseSeal singleUseSeal = payToContract.getProperty().getSingleUseSeal();
+        if (!arguments.isEmpty()) {
+            for (FunctionArgument argument : arguments) {
 
-                Asset asset = assetsStorage.getAsset(singleUseSeal.getAssetId());
+                if (argument.getType().equals("asset")) {
+                    System.out.println("validateProperties: type => " + argument.getValue().getClass());
+                    System.out.println("validateProperties: value => " + argument.getValue());
 
-                AssetType value = new AssetType(
-                        asset.getId(),
-                        new FloatType(
-                                singleUseSeal.getAmount().getInteger(),
-                                singleUseSeal.getAmount().getDecimals()
-                        )
-                );
+                    if (argument.getValue() instanceof String) {
+                        System.out.println("validateProperties: the argument is a string");
+                    }
 
-                assetArguments.put(entry.getKey(), value);
+                    PayToContract payToContract = (PayToContract) argument.getValue();
+                    String propertyId = payToContract.getPropertyId();
+                    String unlockScript = payToContract.getUnlockScript();
+
+                    // Try to get the property from the storage
+                    Property propertyFromStorage = propertiesStorage.getFund(address.getAddress(), propertyId);
+                    if (propertyFromStorage == null) {
+                        // TODO: Error: the property does not exist in the storage
+                        System.out.println("validateProperties: the property does not exist in the storage");
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
+                        // TODO: Error: the property has been spent
+                        System.out.println("validateProperties: the property has been spent");
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    // Get the single-use seal
+                    SingleUseSeal singleUseSeal = propertyFromStorage.getSingleUseSeal();
+                    String assetId = singleUseSeal.getAssetId();
+                    String lockScript = singleUseSeal.getLockScript();
+
+                    // Get the asset from the single-use seal
+                    Asset asset = assetsStorage.getAsset(assetId);
+
+                    if (asset == null) {
+                        // TODO: Error
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    // Check if the decimals matches
+                    if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
+                        // TODO: Error
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    // Check if the amount > 0
+                    BigDecimal zeroValue = new BigDecimal(0);
+                    if (singleUseSeal.getAmount().getValue().compareTo(zeroValue) <= 0) {
+                        // TODO: Error
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    // Check if the amount <= asset supply
+                    BigDecimal supply = new BigDecimal(asset.getAsset().getSupply());
+                    if (singleUseSeal.getAmount().getValue().compareTo(supply) > 0) {
+                        // TODO: Error
+                        //return false;
+                        throw new RuntimeException();
+                    }
+
+                    // Check if it is possible to unlock the script
+                    String script = unlockScript + lockScript;
+                    System.out.println("validateProperties: Script to validate\n" + script);
+                    String[] instructions = script.split("\n");
+
+                    System.out.println("validateProperties: Start validating the script...");
+                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions, propertyId);
+
+                    // Execute the code
+                    boolean result = vm.execute();
+
+                    if (!result) {
+                        System.out.println("validateProperties: Error while executing the function");
+                        //return false;
+                        throw new RuntimeException();
+
+                    }
+
+                    propertiesToUpdate.add((PayToContract) argument.getValue());
+                    System.out.println("validateProperties: Script validated");
+                }
             }
         }
-        return assetArguments;
-    }
-
-    private HashMap<String, PropertyUpdateData> getPropertiesToUpdate(Address address, FunctionCall functionCall) throws Exception {
-        HashMap<String, PropertyUpdateData> propertiesToUpdate = new HashMap<>();
-
-        if (!functionCall.getAssetArguments().isEmpty()) {
-            for (HashMap.Entry<String, PayToContract> entry : functionCall.getAssetArguments().entrySet()) {
-                PayToContract payToContract = entry.getValue();
-                PropertyUpdateData data = new PropertyUpdateData(
-                        payToContract.getProperty().getId(),
-                        functionCall.getContractInstanceId(),
-                        payToContract.getUnlockScript()
-                );
-                propertiesToUpdate.put(address.getAddress(), data);
-            }
-        }
-
         return propertiesToUpdate;
     }
 
-    private String getNextStateFromFunction(String contractId, String function) throws IOException {
-        String nextState = "";
-
+    private DfaState getNextStateFromCommonFunction(
+            String contractId,
+            DfaState sourceState,
+            String party,
+            String functionName,
+            ArrayList<String> argumentTypes
+    ) throws IOException, ContractNotFoundException {
         // Load all the bytecode
         Contract contract = contractsStorage.getContract(contractId);
         String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
 
-        System.out.println("loadFunction: Loading the function...");
-        for (String s : instructions) {
-            String[] instruction = s.trim().split(" ");
-
-            if (instruction[0].equals("fn") && instruction[1].equals(function)) {
-                nextState = instruction[3];
-                break;
-            }
-
-            if (instruction[0].equals("obligation") && instruction[1].equals(function)) {
-                nextState = instruction[2];
-                break;
-            }
-        }
-        System.out.println("loadFunction: Function loaded");
-
-        return nextState;
-    }
-
-    private String loadBytecode(String rawBytecode, HashMap<String, String> arguments) {
-        String bytecode = "";
-        String substitution = "";
-        String[] instructions = rawBytecode.split("\n");
-
-        System.out.println("loadBytecode: Loading the function...");
         for (int i = 0; i < instructions.length; i++) {
             String[] instruction = instructions[i].trim().split(" ");
 
-            if (arguments.containsKey(instruction[instruction.length - 1].substring(1))) {
-                for (int j = 0; j < instruction.length - 1; j++) {
-                    substitution += instruction[j] + " ";
+            if (instruction[0].equals("fn") &&
+                    instruction[1].equals(sourceState.getName()) &&
+                    instruction[2].equals(party) &&
+                    instruction[3].equals(functionName)
+            ) {
+                if (instruction.length == 6 && argumentTypes != null && argumentTypes.size() > 0) {
+                    // Check the arguments types
+                    boolean areArgumentTypesCorrect = true;
+                    String[] argumentTypesFromFunction = instruction[5].split(",");
+
+                    if (argumentTypesFromFunction.length == argumentTypes.size()) {
+                        // Check the arguments types
+                        for (int j = 0; j < argumentTypesFromFunction.length; j++) {
+                            String argumentTypeFromFunction = argumentTypesFromFunction[j];
+                            if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
+                                areArgumentTypesCorrect = false;
+                            }
+                        }
+
+                        if (areArgumentTypesCorrect) {
+                            return new DfaState(instruction[4]);
+                        }
+                    }
+                } else {
+                    return new DfaState(instruction[4]);
                 }
-                substitution += arguments.get(instruction[instruction.length - 1].substring(1));
-                bytecode += substitution + "\n";
-                substitution = "";
-            } else {
-                bytecode += instructions[i].trim() + "\n";
             }
         }
-        System.out.println("loadBytecode: Function loaded\n");
-
-        return bytecode;
+        return null;
     }
 
-    private String loadBytecode(String rawBytecode, HashMap<String, String> arguments, HashMap<String, AssetType> assetArguments) {
-        String bytecode = loadBytecode(rawBytecode, arguments);
-        String finalBytecode = "";
-        String substitution = "";
+    private DfaState getNextStateFromObligationFunction(
+            String contractId,
+            DfaState sourceState,
+            String obligationFunctionName
+    ) throws IOException, ContractNotFoundException {
+        // Load all the bytecode
+        Contract contract = contractsStorage.getContract(contractId);
+        String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
 
-        System.out.println("loadBytecode: Loading the function...");
         for (int i = 0; i < instructions.length; i++) {
             String[] instruction = instructions[i].trim().split(" ");
 
-            if (assetArguments.containsKey(instruction[instruction.length - 1].substring(1))) {
-                for (int j = 0; j < instruction.length - 1; j++) {
-                    substitution += instruction[j] + " ";
-                }
-                AssetType value = assetArguments.get(instruction[instruction.length - 1].substring(1));
-                substitution += value.getValue().getInteger() + " " + value.getValue().getDecimals() + " " + value.getAssetId();
-                finalBytecode += substitution + "\n";
-                substitution = "";
-            } else {
-                finalBytecode += instructions[i].trim() + "\n";
+            if (instruction[0].equals("obligation") &&
+                    instruction[1].equals(sourceState.getName()) &&
+                    instruction[2].equals(obligationFunctionName)
+            ) {
+                return new DfaState(instruction[3]);
             }
         }
-        System.out.println("loadBytecode: Function loaded");
-
-        return finalBytecode;
+        return null;
     }
 }
