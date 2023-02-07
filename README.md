@@ -1,6 +1,6 @@
 # Stipula Node
 
-What does it include?
+What does it include at the moment?
 - [x] Message layer (API)
   - [x] Handle the socket 
   - [x] Handle the messages
@@ -14,20 +14,26 @@ What does it include?
 - [ ] Deploy a contract
   - [x] Handle the request 
   - [ ] Stipula compiler 
+
+Future improvements:
 - [ ] Consensus layer
 - [ ] Commitment layer
 
 ## Status of the project
 
 The node is able to:
-- [x] Call functions
+- [x] Create and manage a contract instances
 - [x] Keep the state of the contract
+- [x] Call functions
 - [x] Manage addresses
 - [x] Manage assets
-- [x] Create and manage a contract instances
 - [x] Manage storage
+- [x] Schedule and trigger events
+- [x] Manage payments ("pat-to-contract" and "pay-to-address")
+- [x] Manage client connections and requests/responses 
 - [x] Add Docker support
-- [x] Manage event trigger
+
+"Pay-to-address" means when a user wants to pay a contract and "pay-to-address" means when the contract wants to pay an address. 
 
 ## How to run a node?
 
