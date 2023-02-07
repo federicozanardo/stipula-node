@@ -12,7 +12,7 @@ public class FunctionArgument {
         if ((value instanceof String) || (value instanceof PayToContract)) {
             this.argument = new Triple<>(type, variableName, value);
         } else {
-            throw new UnsupportedTypeException("The only supported types for 'value' are String or Property");
+            throw new UnsupportedTypeException("The only supported types for 'value' are String or PayToContract");
         }
     }
 
