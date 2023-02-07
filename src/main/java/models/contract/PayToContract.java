@@ -1,6 +1,8 @@
 package models.contract;
 
-public class PayToContract {
+import java.io.Serializable;
+
+public class PayToContract implements Serializable {
     private final String propertyId;
     private final String address;
     private final String unlockScript;
