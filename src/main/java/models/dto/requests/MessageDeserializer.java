@@ -27,33 +27,38 @@ public class MessageDeserializer implements JsonDeserializer<Message> {
         ArrayList<FunctionArgument> args = new ArrayList<>();
 
         JsonObject jsonObject = json.getAsJsonObject();
-        JsonArray arguments = jsonObject.get("arguments").getAsJsonArray();
+        try {
+            JsonArray arguments = jsonObject.get("arguments").getAsJsonArray();
 
-        for (int i = 0; i < arguments.size(); i++) {
-            JsonObject argument = arguments.get(i).getAsJsonObject().get("argument").getAsJsonObject();
-            String argumentType = argument.get("first").getAsString();
-            String variableName = argument.get("second").getAsString();
+            for (int i = 0; i < arguments.size(); i++) {
+                JsonObject argument = arguments.get(i).getAsJsonObject().get("argument").getAsJsonObject();
+                String argumentType = argument.get("first").getAsString();
+                String variableName = argument.get("second").getAsString();
 
-            if (argumentType.equals("asset")) {
-                JsonObject val = argument.get("third").getAsJsonObject();
-                String ownershipId = val.get("ownershipId").getAsString();
-                String address = val.get("address").getAsString();
-                String unlockScript = val.get("unlockScript").getAsString();
+                if (argumentType.equals("asset")) {
+                    JsonObject val = argument.get("third").getAsJsonObject();
+                    String ownershipId = val.get("ownershipId").getAsString();
+                    String address = val.get("address").getAsString();
+                    String unlockScript = val.get("unlockScript").getAsString();
 
-                try {
-                    args.add(new FunctionArgument(argumentType, variableName, new PayToContract(ownershipId, address, unlockScript)));
-                } catch (UnsupportedTypeException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                String val = argument.get("third").getAsString();
-                try {
-                    args.add(new FunctionArgument(argumentType, variableName, val));
-                } catch (UnsupportedTypeException e) {
-                    throw new RuntimeException(e);
+                    try {
+                        args.add(new FunctionArgument(argumentType, variableName, new PayToContract(ownershipId, address, unlockScript)));
+                    } catch (UnsupportedTypeException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    String val = argument.get("third").getAsString();
+                    try {
+                        args.add(new FunctionArgument(argumentType, variableName, val));
+                    } catch (UnsupportedTypeException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
+        } catch (Exception exception) {
+            System.out.println("deserialize: Error while trying to get the arguments");
         }
+
         String value = jsonObject.get("type").getAsString();
 
         for (HashMap.Entry<String, Class<? extends Message>> entry : dataTypeRegistry.entrySet()) {
@@ -61,12 +66,16 @@ public class MessageDeserializer implements JsonDeserializer<Message> {
                 Class<? extends Message> dataType = dataTypeRegistry.get(value);
                 Message message = context.deserialize(jsonObject, dataType);
 
-                if (message instanceof FunctionCall) {
-                    FunctionCall functionCall = (FunctionCall) message;
-                    return new FunctionCall(functionCall.getContractInstanceId(), functionCall.getFunctionName(), args);
+                if ((message instanceof FunctionCall) || (message instanceof AgreementCall)) {
+                    if (message instanceof FunctionCall) {
+                        FunctionCall functionCall = (FunctionCall) message;
+                        return new FunctionCall(functionCall.getContractInstanceId(), functionCall.getFunctionName(), args);
+                    } else {
+                        AgreementCall agreementCall = (AgreementCall) message;
+                        return new AgreementCall(agreementCall.getContractId(), args, agreementCall.getParties());
+                    }
                 } else {
-                    AgreementCall agreementCall = (AgreementCall) message;
-                    return new AgreementCall(agreementCall.getContractId(), args, agreementCall.getParties());
+                    return message;
                 }
             }
         }
