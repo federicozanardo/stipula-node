@@ -5,7 +5,7 @@ import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
-import storage.PropertiesStorage;
+import storage.OwnershipsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 import vm.event.EventTriggerHandler;
@@ -24,9 +24,9 @@ class Main {
         ContractsStorage contractsStorage = new ContractsStorage();
         ContractInstancesStorage contractInstancesStorage = new ContractInstancesStorage();
         AssetsStorage assetsStorage = new AssetsStorage();
-        PropertiesStorage propertiesStorage = new PropertiesStorage();
+        OwnershipsStorage ownershipsStorage = new OwnershipsStorage();
 
-        setup(assetsStorage, propertiesStorage);
+        setup(assetsStorage, ownershipsStorage);
 
         // Set up the Event trigger handler
         EventTriggerHandler eventTriggerHandler = new EventTriggerHandler();
@@ -39,7 +39,7 @@ class Main {
                 contractsStorage,
                 contractInstancesStorage,
                 assetsStorage,
-                propertiesStorage
+                ownershipsStorage
         );
 
         // Set up the server
@@ -49,7 +49,7 @@ class Main {
                 virtualMachine,
                 sharedMemory,
                 contractsStorage,
-                propertiesStorage
+                ownershipsStorage
         );
 
         // Start the virtual machine
@@ -61,13 +61,13 @@ class Main {
 
     private static void setup(
             AssetsStorage assetsStorage,
-            PropertiesStorage propertiesStorage
+            OwnershipsStorage ownershipsStorage
     ) throws IOException {
         File storagePath = new File("storage");
         File contractStoragePath = new File(String.valueOf(Constants.CONTRACTS_PATH));
         File contractInstancesStoragePath = new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH));
         File assetsStoragePath = new File(String.valueOf(Constants.ASSETS_PATH));
-        File propertiesStoragePath = new File(String.valueOf(Constants.PROPERTIES_PATH));
+        File ownershipsStoragePath = new File(String.valueOf(Constants.OWNERSHIPS_PATH));
 
         if (storagePath.exists()) {
             if (!storagePath.isDirectory()) {
@@ -137,19 +137,19 @@ class Main {
             }
         }
 
-        if (propertiesStoragePath.exists()) {
-            if (!propertiesStoragePath.isDirectory()) {
-                System.out.println("setup: propertiesStoragePath is not a directory");
+        if (ownershipsStoragePath.exists()) {
+            if (!ownershipsStoragePath.isDirectory()) {
+                System.out.println("setup: ownershipsStoragePath is not a directory");
                 System.exit(-1);
             } else {
-                System.out.println("setup: propertiesStoragePath exists");
+                System.out.println("setup: ownershipsStoragePath exists");
             }
         } else {
-            boolean result = propertiesStoragePath.mkdir();
+            boolean result = ownershipsStoragePath.mkdir();
             if (result) {
-                System.out.println("setup: propertiesStoragePath created");
+                System.out.println("setup: ownershipsStoragePath created");
             } else {
-                System.out.println("setup: error while creating propertiesStoragePath");
+                System.out.println("setup: error while creating ownershipsStoragePath");
                 System.exit(-1);
             }
         }
@@ -160,7 +160,7 @@ class Main {
         if (value.equals("yes")) {
             System.out.println("setup: seeding...");
             assetsStorage.seed();
-            propertiesStorage.seed();
+            ownershipsStorage.seed();
         } else if (value.equals("no")) {
             System.out.println("setup: no need of seeding process");
         } else {

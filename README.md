@@ -56,7 +56,7 @@ In order to execute properly the node, there is the need to launch it with `dock
 docker-compose -f docker-compose.yml up -d
 ```
 
-Inside the `docker-compose.yml` there is the need to specify the version of the image (i.e. `image: stipula-node:v0.2.0`). Furthermore, due to the limitations in the current development, in order to start up the node, there is the need to *seed* the node with properties (single-use seals) and assets (create an asset an its supply). In order to do that, there is the need to specify the seeding process with `yes` or `no`:
+Inside the `docker-compose.yml` there is the need to specify the version of the image (i.e. `image: stipula-node:v0.2.0`). Furthermore, due to the limitations in the current development, in order to start up the node, there is the need to *seed* the node with ownerships (single-use seals) and assets (create an asset an its supply). In order to do that, there is the need to specify the seeding process with `yes` or `no`:
 ```
 environment:
   - SEED=no

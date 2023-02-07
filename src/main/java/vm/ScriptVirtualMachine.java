@@ -20,15 +20,15 @@ import static lib.crypto.Crypto.verify;
 
 public class ScriptVirtualMachine {
     private final String[] instructions;
-    private final String propertyId;
+    private final String ownershipId;
     private boolean isRunning = true;
     private int executionPointer = -1;
     private final Stack<Type> stack = new Stack<Type>(10);
     private final Trap trap;
 
-    public ScriptVirtualMachine(String[] instructions, String propertyId) {
+    public ScriptVirtualMachine(String[] instructions, String ownershipId) {
         this.instructions = instructions;
-        this.propertyId = propertyId;
+        this.ownershipId = ownershipId;
         this.trap = new Trap(0);
     }
 
@@ -248,7 +248,7 @@ public class ScriptVirtualMachine {
             PublicKey pubKey = getPublicKeyFromString(publicKey.getValue());
 
             // Verify the signature
-            BoolType result = new BoolType(verify(propertyId, signature.getValue(), pubKey));
+            BoolType result = new BoolType(verify(ownershipId, signature.getValue(), pubKey));
 
             stack.push(result);
         } catch (NoSuchAlgorithmException e) {

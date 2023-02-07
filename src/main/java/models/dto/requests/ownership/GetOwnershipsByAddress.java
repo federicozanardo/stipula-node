@@ -1,12 +1,12 @@
-package models.dto.requests.property;
+package models.dto.requests.ownership;
 
 import models.dto.requests.Message;
 
-public class GetPropertiesByAddress extends Message {
+public class GetOwnershipsByAddress extends Message {
     private final String address;
 
-    public GetPropertiesByAddress(String address) {
-        super(GetPropertiesByAddress.class.getSimpleName());
+    public GetOwnershipsByAddress(String address) {
+        super(GetOwnershipsByAddress.class.getSimpleName());
         this.address = address;
     }
 

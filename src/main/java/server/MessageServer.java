@@ -5,11 +5,11 @@ import models.dto.requests.asset.GetAssetById;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.property.GetPropertiesByAddress;
+import models.dto.requests.ownership.GetOwnershipsByAddress;
 import models.dto.responses.Response;
 import shared.SharedMemory;
 import storage.ContractsStorage;
-import storage.PropertiesStorage;
+import storage.OwnershipsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -24,7 +24,7 @@ public class MessageServer extends Thread {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
-    private final PropertiesStorage propertiesStorage;
+    private final OwnershipsStorage ownershipsStorage;
 
     public MessageServer(
             int port,
@@ -32,7 +32,7 @@ public class MessageServer extends Thread {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            PropertiesStorage propertiesStorage
+            OwnershipsStorage ownershipsStorage
     ) {
         super(MessageServer.class.getSimpleName());
         this.port = port;
@@ -40,7 +40,7 @@ public class MessageServer extends Thread {
         this.virtualMachine = virtualMachine;
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
-        this.propertiesStorage = propertiesStorage;
+        this.ownershipsStorage = ownershipsStorage;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -53,8 +53,8 @@ public class MessageServer extends Thread {
         this.messageDeserializer.registerDataType(DeployContract.class.getSimpleName(), DeployContract.class);
         this.messageDeserializer.registerDataType(FunctionCall.class.getSimpleName(), FunctionCall.class);
 
-        // Property
-        this.messageDeserializer.registerDataType(GetPropertiesByAddress.class.getSimpleName(), GetPropertiesByAddress.class);
+        // Ownership
+        this.messageDeserializer.registerDataType(GetOwnershipsByAddress.class.getSimpleName(), GetOwnershipsByAddress.class);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class MessageServer extends Thread {
                                 virtualMachine,
                                 sharedMemory,
                                 contractsStorage,
-                                propertiesStorage,
+                                ownershipsStorage,
                                 messageDeserializer
                         ).start();
 

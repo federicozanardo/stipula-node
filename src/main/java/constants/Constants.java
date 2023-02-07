@@ -28,10 +28,10 @@ public enum Constants {
             return currentDirectory + "/storage/contract-instances/";
         }
     },
-    PROPERTIES_PATH {
+    OWNERSHIPS_PATH {
         public String toString() {
             File currentDirectory = new File(new File(".").getAbsolutePath());
-            return currentDirectory + "/storage/properties/";
+            return currentDirectory + "/storage/ownerships/";
         }
     }
 }

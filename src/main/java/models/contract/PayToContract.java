@@ -3,18 +3,18 @@ package models.contract;
 import java.io.Serializable;
 
 public class PayToContract implements Serializable {
-    private final String propertyId;
+    private final String ownershipId;
     private final String address;
     private final String unlockScript;
 
-    public PayToContract(String propertyId, String address, String unlockScript) {
-        this.propertyId = propertyId;
+    public PayToContract(String ownershipId, String address, String unlockScript) {
+        this.ownershipId = ownershipId;
         this.address = address;
         this.unlockScript = unlockScript;
     }
 
-    public String getPropertyId() {
-        return propertyId;
+    public String getOwnershipId() {
+        return ownershipId;
     }
 
     public String getAddress() {
@@ -28,7 +28,7 @@ public class PayToContract implements Serializable {
     @Override
     public String toString() {
         return "PayToContract{" +
-                "propertyId='" + propertyId + '\'' +
+                "ownershipId='" + ownershipId + '\'' +
                 ", address='" + address + '\'' +
                 ", unlockScript='" + unlockScript + '\'' +
                 '}';

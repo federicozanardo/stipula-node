@@ -5,21 +5,21 @@ import com.google.gson.GsonBuilder;
 import compiler.StipulaCompiler;
 import exceptions.datastructures.queue.QueueOverflowException;
 import exceptions.models.dto.requests.MessageNotSupportedException;
-import exceptions.storage.PropertiesNotFoundException;
-import models.contract.Property;
+import exceptions.storage.OwnershipsNotFoundException;
+import models.contract.Ownership;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
 import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.property.GetPropertiesByAddress;
+import models.dto.requests.ownership.GetOwnershipsByAddress;
 import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
 import storage.ContractsStorage;
-import storage.PropertiesStorage;
+import storage.OwnershipsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
 
@@ -33,7 +33,7 @@ public class ClientHandler extends Thread {
     private final VirtualMachine virtualMachine;
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
-    private final PropertiesStorage propertiesStorage;
+    private final OwnershipsStorage ownershipsStorage;
     private final Gson gson;
 
     public ClientHandler(
@@ -43,7 +43,7 @@ public class ClientHandler extends Thread {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            PropertiesStorage propertiesStorage,
+            OwnershipsStorage ownershipsStorage,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
@@ -52,7 +52,7 @@ public class ClientHandler extends Thread {
         this.requestQueue = requestQueue;
         this.virtualMachine = virtualMachine;
         this.contractsStorage = contractsStorage;
-        this.propertiesStorage = propertiesStorage;
+        this.ownershipsStorage = ownershipsStorage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -104,19 +104,19 @@ public class ClientHandler extends Thread {
                 // Send the response
                 Response response = new SuccessDataResponse(contractId);
                 clientConnection.sendResponse(response);
-            } else if (message instanceof GetPropertiesByAddress) {
-                // Get all the properties associated to the address
-                GetPropertiesByAddress getPropertiesByAddress = (GetPropertiesByAddress) message;
-                String address = getPropertiesByAddress.getAddress();
+            } else if (message instanceof GetOwnershipsByAddress) {
+                // Get all the ownerships associated to the address
+                GetOwnershipsByAddress getOwnershipsByAddress = (GetOwnershipsByAddress) message;
+                String address = getOwnershipsByAddress.getAddress();
                 Response response;
 
                 try {
-                    ArrayList<Property> properties = propertiesStorage.getFunds(address);
+                    ArrayList<Ownership> ownerships = ownershipsStorage.getFunds(address);
 
                     // Prepare the response
-                    response = new SuccessDataResponse(properties.toString());
+                    response = new SuccessDataResponse(ownerships.toString());
 
-                } catch (PropertiesNotFoundException exception) {
+                } catch (OwnershipsNotFoundException exception) {
                     // Prepare the response
                     response = new ErrorResponse(123, "There are no funds associated to the address = " + address);
                 }

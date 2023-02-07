@@ -36,12 +36,12 @@ public class MessageDeserializer implements JsonDeserializer<Message> {
 
             if (argumentType.equals("asset")) {
                 JsonObject val = argument.get("third").getAsJsonObject();
-                String propertyId = val.get("propertyId").getAsString();
+                String ownershipId = val.get("ownershipId").getAsString();
                 String address = val.get("address").getAsString();
                 String unlockScript = val.get("unlockScript").getAsString();
 
                 try {
-                    args.add(new FunctionArgument(argumentType, variableName, new PayToContract(propertyId, address, unlockScript)));
+                    args.add(new FunctionArgument(argumentType, variableName, new PayToContract(ownershipId, address, unlockScript)));
                 } catch (UnsupportedTypeException e) {
                     throw new RuntimeException(e);
                 }

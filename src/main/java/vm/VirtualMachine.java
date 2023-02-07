@@ -4,8 +4,8 @@ import exceptions.datastructures.queue.QueueUnderflowException;
 import exceptions.models.dto.requests.contract.function.UnsupportedTypeException;
 import exceptions.storage.AssetNotFoundException;
 import exceptions.storage.ContractNotFoundException;
-import exceptions.storage.PropertiesNotFoundException;
-import exceptions.storage.PropertyNotFoundException;
+import exceptions.storage.OwnershipNotFoundException;
+import exceptions.storage.OwnershipsNotFoundException;
 import lib.datastructures.Pair;
 import models.address.Address;
 import models.assets.Asset;
@@ -24,7 +24,7 @@ import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
-import storage.PropertiesStorage;
+import storage.OwnershipsStorage;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.dfa.DfaState;
 import vm.event.EventTrigger;
@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,7 +49,7 @@ public class VirtualMachine extends Thread {
     private final ContractsStorage contractsStorage;
     private final ContractInstancesStorage contractInstancesStorage;
     private final AssetsStorage assetsStorage;
-    private final PropertiesStorage propertiesStorage;
+    private final OwnershipsStorage ownershipsStorage;
 
     public VirtualMachine(
             RequestQueue queue,
@@ -59,7 +58,7 @@ public class VirtualMachine extends Thread {
             ContractsStorage contractsStorage,
             ContractInstancesStorage contractInstancesStorage,
             AssetsStorage assetsStorage,
-            PropertiesStorage propertiesStorage
+            OwnershipsStorage ownershipsStorage
     ) {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
@@ -68,7 +67,7 @@ public class VirtualMachine extends Thread {
         this.contractsStorage = contractsStorage;
         this.contractInstancesStorage = contractInstancesStorage;
         this.assetsStorage = assetsStorage;
-        this.propertiesStorage = propertiesStorage;
+        this.ownershipsStorage = ownershipsStorage;
     }
 
     @Override
@@ -225,12 +224,12 @@ public class VirtualMachine extends Thread {
 
                         }*/
 
-                        ArrayList<PayToContract> propertiesToUpdate = new ArrayList<>();
+                        ArrayList<PayToContract> ownershipsToUpdate = new ArrayList<>();
 
                         if (message instanceof FunctionCall) {
-                            // Properties validation
+                            // Ownerships validation
                             FunctionCall functionCall = (FunctionCall) message;
-                            propertiesToUpdate = validateProperties(address, functionCall);
+                            ownershipsToUpdate = validateOwnerships(address, functionCall);
                         }
 
                         // Load arguments
@@ -287,13 +286,13 @@ public class VirtualMachine extends Thread {
                             eventTriggerHandler.addTask(eventTrigger);
                         }
 
-                        // Update the properties/single-use seals
-                        for (PayToContract propertyToUpdate : propertiesToUpdate) {
-                            propertiesStorage.makePropertySpent(
-                                    propertyToUpdate.getAddress(),
-                                    propertyToUpdate.getPropertyId(),
+                        // Update the ownerships/single-use seals
+                        for (PayToContract ownershipToUpdate : ownershipsToUpdate) {
+                            ownershipsStorage.makeOwnershipSpent(
+                                    ownershipToUpdate.getAddress(),
+                                    ownershipToUpdate.getOwnershipId(),
                                     contractInstanceId,
-                                    propertyToUpdate.getUnlockScript()
+                                    ownershipToUpdate.getUnlockScript()
                             );
                         }
 
@@ -308,7 +307,7 @@ public class VirtualMachine extends Thread {
 
                         // Store the new single-use seals produced by the contract execution
                         HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
-                        propertiesStorage.addFunds(singleUseSealsToSend);
+                        ownershipsStorage.addFunds(singleUseSealsToSend);
 
                         sharedMemory.notifyThread(thread, new SuccessDataResponse("ack from VirtualMachine"));
                     }
@@ -372,7 +371,7 @@ public class VirtualMachine extends Thread {
 
                         // Store the new single-use seals produced by the contract execution
                         HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
-                        propertiesStorage.addFunds(singleUseSealsToSend);
+                        ownershipsStorage.addFunds(singleUseSealsToSend);
                     }
                 }
             } catch (QueueUnderflowException exception) {
@@ -589,7 +588,7 @@ public class VirtualMachine extends Thread {
         return bytecodeFunction;
     }
 
-    private ArrayList<FunctionArgument> loadArguments(Message message) throws UnsupportedTypeException, AssetNotFoundException, IOException, PropertyNotFoundException, PropertiesNotFoundException {
+    private ArrayList<FunctionArgument> loadArguments(Message message) throws UnsupportedTypeException, AssetNotFoundException, IOException, OwnershipNotFoundException, OwnershipsNotFoundException {
         ArrayList<FunctionArgument> arguments = new ArrayList<>();
 
         if (message instanceof AgreementCall) {
@@ -619,25 +618,25 @@ public class VirtualMachine extends Thread {
                     String type = functionArgument.getType();
                     String variableName = functionArgument.getVariableName();
                     PayToContract payToContract = (PayToContract) functionArgument.getValue();
-                    String propertyId = payToContract.getPropertyId();
+                    String ownershipId = payToContract.getOwnershipId();
                     String address = payToContract.getAddress();
 
-                    // Try to get the property from the storage
-                    Property propertyFromStorage = propertiesStorage.getFund(address, propertyId);
-                    if (propertyFromStorage == null) {
-                        // TODO: Error: the property does not exist in the storage
-                        System.out.println("validateProperties: the property does not exist in the storage");
+                    // Try to get the ownership from the storage
+                    Ownership ownershipFromStorage = ownershipsStorage.getFund(address, ownershipId);
+                    if (ownershipFromStorage == null) {
+                        // TODO: Error: the ownership does not exist in the storage
+                        System.out.println("loadArguments: the ownership does not exist in the storage");
                         throw new RuntimeException();
                     }
 
-                    if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
-                        // TODO: Error: the property has been spent
-                        System.out.println("validateProperties: the property has been spent");
+                    if (!ownershipFromStorage.getUnlockScript().equals("") && !ownershipFromStorage.getContractInstanceId().equals("")) {
+                        // TODO: Error: the ownership has been spent
+                        System.out.println("loadArguments: the ownership has been spent");
                         throw new RuntimeException();
                     }
 
                     // Get the single-use seal
-                    SingleUseSeal singleUseSeal = propertyFromStorage.getSingleUseSeal();
+                    SingleUseSeal singleUseSeal = ownershipFromStorage.getSingleUseSeal();
                     String assetId = singleUseSeal.getAssetId();
 
                     // Get the asset
@@ -704,43 +703,34 @@ public class VirtualMachine extends Thread {
         return bytecode;
     }
 
-    private ArrayList<PayToContract> validateProperties(Address address, FunctionCall functionCall) throws Exception {
-        ArrayList<PayToContract> propertiesToUpdate = new ArrayList<>();
+    private ArrayList<PayToContract> validateOwnerships(Address address, FunctionCall functionCall) throws Exception {
+        ArrayList<PayToContract> ownershipsToUpdate = new ArrayList<>();
         ArrayList<FunctionArgument> arguments = functionCall.getArguments();
 
         if (!arguments.isEmpty()) {
             for (FunctionArgument argument : arguments) {
 
                 if (argument.getType().equals("asset")) {
-                    System.out.println("validateProperties: type => " + argument.getValue().getClass());
-                    System.out.println("validateProperties: value => " + argument.getValue());
-
-                    if (argument.getValue() instanceof String) {
-                        System.out.println("validateProperties: the argument is a string");
-                    }
-
                     PayToContract payToContract = (PayToContract) argument.getValue();
-                    String propertyId = payToContract.getPropertyId();
+                    String ownershipId = payToContract.getOwnershipId();
                     String unlockScript = payToContract.getUnlockScript();
 
-                    // Try to get the property from the storage
-                    Property propertyFromStorage = propertiesStorage.getFund(address.getAddress(), propertyId);
-                    if (propertyFromStorage == null) {
-                        // TODO: Error: the property does not exist in the storage
-                        System.out.println("validateProperties: the property does not exist in the storage");
-                        //return false;
+                    // Try to get the ownership from the storage
+                    Ownership ownershipFromStorage = ownershipsStorage.getFund(address.getAddress(), ownershipId);
+                    if (ownershipFromStorage == null) {
+                        // TODO: Error: the ownership does not exist in the storage
+                        System.out.println("validateOwnerships: the ownership does not exist in the storage");
                         throw new RuntimeException();
                     }
 
-                    if (!propertyFromStorage.getUnlockScript().equals("") && !propertyFromStorage.getContractInstanceId().equals("")) {
-                        // TODO: Error: the property has been spent
-                        System.out.println("validateProperties: the property has been spent");
-                        //return false;
+                    if (!ownershipFromStorage.getUnlockScript().equals("") && !ownershipFromStorage.getContractInstanceId().equals("")) {
+                        // TODO: Error: the ownership has been spent
+                        System.out.println("validateOwnerships: the ownership has been spent");
                         throw new RuntimeException();
                     }
 
                     // Get the single-use seal
-                    SingleUseSeal singleUseSeal = propertyFromStorage.getSingleUseSeal();
+                    SingleUseSeal singleUseSeal = ownershipFromStorage.getSingleUseSeal();
                     String assetId = singleUseSeal.getAssetId();
                     String lockScript = singleUseSeal.getLockScript();
 
@@ -749,14 +739,12 @@ public class VirtualMachine extends Thread {
 
                     if (asset == null) {
                         // TODO: Error
-                        //return false;
                         throw new RuntimeException();
                     }
 
                     // Check if the decimals matches
                     if (!(singleUseSeal.getAmount().getDecimals() == asset.getAsset().getDecimals())) {
                         // TODO: Error
-                        //return false;
                         throw new RuntimeException();
                     }
 
@@ -764,7 +752,6 @@ public class VirtualMachine extends Thread {
                     BigDecimal zeroValue = new BigDecimal(0);
                     if (singleUseSeal.getAmount().getValue().compareTo(zeroValue) <= 0) {
                         // TODO: Error
-                        //return false;
                         throw new RuntimeException();
                     }
 
@@ -772,34 +759,31 @@ public class VirtualMachine extends Thread {
                     BigDecimal supply = new BigDecimal(asset.getAsset().getSupply());
                     if (singleUseSeal.getAmount().getValue().compareTo(supply) > 0) {
                         // TODO: Error
-                        //return false;
                         throw new RuntimeException();
                     }
 
                     // Check if it is possible to unlock the script
                     String script = unlockScript + lockScript;
-                    System.out.println("validateProperties: Script to validate\n" + script);
+                    System.out.println("validateOwnerships: Script to validate\n" + script);
                     String[] instructions = script.split("\n");
 
-                    System.out.println("validateProperties: Start validating the script...");
-                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions, propertyId);
+                    System.out.println("validateOwnerships: Start validating the script...");
+                    ScriptVirtualMachine vm = new ScriptVirtualMachine(instructions, ownershipId);
 
                     // Execute the code
                     boolean result = vm.execute();
 
                     if (!result) {
-                        System.out.println("validateProperties: Error while executing the function");
-                        //return false;
+                        System.out.println("validateOwnerships: Error while executing the function");
                         throw new RuntimeException();
-
                     }
 
-                    propertiesToUpdate.add((PayToContract) argument.getValue());
-                    System.out.println("validateProperties: Script validated");
+                    ownershipsToUpdate.add((PayToContract) argument.getValue());
+                    System.out.println("validateOwnerships: Script validated");
                 }
             }
         }
-        return propertiesToUpdate;
+        return ownershipsToUpdate;
     }
 
     private DfaState getNextStateFromCommonFunction(

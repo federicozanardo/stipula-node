@@ -2,13 +2,13 @@ package models.contract;
 
 import java.io.Serializable;
 
-public class Property implements Serializable {
+public class Ownership implements Serializable {
     private final String id;
     private final SingleUseSeal singleUseSeal;
     private String unlockScript;
     private String contractInstanceId;
 
-    public Property(String id, SingleUseSeal singleUseSeal) {
+    public Ownership(String id, SingleUseSeal singleUseSeal) {
         this.id = id;
         this.singleUseSeal = singleUseSeal;
         this.unlockScript = "";
@@ -41,7 +41,7 @@ public class Property implements Serializable {
 
     @Override
     public String toString() {
-        return "Property{" +
+        return "Ownership{" +
                 "id='" + id + '\'' +
                 ", singleUseSeal=" + singleUseSeal +
                 ", unlockScript='" + unlockScript + '\'' +
