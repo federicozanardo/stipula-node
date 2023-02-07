@@ -2,14 +2,14 @@ package models.dto.requests.contract;
 
 import exceptions.UnsupportedTypeException;
 import lib.datastructures.Triple;
-import models.contract.Property;
+import models.dto.requests.contract.function.PayToContract;
 
 public class FunctionArgument {
     // Triple<variable_type, variable_name, variable_value> argument;
     private final Triple<String, String, Object> argument;
 
     public FunctionArgument(String type, String variableName, Object value) throws UnsupportedTypeException {
-        if ((value instanceof String) || (value instanceof Property)) {
+        if ((value instanceof String) || (value instanceof PayToContract)) {
             this.argument = new Triple<>(type, variableName, value);
         } else {
             throw new UnsupportedTypeException("The only supported types for 'value' are String or Property");
