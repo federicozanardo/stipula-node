@@ -10,6 +10,7 @@ import vm.types.Type;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
@@ -110,6 +111,60 @@ public class ContractInstancesStorage extends StorageSerializer<ContractInstance
             }
         }
 
+        levelDb.put(bytes(contractInstanceId), this.serialize(contractInstance));
+
+        levelDb.close();
+        mutex.unlock();
+    }
+
+    /**
+     * @param contractInstanceId
+     * @param partyName
+     * @param functionName
+     * @param argumentsTypes
+     * @throws IOException
+     * @throws ContractInstanceNotFoundException
+     */
+    public void storeStateMachine(String contractInstanceId, String partyName, String functionName, ArrayList<String> argumentsTypes)
+            throws IOException,
+            ContractInstanceNotFoundException {
+        mutex.lock();
+        levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+
+        ContractInstance contractInstance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
+        if (contractInstance == null) {
+            levelDb.close();
+            mutex.unlock();
+            throw new ContractInstanceNotFoundException(contractInstanceId);
+        }
+
+        contractInstance.getStateMachine().nextState(partyName, functionName, argumentsTypes);
+        levelDb.put(bytes(contractInstanceId), this.serialize(contractInstance));
+
+        levelDb.close();
+        mutex.unlock();
+    }
+
+    /**
+     * @param contractInstanceId
+     * @param obligationFunctionName
+     * @throws IOException
+     * @throws ContractInstanceNotFoundException
+     */
+    public void storeStateMachine(String contractInstanceId, String obligationFunctionName)
+            throws IOException,
+            ContractInstanceNotFoundException {
+        mutex.lock();
+        levelDb = factory.open(new File(String.valueOf(Constants.CONTRACT_INSTANCES_PATH)), new Options());
+
+        ContractInstance contractInstance = this.deserialize(levelDb.get(bytes(contractInstanceId)));
+        if (contractInstance == null) {
+            levelDb.close();
+            mutex.unlock();
+            throw new ContractInstanceNotFoundException(contractInstanceId);
+        }
+
+        contractInstance.getStateMachine().nextState(obligationFunctionName);
         levelDb.put(bytes(contractInstanceId), this.serialize(contractInstance));
 
         levelDb.close();
