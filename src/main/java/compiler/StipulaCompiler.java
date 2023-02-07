@@ -188,7 +188,6 @@ public class StipulaCompiler {
 
                 if (data.startsWith("//")) {
                     isCommentLine = true;
-                    // System.out.println("comment line: " + data);
                 }
 
                 // It is a non-comment line, so add it to the bytecode
