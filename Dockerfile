@@ -1,6 +1,6 @@
 # Setup Gradle
 FROM gradle:7.6.0-jdk8 AS TEMP_BUILD_IMAGE
-ENV APP_HOME=/usr/app/
+ENV APP_HOME=/usr/app
 WORKDIR $APP_HOME
 COPY build.gradle settings.gradle $APP_HOME
 
