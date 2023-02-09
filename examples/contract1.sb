@@ -1,4 +1,3 @@
-contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e
 //fn agreement
 fn agreement Lender,Borrower Inactive float,time
 global:
