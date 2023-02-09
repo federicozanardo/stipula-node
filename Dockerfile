@@ -15,7 +15,7 @@ RUN gradle clean build
 
 # Setup Java
 FROM amazoncorretto:8
-ENV ARTIFACT_NAME=stipula-virtual-machine-1.0-SNAPSHOT.jar
+ENV ARTIFACT_NAME=stipula-node-1.0-SNAPSHOT.jar
 ENV APP_HOME=/usr/app
 
 WORKDIR $APP_HOME
