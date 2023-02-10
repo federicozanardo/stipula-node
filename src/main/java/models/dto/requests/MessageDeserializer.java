@@ -55,7 +55,8 @@ public class MessageDeserializer implements JsonDeserializer<Message> {
                     }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         String value = jsonObject.get("type").getAsString();
 

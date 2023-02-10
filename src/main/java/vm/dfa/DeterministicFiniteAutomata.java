@@ -1,6 +1,11 @@
 package vm.dfa;
 
 import lib.datastructures.Triple;
+import vm.dfa.states.DfaState;
+import vm.dfa.states.FinalStates;
+import vm.dfa.transitions.ContractCallByEvent;
+import vm.dfa.transitions.ContractCallByParty;
+import vm.dfa.transitions.TransitionData;
 
 import java.io.Serializable;
 import java.util.ArrayList;
