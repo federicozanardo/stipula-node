@@ -1,4 +1,4 @@
-package vm.dfa;
+package vm.dfa.states;
 
 import java.io.Serializable;
 import java.util.HashSet;

@@ -4,7 +4,11 @@ import lib.datastructures.Triple;
 import models.contract.Contract;
 import models.dto.requests.contract.deploy.DeployContract;
 import storage.ContractsStorage;
-import vm.dfa.*;
+import vm.dfa.states.DfaState;
+import vm.dfa.states.FinalStates;
+import vm.dfa.transitions.ContractCallByEvent;
+import vm.dfa.transitions.ContractCallByParty;
+import vm.dfa.transitions.TransitionData;
 
 import java.io.File;
 import java.io.FileNotFoundException;

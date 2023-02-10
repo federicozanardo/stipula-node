@@ -1,4 +1,4 @@
-package vm.dfa;
+package vm.dfa.transitions;
 
 import java.io.Serializable;
 

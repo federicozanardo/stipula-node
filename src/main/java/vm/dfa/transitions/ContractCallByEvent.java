@@ -1,4 +1,4 @@
-package vm.dfa;
+package vm.dfa.transitions;
 
 public class ContractCallByEvent extends TransitionData {
     private final String obligationFunctionName;

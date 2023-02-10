@@ -1,9 +1,9 @@
 package models.contract;
 
 import lib.datastructures.Triple;
-import vm.dfa.DfaState;
-import vm.dfa.FinalStates;
-import vm.dfa.TransitionData;
+import vm.dfa.states.DfaState;
+import vm.dfa.states.FinalStates;
+import vm.dfa.transitions.TransitionData;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -26,7 +26,7 @@ import storage.ContractInstancesStorage;
 import storage.ContractsStorage;
 import storage.OwnershipsStorage;
 import vm.dfa.DeterministicFiniteAutomata;
-import vm.dfa.DfaState;
+import vm.dfa.states.DfaState;
 import vm.event.EventTrigger;
 import vm.event.EventTriggerHandler;
 import vm.types.AssetType;

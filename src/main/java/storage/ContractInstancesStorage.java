@@ -6,7 +6,6 @@ import models.contract.ContractInstance;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import vm.types.TraceChange;
-import vm.types.Type;
 
 import java.io.File;
 import java.io.IOException;
