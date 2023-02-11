@@ -1,10 +1,10 @@
 package models.dto.requests.event;
 
-public class EventTriggerRequest {
+public class CreateEventRequest {
     private final String obligationFunctionName;
     private final int time;
 
-    public EventTriggerRequest(String obligationFunctionName, int time) {
+    public CreateEventRequest(String obligationFunctionName, int time) {
         this.obligationFunctionName = obligationFunctionName;
         this.time = time;
     }
@@ -19,7 +19,7 @@ public class EventTriggerRequest {
 
     @Override
     public String toString() {
-        return "EventTriggerRequest{" +
+        return "CreateEventRequest{" +
                 "obligationFunctionName='" + obligationFunctionName + '\'' +
                 ", time=" + time +
                 '}';

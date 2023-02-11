@@ -1,12 +1,12 @@
 package models.dto.requests.event;
 
-public class EventTriggerSchedulingRequest {
-    private final EventTriggerRequest request;
+public class EventSchedulingRequest {
+    private final CreateEventRequest request;
     private final String contractId;
     private final String contractInstanceId;
 
-    public EventTriggerSchedulingRequest(
-            EventTriggerRequest request,
+    public EventSchedulingRequest(
+            CreateEventRequest request,
             String contractId,
             String contractInstanceId
     ) {
@@ -15,7 +15,7 @@ public class EventTriggerSchedulingRequest {
         this.contractInstanceId = contractInstanceId;
     }
 
-    public EventTriggerRequest getRequest() {
+    public CreateEventRequest getRequest() {
         return request;
     }
 

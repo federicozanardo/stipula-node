@@ -5,7 +5,7 @@ import exceptions.datastructures.stack.StackUnderflowException;
 import lib.datastructures.Stack;
 import models.address.Address;
 import models.contract.SingleUseSeal;
-import models.dto.requests.event.EventTriggerRequest;
+import models.dto.requests.event.CreateEventRequest;
 import vm.trap.Trap;
 import vm.trap.TrapErrorCodes;
 import vm.types.*;
@@ -24,11 +24,11 @@ public class SmartContractVirtualMachine {
     private int executionPointer = -1;
     private final int offset;
     private final Stack<Type> stack = new Stack<Type>(10);
-    private final HashMap<String, Type> dataSpace = new HashMap<String, Type>();
+    private final HashMap<String, Type> dataSpace = new HashMap<String, Type>(); // FIXME: rename
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
     private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<String, SingleUseSeal>();
-    private final ArrayList<EventTriggerRequest> eventTriggersToRequest = new ArrayList<EventTriggerRequest>();
+    private final ArrayList<CreateEventRequest> createEventRequests = new ArrayList<CreateEventRequest>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
@@ -54,8 +54,8 @@ public class SmartContractVirtualMachine {
         return singleUseSealsToCreate;
     }
 
-    public ArrayList<EventTriggerRequest> getEventTriggersToRequest() {
-        return eventTriggersToRequest;
+    public ArrayList<CreateEventRequest> getCreateEventRequests() {
+        return createEventRequests;
     }
 
     public boolean execute() {
@@ -1411,7 +1411,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        EventTriggerRequest eventTriggerRequest = new EventTriggerRequest(obligationFunctionName, timeVal.getValue());
-        eventTriggersToRequest.add(eventTriggerRequest);
+        CreateEventRequest createEventRequest = new CreateEventRequest(obligationFunctionName, timeVal.getValue());
+        createEventRequests.add(createEventRequest);
     }
 }

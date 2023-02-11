@@ -9,7 +9,7 @@ import models.dto.requests.Message;
 import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.event.EventTriggerSchedulingRequest;
+import models.dto.requests.event.EventSchedulingRequest;
 import vm.event.EventTrigger;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -57,7 +57,7 @@ public class RequestQueue {
      * @param value: value to be enqueued.
      * @throws QueueOverflowException: throws when the current value exceed the queue space limit.
      */
-    public void enqueue(EventTriggerSchedulingRequest value) throws QueueOverflowException {
+    public void enqueue(EventSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
 
         if (triggerRequests.isFull()) {

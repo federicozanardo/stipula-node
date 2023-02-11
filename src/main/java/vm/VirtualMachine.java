@@ -15,8 +15,8 @@ import models.dto.requests.SignedMessage;
 import models.dto.requests.contract.FunctionArgument;
 import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
-import models.dto.requests.event.EventTriggerRequest;
-import models.dto.requests.event.EventTriggerSchedulingRequest;
+import models.dto.requests.event.CreateEventRequest;
+import models.dto.requests.event.EventSchedulingRequest;
 import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
@@ -28,7 +28,7 @@ import storage.OwnershipsStorage;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.dfa.states.DfaState;
 import vm.event.EventTrigger;
-import vm.event.EventTriggerHandler;
+import vm.event.EventScheduler;
 import vm.types.AssetType;
 import vm.types.FloatType;
 import vm.types.TraceChange;
@@ -45,7 +45,7 @@ public class VirtualMachine extends Thread {
     private final RequestQueue queue;
     private final SharedMemory<Response> sharedMemory;
     private int offset = 0;
-    private final EventTriggerHandler eventTriggerHandler;
+    private final EventScheduler eventScheduler;
     private final ContractsStorage contractsStorage;
     private final ContractInstancesStorage contractInstancesStorage;
     private final AssetsStorage assetsStorage;
@@ -54,7 +54,7 @@ public class VirtualMachine extends Thread {
     public VirtualMachine(
             RequestQueue queue,
             SharedMemory<Response> sharedMemory,
-            EventTriggerHandler eventTriggerHandler,
+            EventScheduler eventScheduler,
             ContractsStorage contractsStorage,
             ContractInstancesStorage contractInstancesStorage,
             AssetsStorage assetsStorage,
@@ -63,7 +63,7 @@ public class VirtualMachine extends Thread {
         super(VirtualMachine.class.getSimpleName());
         this.queue = queue;
         this.sharedMemory = sharedMemory;
-        this.eventTriggerHandler = eventTriggerHandler;
+        this.eventScheduler = eventScheduler;
         this.contractsStorage = contractsStorage;
         this.contractInstancesStorage = contractInstancesStorage;
         this.assetsStorage = assetsStorage;
@@ -75,7 +75,7 @@ public class VirtualMachine extends Thread {
         Pair<Thread, Object> request;
         Thread thread;
         SignedMessage signedMessage;
-        EventTriggerSchedulingRequest triggerRequest;
+        EventSchedulingRequest triggerRequest;
         boolean errorInStateMachine;
 
         while (true) {
@@ -94,8 +94,8 @@ public class VirtualMachine extends Thread {
 
                 if (request.getSecond() instanceof SignedMessage) {
                     signedMessage = (SignedMessage) request.getSecond();
-                } else if (request.getSecond() instanceof EventTriggerSchedulingRequest) {
-                    triggerRequest = (EventTriggerSchedulingRequest) request.getSecond();
+                } else if (request.getSecond() instanceof EventSchedulingRequest) {
+                    triggerRequest = (EventSchedulingRequest) request.getSecond();
                 } else {
                     System.out.println("VirtualMachine: Request not valid");
                     sharedMemory.notifyThread(thread, new ErrorResponse(123, "Request not valid"));
@@ -270,20 +270,20 @@ public class VirtualMachine extends Thread {
                         }
 
                         // Set up trigger events
-                        for (EventTriggerRequest eventTriggerRequest : vm.getEventTriggersToRequest()) {
-                            EventTriggerSchedulingRequest eventTriggerSchedulingRequest =
-                                    new EventTriggerSchedulingRequest(
-                                            eventTriggerRequest,
+                        for (CreateEventRequest createEventRequest : vm.getCreateEventRequests()) {
+                            EventSchedulingRequest eventSchedulingRequest =
+                                    new EventSchedulingRequest(
+                                            createEventRequest,
                                             contractId,
                                             contractInstanceId
                                     );
                             EventTrigger eventTrigger = new EventTrigger(
-                                    eventTriggerSchedulingRequest,
-                                    eventTriggerHandler,
+                                    eventSchedulingRequest,
+                                    eventScheduler,
                                     queue,
                                     this
                             );
-                            eventTriggerHandler.addTask(eventTrigger);
+                            eventScheduler.addTask(eventTrigger);
                         }
 
                         // Update the ownerships/single-use seals

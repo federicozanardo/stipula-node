@@ -8,7 +8,7 @@ import storage.ContractsStorage;
 import storage.OwnershipsStorage;
 import vm.RequestQueue;
 import vm.VirtualMachine;
-import vm.event.EventTriggerHandler;
+import vm.event.EventScheduler;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +18,7 @@ class Main {
         // Set up the requests queue
         RequestQueue requestQueue = new RequestQueue();
 
+        // Set up a shared memory for client handlers and virtual machine
         SharedMemory<Response> sharedMemory = new SharedMemory<>();
 
         // Set up the storage
@@ -26,16 +27,17 @@ class Main {
         AssetsStorage assetsStorage = new AssetsStorage();
         OwnershipsStorage ownershipsStorage = new OwnershipsStorage();
 
+        // Seeding the database
         setup(assetsStorage, ownershipsStorage);
 
         // Set up the Event trigger handler
-        EventTriggerHandler eventTriggerHandler = new EventTriggerHandler();
+        EventScheduler eventScheduler = new EventScheduler();
 
-        // Set up the virtual machine handler
+        // Set up the virtual machine
         VirtualMachine virtualMachine = new VirtualMachine(
                 requestQueue,
                 sharedMemory,
-                eventTriggerHandler,
+                eventScheduler,
                 contractsStorage,
                 contractInstancesStorage,
                 assetsStorage,

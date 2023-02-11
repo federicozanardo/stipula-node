@@ -1,23 +1,28 @@
 package vm.event;
 
-import models.dto.requests.event.EventTriggerSchedulingRequest;
+import models.dto.requests.event.EventSchedulingRequest;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Timer;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class EventTriggerHandler {
+public class EventScheduler {
     private final ArrayList<EventTrigger> tasks;
     private final Timer timer;
     private final ReentrantLock mutex;
 
-    public EventTriggerHandler() {
+    public EventScheduler() {
         this.tasks = new ArrayList<>();
         this.timer = new Timer();
         this.mutex = new ReentrantLock();
     }
 
+    /**
+     * This method allows to schedule a new task.
+     *
+     * @param task: task to be scheduled.
+     */
     public void addTask(EventTrigger task) {
         mutex.lock();
 
@@ -27,7 +32,12 @@ public class EventTriggerHandler {
         mutex.unlock();
     }
 
-    public void removeTask(EventTriggerSchedulingRequest schedulingRequest) {
+    /**
+     * This method allows to remove a scheduled tasks from the list.
+     *
+     * @param schedulingRequest: the request to be removed.
+     */
+    public void removeTask(EventSchedulingRequest schedulingRequest) {
         mutex.lock();
 
         int i = 0;
@@ -35,7 +45,7 @@ public class EventTriggerHandler {
 
         while (i < tasks.size() && !found) {
             EventTrigger task = tasks.get(i);
-            EventTriggerSchedulingRequest taskRequest = task.getSchedulingRequest();
+            EventSchedulingRequest taskRequest = task.getSchedulingRequest();
 
             if (taskRequest.getContractId().equals(schedulingRequest.getContractId()) &&
                     taskRequest.getContractInstanceId().equals(schedulingRequest.getContractInstanceId()) &&
@@ -54,7 +64,19 @@ public class EventTriggerHandler {
         mutex.unlock();
     }
 
+    /**
+     * This method allows to get all the current scheduled tasks.
+     *
+     * @return the list of scheduled tasks.
+     */
     public ArrayList<EventTrigger> getTasks() {
         return tasks;
+    }
+
+    @Override
+    public String toString() {
+        return "EventScheduler{" +
+                "tasks=" + tasks +
+                '}';
     }
 }

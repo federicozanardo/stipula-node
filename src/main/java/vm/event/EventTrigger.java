@@ -1,50 +1,50 @@
 package vm.event;
 
 import exceptions.datastructures.queue.QueueOverflowException;
-import models.dto.requests.event.EventTriggerSchedulingRequest;
+import models.dto.requests.event.EventSchedulingRequest;
 import vm.RequestQueue;
 
 import java.util.TimerTask;
 
 public class EventTrigger extends TimerTask {
-    private final EventTriggerSchedulingRequest schedulingRequest;
-    private final EventTriggerHandler handler;
+    private final EventSchedulingRequest schedulingRequest;
+    private final EventScheduler scheduler;
     private final RequestQueue requestQueue;
     private final Thread virtualMachineThread;
 
     public EventTrigger(
-            EventTriggerSchedulingRequest schedulingRequest,
-            EventTriggerHandler handler,
+            EventSchedulingRequest schedulingRequest,
+            EventScheduler scheduler,
             RequestQueue requestQueue,
             Thread virtualMachineThread
     ) {
         this.schedulingRequest = schedulingRequest;
-        this.handler = handler;
+        this.scheduler = scheduler;
         this.requestQueue = requestQueue;
         this.virtualMachineThread = virtualMachineThread;
     }
 
     @Override
     public void run() {
-        System.out.println("EventTrigger: request raised => " + this.schedulingRequest);
-        System.out.println("EventTrigger: enqueue the request...");
+        System.out.println("EventTrigger: A new scheduled request has been triggered => " + this.schedulingRequest);
+        System.out.println("EventTrigger: Enqueuing the request...");
         try {
             this.requestQueue.enqueue(schedulingRequest);
         } catch (QueueOverflowException e) {
             throw new RuntimeException(e);
         }
 
-        System.out.println("EventTrigger: notifying the virtual machine...");
+        System.out.println("EventTrigger: Notifying the virtual machine...");
         synchronized (this.virtualMachineThread) {
             this.virtualMachineThread.notify();
         }
-        System.out.println("EventTrigger: virtual machine notified");
+        System.out.println("EventTrigger: Virtual machine notified");
 
-        System.out.println("EventTrigger: removing the request from EventTriggerHandler...");
-        this.handler.removeTask(schedulingRequest);
+        System.out.println("EventTrigger: Removing the request from EventTriggerHandler...");
+        this.scheduler.removeTask(schedulingRequest);
     }
 
-    public EventTriggerSchedulingRequest getSchedulingRequest() {
+    public EventSchedulingRequest getSchedulingRequest() {
         return schedulingRequest;
     }
 
@@ -52,8 +52,9 @@ public class EventTrigger extends TimerTask {
     public String toString() {
         return "EventTrigger{" +
                 "schedulingRequest=" + schedulingRequest +
-                ", handler=" + handler +
+                ", scheduler=" + scheduler +
                 ", requestQueue=" + requestQueue +
+                ", virtualMachineThread=" + virtualMachineThread +
                 '}';
     }
 }
