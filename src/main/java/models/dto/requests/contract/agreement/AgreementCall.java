@@ -1,6 +1,6 @@
 package models.dto.requests.contract.agreement;
 
-import models.address.Address;
+import models.party.Party;
 import models.dto.requests.Message;
 import models.dto.requests.contract.FunctionArgument;
 
@@ -10,9 +10,9 @@ import java.util.HashMap;
 public class AgreementCall extends Message {
     private final String contractId;
     private final ArrayList<FunctionArgument> arguments;
-    private final HashMap<String, Address> parties;
+    private final HashMap<String, Party> parties;
 
-    public AgreementCall(String contractId, ArrayList<FunctionArgument> arguments, HashMap<String, Address> parties) {
+    public AgreementCall(String contractId, ArrayList<FunctionArgument> arguments, HashMap<String, Party> parties) {
         super(AgreementCall.class.getSimpleName());
         this.contractId = contractId;
         this.arguments = arguments;
@@ -27,7 +27,7 @@ public class AgreementCall extends Message {
         return arguments;
     }
 
-    public HashMap<String, Address> getParties() {
+    public HashMap<String, Party> getParties() {
         return parties;
     }
 

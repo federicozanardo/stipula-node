@@ -2,16 +2,16 @@ contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e
 //fn agreement
 fn agreement Lender,Borrower Inactive float,time
 global:
-GINST addr Lender
-GINST addr Borrower
+GINST party Lender
+GINST party Borrower
 GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
 GINST float cost 2
 GINST time rent_time
 GINST int use_code
 args:
-PUSH addr :Lender
+PUSH party :Lender
 GSTORE Lender
-PUSH addr :Borrower
+PUSH party :Borrower
 GSTORE Borrower
 PUSH float :cost
 GSTORE cost

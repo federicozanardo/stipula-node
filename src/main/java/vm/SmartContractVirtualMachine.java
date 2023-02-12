@@ -3,7 +3,7 @@ package vm;
 import exceptions.datastructures.stack.StackOverflowException;
 import exceptions.datastructures.stack.StackUnderflowException;
 import lib.datastructures.Stack;
-import models.address.Address;
+import models.party.Party;
 import models.contract.SingleUseSeal;
 import models.dto.requests.event.EventTriggerRequest;
 import vm.trap.Trap;
@@ -184,9 +184,9 @@ public class SmartContractVirtualMachine {
             System.out.println("\nSmartContractVirtualMachine: execute => GlobalSpace");
             for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
                 TraceChange value = entry.getValue();
-                if (value.getValue().getType().equals("addr")) {
-                    AddrType address = (AddrType) value.getValue();
-                    System.out.println(entry.getKey() + ": " + address.getAddress() + " " + address.getPublicKey() + ", changed: " + value.isChanged());
+                if (value.getValue().getType().equals("party")) {
+                    PartyType party = (PartyType) value.getValue();
+                    System.out.println(entry.getKey() + ": " + party.getAddress() + " " + party.getPublicKey() + ", changed: " + value.isChanged());
                 } else if (value.getValue().getType().equals("asset")) {
                     AssetType asset = (AssetType) value.getValue();
                     System.out.println(entry.getKey() + ": " + asset.getValue().getValue() + " " + asset.getAssetId() + ", changed: " + value.isChanged());
@@ -294,11 +294,11 @@ public class SmartContractVirtualMachine {
             case "str":
                 stack.push(new StrType(value));
                 break;
-            case "addr":
-                AddrType addrType;
+            case "party":
+                PartyType partyType;
                 try {
-                    addrType = new AddrType(new Address(value));
-                    stack.push(addrType);
+                    partyType = new PartyType(new Party(value));
+                    stack.push(partyType);
                 } catch (NoSuchAlgorithmException exception) {
                     trap.raiseError(TrapErrorCodes.CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS, executionPointer, Arrays.toString(instruction));
                     break;
@@ -693,8 +693,8 @@ public class SmartContractVirtualMachine {
             case "str":
                 dataSpace.put(variableName, new StrType());
                 break;
-            case "addr":
-                dataSpace.put(variableName, new AddrType());
+            case "party":
+                dataSpace.put(variableName, new PartyType());
                 break;
             case "float":
                 dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
@@ -891,9 +891,9 @@ public class SmartContractVirtualMachine {
                 StrType secondStr = new StrType((String) second.getValue());
                 stack.push(new BoolType(firstStr.getValue().equals(secondStr.getValue())));
                 break;
-            case "addr":
-                AddrType firstAddr = new AddrType((Address) first.getValue());
-                AddrType secondAddr = new AddrType((Address) second.getValue());
+            case "party":
+                PartyType firstAddr = new PartyType((Party) first.getValue());
+                PartyType secondAddr = new PartyType((Party) second.getValue());
                 stack.push(new BoolType(firstAddr.getValue().equals(secondAddr.getValue())));
                 break;
             case "float":
@@ -1080,8 +1080,8 @@ public class SmartContractVirtualMachine {
             case "str":
                 argumentsSpace.put(variableName, new StrType());
                 break;
-            case "addr":
-                argumentsSpace.put(variableName, new AddrType());
+            case "party":
+                argumentsSpace.put(variableName, new PartyType());
                 break;
             case "float":
                 argumentsSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
@@ -1210,8 +1210,8 @@ public class SmartContractVirtualMachine {
             case "str":
                 globalSpace.put(variableName, new TraceChange(new StrType(), true));
                 break;
-            case "addr":
-                globalSpace.put(variableName, new TraceChange(new AddrType(), true));
+            case "party":
+                globalSpace.put(variableName, new TraceChange(new PartyType(), true));
                 break;
             case "float":
                 globalSpace.put(variableName, new TraceChange(new FloatType(0, Integer.parseInt(decimals)), true));
@@ -1323,19 +1323,19 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        Type third = stack.pop();   // Address
+        Type third = stack.pop();   // Party
         Type second = stack.pop();  // Asset
         Type first = stack.pop();   // Float
         AssetType result;
 
-        if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("addr")) {
+        if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("party")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         FloatType floatVal = (FloatType) first;
         AssetType assetVal = (AssetType) second;
-        AddrType addressVal = (AddrType) third;
+        PartyType partyVal = (PartyType) third;
 
         if (assetVal.getValue().getDecimals() != floatVal.getDecimals()) {
             trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
@@ -1363,9 +1363,9 @@ public class SmartContractVirtualMachine {
         SingleUseSeal singleUseSeal = new SingleUseSeal(
                 assetVal.getAssetId(),
                 floatVal,
-                addressVal.getAddress()
+                partyVal.getAddress()
         );
-        singleUseSealsToCreate.put(addressVal.getAddress(), singleUseSeal);
+        singleUseSealsToCreate.put(partyVal.getAddress(), singleUseSeal);
     }
 
     private void raiseOperation(String[] instruction) {

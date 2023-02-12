@@ -7,7 +7,7 @@ import exceptions.storage.ContractNotFoundException;
 import exceptions.storage.OwnershipNotFoundException;
 import exceptions.storage.OwnershipsNotFoundException;
 import lib.datastructures.Pair;
-import models.address.Address;
+import models.party.Party;
 import models.assets.Asset;
 import models.contract.*;
 import models.dto.requests.Message;
@@ -111,7 +111,7 @@ public class VirtualMachine extends Thread {
                         Contract contract;
                         ContractInstance contractInstance;
                         DfaState nextState;
-                        Address address = null;
+                        Party party = null;
                         String functionName = "";
                         String contractId;
                         String contractInstanceId;
@@ -124,7 +124,7 @@ public class VirtualMachine extends Thread {
                         if (message instanceof AgreementCall) {
                             AgreementCall agreementCall = (AgreementCall) message;
                             contractId = agreementCall.getContractId();
-                            HashMap<String, Address> parties = agreementCall.getParties();
+                            HashMap<String, Party> parties = agreementCall.getParties();
                             ArrayList<FunctionArgument> arguments = agreementCall.getArguments();
 
                             // Get the contract
@@ -150,7 +150,7 @@ public class VirtualMachine extends Thread {
 
                             // Get the party names
                             ArrayList<String> partiesNames = new ArrayList<>();
-                            for (Map.Entry<String, Address> entry : parties.entrySet()) {
+                            for (Map.Entry<String, Party> entry : parties.entrySet()) {
                                 partiesNames.add(entry.getKey());
                             }
 
@@ -184,11 +184,11 @@ public class VirtualMachine extends Thread {
                             // Get the address of the party
                             Map.Entry<String, String> first = signedMessage.getSignatures().entrySet().iterator().next();
                             String publicKeyParty = first.getKey();
-                            address = new Address(publicKeyParty);
+                            party = new Party(publicKeyParty);
 
                             // Get the name of the party from the address
-                            for (HashMap.Entry<String, Address> entry : contractInstance.getParties().entrySet()) {
-                                if (entry.getValue().getAddress().equals(address.getAddress())) {
+                            for (HashMap.Entry<String, Party> entry : contractInstance.getParties().entrySet()) {
+                                if (entry.getValue().getAddress().equals(party.getAddress())) {
                                     partyName = entry.getKey();
                                 }
                             }
@@ -229,7 +229,7 @@ public class VirtualMachine extends Thread {
                         if (message instanceof FunctionCall) {
                             // Ownerships validation
                             FunctionCall functionCall = (FunctionCall) message;
-                            ownershipsToUpdate = validateOwnerships(address, functionCall);
+                            ownershipsToUpdate = validateOwnerships(party, functionCall);
                         }
 
                         // Load arguments
@@ -594,20 +594,20 @@ public class VirtualMachine extends Thread {
         if (message instanceof AgreementCall) {
             AgreementCall agreementCall = (AgreementCall) message;
             ArrayList<FunctionArgument> agreementCallArguments = agreementCall.getArguments();
-            HashMap<String, Address> parties = agreementCall.getParties();
+            HashMap<String, Party> parties = agreementCall.getParties();
 
             for (FunctionArgument functionArgument : agreementCallArguments) {
                 if (functionArgument.getType().equals("asset")) {
                     throw new RuntimeException("Assets cannot be accepted by the agreement function as arguments");
-                } else if (functionArgument.getType().equals("addr")) {
-                    throw new RuntimeException("Addresses cannot be accepted by the agreement function as arguments");
+                } else if (functionArgument.getType().equals("party")) {
+                    throw new RuntimeException("Parties cannot be accepted by the agreement function as arguments");
                 } else {
                     arguments.add(functionArgument);
                 }
             }
 
-            for (HashMap.Entry<String, Address> entry : parties.entrySet()) {
-                arguments.add(new FunctionArgument("addr", entry.getKey(), entry.getValue().getPublicKey()));
+            for (HashMap.Entry<String, Party> entry : parties.entrySet()) {
+                arguments.add(new FunctionArgument("party", entry.getKey(), entry.getValue().getPublicKey()));
             }
         } else {
             FunctionCall functionCall = (FunctionCall) message;
@@ -652,8 +652,8 @@ public class VirtualMachine extends Thread {
 
                     String argumentValue = value.getValue().getInteger() + " " + value.getValue().getDecimals() + " " + value.getAssetId();
                     arguments.add(new FunctionArgument(type, variableName, argumentValue));
-                } else if (functionArgument.getType().equals("addr")) {
-                    throw new RuntimeException("Addresses cannot be accepted by the agreement function as arguments");
+                } else if (functionArgument.getType().equals("party")) {
+                    throw new RuntimeException("Parties cannot be accepted by the agreement function as arguments");
                 } else {
                     arguments.add(functionArgument);
                 }
@@ -703,7 +703,7 @@ public class VirtualMachine extends Thread {
         return bytecode;
     }
 
-    private ArrayList<PayToContract> validateOwnerships(Address address, FunctionCall functionCall) throws Exception {
+    private ArrayList<PayToContract> validateOwnerships(Party party, FunctionCall functionCall) throws Exception {
         ArrayList<PayToContract> ownershipsToUpdate = new ArrayList<>();
         ArrayList<FunctionArgument> arguments = functionCall.getArguments();
 
@@ -716,7 +716,7 @@ public class VirtualMachine extends Thread {
                     String unlockScript = payToContract.getUnlockScript();
 
                     // Try to get the ownership from the storage
-                    Ownership ownershipFromStorage = ownershipsStorage.getFund(address.getAddress(), ownershipId);
+                    Ownership ownershipFromStorage = ownershipsStorage.getFund(party.getAddress(), ownershipId);
                     if (ownershipFromStorage == null) {
                         // TODO: Error: the ownership does not exist in the storage
                         System.out.println("validateOwnerships: the ownership does not exist in the storage");

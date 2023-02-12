@@ -1,4 +1,4 @@
-package models.address;
+package models.party;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -6,11 +6,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class Address implements Serializable {
+public class Party implements Serializable {
     private final String address;
     private final String publicKey;
 
-    public Address(String publicKey) throws NoSuchAlgorithmException {
+    public Party(String publicKey) throws NoSuchAlgorithmException {
         this.publicKey = publicKey;
 
         // Hash the public key

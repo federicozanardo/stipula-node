@@ -25,15 +25,15 @@ The node is able to:
 - [x] Create and manage a contract instances
 - [x] Keep the state of the contract
 - [x] Call functions
-- [x] Manage addresses
+- [x] Manage parties (addresses)
 - [x] Manage assets
 - [x] Manage storage
 - [x] Schedule and trigger events
-- [x] Manage payments ("pat-to-contract" and "pay-to-address")
+- [x] Manage payments ("pat-to-contract" and "pay-to-party")
 - [x] Manage client connections and requests/responses 
 - [x] Add Docker support
 
-"Pay-to-address" means when a user wants to pay a contract and "pay-to-address" means when the contract wants to pay an address. 
+"Pay-to-party" means when a user wants to pay a contract and "pay-to-party" means when the contract wants to pay an party. 
 
 ## How to run a node?
 

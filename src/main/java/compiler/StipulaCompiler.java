@@ -45,16 +45,16 @@ public class StipulaCompiler {
         String bytecode = "contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e\n" +
                 "fn agreement Lender,Borrower Inactive float,time\n" +
                 "global:\n" +
-                "GINST addr Lender\n" +
-                "GINST addr Borrower\n" +
+                "GINST party Lender\n" +
+                "GINST party Borrower\n" +
                 "GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n" +
                 "GINST float cost 2\n" +
                 "GINST time rent_time\n" +
                 "GINST int use_code\n" +
                 "args:\n" +
-                "PUSH addr :Lender\n" +
+                "PUSH party :Lender\n" +
                 "GSTORE Lender\n" +
-                "PUSH addr :Borrower\n" +
+                "PUSH party :Borrower\n" +
                 "GSTORE Borrower\n" +
                 "PUSH float :cost\n" +
                 "GSTORE cost\n" +

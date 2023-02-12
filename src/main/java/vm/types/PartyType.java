@@ -1,21 +1,21 @@
 package vm.types;
 
-import models.address.Address;
+import models.party.Party;
 
-public class AddrType extends Type {
-    private final Address value;
+public class PartyType extends Type {
+    private final Party value;
 
-    public AddrType() {
+    public PartyType() {
         this.value = null;
     }
 
-    public AddrType(Address value) {
+    public PartyType(Party value) {
         this.value = value;
     }
 
     @Override
     public String getType() {
-        return "addr";
+        return "party";
     }
 
     @Override
@@ -36,7 +36,7 @@ public class AddrType extends Type {
 
     @Override
     public String toString() {
-        return "AddrType{" +
+        return "PartyType{" +
                 "value=" + value +
                 '}';
     }
