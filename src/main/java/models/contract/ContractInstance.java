@@ -1,6 +1,6 @@
 package models.contract;
 
-import models.address.Address;
+import models.party.Party;
 import vm.dfa.DeterministicFiniteAutomata;
 import vm.types.Type;
 
@@ -10,10 +10,10 @@ import java.util.HashMap;
 public class ContractInstance implements Serializable {
     private final String contractId;
     private final DeterministicFiniteAutomata stateMachine;
-    private final HashMap<String, Address> parties;
+    private final HashMap<String, Party> parties;
     private final HashMap<String, Type> globalSpace;
 
-    public ContractInstance(String contractId, DeterministicFiniteAutomata stateMachine, HashMap<String, Address> parties) {
+    public ContractInstance(String contractId, DeterministicFiniteAutomata stateMachine, HashMap<String, Party> parties) {
         this.contractId = contractId;
         this.parties = parties;
         this.stateMachine = stateMachine;
@@ -28,7 +28,7 @@ public class ContractInstance implements Serializable {
         return stateMachine;
     }
 
-    public HashMap<String, Address> getParties() {
+    public HashMap<String, Party> getParties() {
         return parties;
     }
 
