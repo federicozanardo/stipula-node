@@ -7,7 +7,7 @@ import models.contract.Ownership;
 import models.contract.SingleUseSeal;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
-import vm.types.FloatType;
+import vm.types.RealType;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
         String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
         String borrowerAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
         String ownershipId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
-        FloatType amount = new FloatType(1200, 2);
+        RealType amount = new RealType(1200, 2);
 
         SingleUseSeal singleUseSeal = new SingleUseSeal(assetId, amount, borrowerAddress);
         Ownership ownership = new Ownership(ownershipId, singleUseSeal);

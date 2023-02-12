@@ -47,12 +47,12 @@ public class StipulaCompiler {
         // String bytecode = readProgram(Constants.EXAMPLES_PATH + "contract1.sb");
 
         String bytecode = "contract c60050c5bb40e4a48df80f1b390ba206f5dcbdcdef5cba561a2dc43cf715989e\n" +
-                "fn agreement Lender,Borrower Inactive float,time\n" +
+                "fn agreement Lender,Borrower Inactive real,time\n" +
                 "global:\n" +
                 "GINST party Lender\n" +
                 "GINST party Borrower\n" +
                 "GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n" +
-                "GINST float cost 2\n" +
+                "GINST real cost 2\n" +
                 "GINST time rent_time\n" +
                 "GINST int use_code\n" +
                 "args:\n" +
@@ -60,7 +60,7 @@ public class StipulaCompiler {
                 "GSTORE Lender\n" +
                 "PUSH party :Borrower\n" +
                 "GSTORE Borrower\n" +
-                "PUSH float :cost\n" +
+                "PUSH real :cost\n" +
                 "GSTORE cost\n" +
                 "PUSH time :rent_time\n" +
                 "GSTORE rent_time\n" +
@@ -99,7 +99,7 @@ public class StipulaCompiler {
                 "HALT\n" +
                 "fn Using Borrower end End\n" +
                 "start:\n" +
-                "PUSH float 100 2\n" +
+                "PUSH real 100 2\n" +
                 "GLOAD wallet\n" +
                 "MUL\n" +
                 "GLOAD wallet\n" +
@@ -108,7 +108,7 @@ public class StipulaCompiler {
                 "HALT\n" +
                 "obligation Using accept_obl_1 End\n" +
                 "start:\n" +
-                "PUSH float 100 2\n" +
+                "PUSH real 100 2\n" +
                 "GLOAD wallet\n" +
                 "MUL\n" +
                 "GLOAD wallet\n" +

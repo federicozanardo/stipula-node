@@ -1,15 +1,15 @@
 package models.contract;
 
-import vm.types.FloatType;
+import vm.types.RealType;
 
 import java.io.Serializable;
 
 public class SingleUseSeal implements Serializable {
     private final String assetId;
-    private final FloatType amount;
+    private final RealType amount;
     private final String lockScript;
 
-    public SingleUseSeal(String assetId, FloatType amount, String publicKeyHash) {
+    public SingleUseSeal(String assetId, RealType amount, String publicKeyHash) {
         this.assetId = assetId;
         this.amount = amount;
         this.lockScript = "DUP\nSHA256\nPUSH str " + publicKeyHash + "\nEQUAL\nCHECKSIG\nHALT\n";
@@ -19,7 +19,7 @@ public class SingleUseSeal implements Serializable {
         return assetId;
     }
 
-    public FloatType getAmount() {
+    public RealType getAmount() {
         return amount;
     }
 
