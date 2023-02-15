@@ -67,3 +67,9 @@ Inside the `docker-compose.yml` there is the need to specify the version of the 
 environment:
   - SEED=no
 ```
+
+## Generate the grammar
+
+```bash
+java -jar antlr-4.10-complete.jar -visitor Stipula.g4
+```
