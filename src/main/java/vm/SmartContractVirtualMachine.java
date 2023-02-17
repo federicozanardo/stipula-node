@@ -260,7 +260,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("real") && !instruction[1].equals("asset")) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -275,7 +275,7 @@ public class SmartContractVirtualMachine {
         String decimals = "";
         String assetId = "";
 
-        if (type.equals("float")) {
+        if (type.equals("real")) {
             decimals = instruction[3];
         }
 
@@ -304,11 +304,11 @@ public class SmartContractVirtualMachine {
                     break;
                 }
                 break;
-            case "float":
-                stack.push(new FloatType(Integer.parseInt(value), Integer.parseInt(decimals)));
+            case "real":
+                stack.push(new RealType(Integer.parseInt(value), Integer.parseInt(decimals)));
                 break;
             case "asset":
-                stack.push(new AssetType(assetId, new FloatType(Integer.parseInt(value), Integer.parseInt(decimals))));
+                stack.push(new AssetType(assetId, new RealType(Integer.parseInt(value), Integer.parseInt(decimals))));
                 break;
             case "time":
                 if (value.equals("now")) {
@@ -336,10 +336,10 @@ public class SmartContractVirtualMachine {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
             result = new IntType(firstVal.getValue() + secondVal.getValue());
-        } else if (first.getType().equals("float") && second.getType().equals("float")) {
-            FloatType firstVal = (FloatType) first;
-            FloatType secondVal = (FloatType) second;
-            result = new FloatType(firstVal.getInteger() + secondVal.getInteger(), firstVal.getDecimals());
+        } else if (first.getType().equals("real") && second.getType().equals("real")) {
+            RealType firstVal = (RealType) first;
+            RealType secondVal = (RealType) second;
+            result = new RealType(firstVal.getInteger() + secondVal.getInteger(), firstVal.getDecimals());
         } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
             AssetType firstVal = (AssetType) first;
             AssetType secondVal = (AssetType) second;
@@ -354,25 +354,25 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getValue().getInteger() + secondVal.getValue().getInteger(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+        } else if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstVal = (AssetType) first;
-            FloatType secondVal = (FloatType) second;
+            RealType secondVal = (RealType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
                 trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getValue().getInteger() + secondVal.getInteger(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstVal = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstVal = (RealType) first;
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
@@ -380,7 +380,7 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getInteger() + secondVal.getValue().getInteger(),
                     firstVal.getDecimals()
             );
@@ -408,10 +408,10 @@ public class SmartContractVirtualMachine {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
             result = new IntType(firstVal.getValue() - secondVal.getValue());
-        } else if (first.getType().equals("float") && second.getType().equals("float")) {
-            FloatType firstVal = (FloatType) first;
-            FloatType secondVal = (FloatType) second;
-            result = new FloatType(firstVal.getInteger() - secondVal.getInteger(), firstVal.getDecimals());
+        } else if (first.getType().equals("real") && second.getType().equals("real")) {
+            RealType firstVal = (RealType) first;
+            RealType secondVal = (RealType) second;
+            result = new RealType(firstVal.getInteger() - secondVal.getInteger(), firstVal.getDecimals());
         } else if (first.getType().equals("asset") && second.getType().equals("asset")) {
             AssetType firstVal = (AssetType) first;
             AssetType secondVal = (AssetType) second;
@@ -426,25 +426,25 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getValue().getInteger() - secondVal.getValue().getInteger(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+        } else if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstVal = (AssetType) first;
-            FloatType secondVal = (FloatType) second;
+            RealType secondVal = (RealType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
                 trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getValue().getInteger() - secondVal.getInteger(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstVal = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstVal = (RealType) first;
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
@@ -452,7 +452,7 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     firstVal.getInteger() - secondVal.getValue().getInteger(),
                     firstVal.getDecimals()
             );
@@ -476,10 +476,10 @@ public class SmartContractVirtualMachine {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
             result = new IntType(firstVal.getValue() * secondVal.getValue());
-        } else if (first.getType().equals("float") && second.getType().equals("float")) {
-            FloatType firstVal = (FloatType) first;
-            FloatType secondVal = (FloatType) second;
-            result = new FloatType(
+        } else if (first.getType().equals("real") && second.getType().equals("real")) {
+            RealType firstVal = (RealType) first;
+            RealType secondVal = (RealType) second;
+            result = new RealType(
                     (new Double(
                             (firstVal.getInteger() * secondVal.getInteger()) / Math.pow(10, firstVal.getDecimals()))
                     ).intValue(),
@@ -499,29 +499,29 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (new Double(
                             (firstVal.getValue().getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getValue().getDecimals()))
                     ).intValue(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+        } else if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstVal = (AssetType) first;
-            FloatType secondVal = (FloatType) second;
+            RealType secondVal = (RealType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
                 trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (new Double(
                             (firstVal.getValue().getInteger() * secondVal.getInteger()) / Math.pow(10, secondVal.getDecimals()))
                     ).intValue(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstVal = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstVal = (RealType) first;
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
@@ -529,7 +529,7 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (new Double(
                             (firstVal.getInteger() * secondVal.getValue().getInteger()) / Math.pow(10, firstVal.getDecimals()))
                     ).intValue(),
@@ -561,10 +561,10 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(firstVal.getValue() / secondVal.getValue(), 2);
-        } else if (first.getType().equals("float") && second.getType().equals("float")) {
-            FloatType firstVal = (FloatType) first;
-            FloatType secondVal = (FloatType) second;
+            result = new RealType(firstVal.getValue() / secondVal.getValue(), 2);
+        } else if (first.getType().equals("real") && second.getType().equals("real")) {
+            RealType firstVal = (RealType) first;
+            RealType secondVal = (RealType) second;
 
             System.out.println(firstVal);
             System.out.println(secondVal);
@@ -580,7 +580,7 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (firstVal.getValue().divide(secondVal.getValue(), RoundingMode.CEILING))
                             .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getDecimals())))
                             .intValue(),
@@ -606,15 +606,15 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (firstVal.getValue().getValue().divide(secondVal.getValue().getValue(), RoundingMode.CEILING))
                             .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getValue().getDecimals())))
                             .intValue(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("asset") && second.getType().equals("float")) {
+        } else if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstVal = (AssetType) first;
-            FloatType secondVal = (FloatType) second;
+            RealType secondVal = (RealType) second;
 
             if (firstVal.getValue().getDecimals() != secondVal.getDecimals()) {
                 trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
@@ -627,14 +627,14 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (firstVal.getValue().getValue().divide(secondVal.getValue(), RoundingMode.CEILING))
                             .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getValue().getDecimals())))
                             .intValue(),
                     firstVal.getValue().getDecimals()
             );
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstVal = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstVal = (RealType) first;
             AssetType secondVal = (AssetType) second;
 
             if (firstVal.getDecimals() != secondVal.getValue().getDecimals()) {
@@ -648,7 +648,7 @@ public class SmartContractVirtualMachine {
                 return;
             }
 
-            result = new FloatType(
+            result = new RealType(
                     (firstVal.getValue().divide(secondVal.getValue().getValue(), RoundingMode.CEILING))
                             .multiply(BigDecimal.valueOf(Math.pow(10, firstVal.getDecimals())))
                             .intValue(),
@@ -666,7 +666,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2 && !instruction[1].equals("float")) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("real")) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -674,7 +674,7 @@ public class SmartContractVirtualMachine {
         String type = instruction[1];
         String variableName = instruction[2];
         String decimals = "";
-        if (type.equals("float")) {
+        if (type.equals("real")) {
             decimals = instruction[3];
         }
 
@@ -696,8 +696,8 @@ public class SmartContractVirtualMachine {
             case "party":
                 dataSpace.put(variableName, new PartyType());
                 break;
-            case "float":
-                dataSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
+            case "real":
+                dataSpace.put(variableName, new RealType(0, Integer.parseInt(decimals)));
                 break;
             case "time":
                 dataSpace.put(variableName, new TimeType());
@@ -858,15 +858,15 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (first.getType().equals("asset") && second.getType().equals("float")) {
+        if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstAsset = (AssetType) first;
-            FloatType secondFloat = (FloatType) second;
-            stack.push(new BoolType(Objects.equals(firstAsset.getValue().getValue(), secondFloat.getValue())));
+            RealType secondReal = (RealType) second;
+            stack.push(new BoolType(Objects.equals(firstAsset.getValue().getValue(), secondReal.getValue())));
             return;
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstFloat = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstReal = (RealType) first;
             AssetType secondAsset = (AssetType) second;
-            stack.push(new BoolType(Objects.equals(firstFloat.getValue(), secondAsset.getValue().getValue())));
+            stack.push(new BoolType(Objects.equals(firstReal.getValue(), secondAsset.getValue().getValue())));
             return;
         }
 
@@ -896,10 +896,10 @@ public class SmartContractVirtualMachine {
                 PartyType secondAddr = new PartyType((Party) second.getValue());
                 stack.push(new BoolType(firstAddr.getValue().equals(secondAddr.getValue())));
                 break;
-            case "float":
-                FloatType firstFloat = (FloatType) first;
-                FloatType secondFloat = (FloatType) second;
-                stack.push(new BoolType(Objects.equals(firstFloat.getValue(), secondFloat.getValue())));
+            case "real":
+                RealType firstReal = (RealType) first;
+                RealType secondReal = (RealType) second;
+                stack.push(new BoolType(Objects.equals(firstReal.getValue(), secondReal.getValue())));
                 break;
             case "asset":
                 AssetType firstAsset = (AssetType) first;
@@ -933,25 +933,25 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
+        if (!first.getType().equals("int") && !first.getType().equals("real") && !first.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
+        if (!second.getType().equals("int") && !second.getType().equals("real") && !second.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        if (first.getType().equals("asset") && second.getType().equals("float")) {
+        if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstAsset = (AssetType) first;
-            FloatType secondFloat = (FloatType) second;
-            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondFloat.getValue()) < 0));
+            RealType secondReal = (RealType) second;
+            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondReal.getValue()) < 0));
             return;
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstFloat = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstReal = (RealType) first;
             AssetType secondAsset = (AssetType) second;
-            stack.push(new BoolType(firstFloat.getValue().compareTo(secondAsset.getValue().getValue()) < 0));
+            stack.push(new BoolType(firstReal.getValue().compareTo(secondAsset.getValue().getValue()) < 0));
             return;
         }
 
@@ -966,10 +966,10 @@ public class SmartContractVirtualMachine {
                 IntType secondInt = new IntType((Integer) second.getValue());
                 stack.push(new BoolType(firstInt.getValue() < secondInt.getValue()));
                 break;
-            case "float":
-                FloatType firstFloat = (FloatType) first;
-                FloatType secondFloat = (FloatType) second;
-                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) < 0));
+            case "real":
+                RealType firstReal = (RealType) first;
+                RealType secondReal = (RealType) second;
+                stack.push(new BoolType(firstReal.getValue().compareTo(secondReal.getValue()) < 0));
                 break;
             case "asset":
                 AssetType firstAsset = (AssetType) first;
@@ -989,25 +989,25 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
-        if (!first.getType().equals("int") && !first.getType().equals("float") && !first.getType().equals("asset")) {
+        if (!first.getType().equals("int") && !first.getType().equals("real") && !first.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        if (!second.getType().equals("int") && !second.getType().equals("float") && !second.getType().equals("asset")) {
+        if (!second.getType().equals("int") && !second.getType().equals("real") && !second.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        if (first.getType().equals("asset") && second.getType().equals("float")) {
+        if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstAsset = (AssetType) first;
-            FloatType secondFloat = (FloatType) second;
-            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondFloat.getValue()) <= 0));
+            RealType secondReal = (RealType) second;
+            stack.push(new BoolType(firstAsset.getValue().getValue().compareTo(secondReal.getValue()) <= 0));
             return;
-        } else if (first.getType().equals("float") && second.getType().equals("asset")) {
-            FloatType firstFloat = (FloatType) first;
+        } else if (first.getType().equals("real") && second.getType().equals("asset")) {
+            RealType firstReal = (RealType) first;
             AssetType secondAsset = (AssetType) second;
-            stack.push(new BoolType(firstFloat.getValue().compareTo(secondAsset.getValue().getValue()) <= 0));
+            stack.push(new BoolType(firstReal.getValue().compareTo(secondAsset.getValue().getValue()) <= 0));
             return;
         }
 
@@ -1018,14 +1018,14 @@ public class SmartContractVirtualMachine {
 
         switch (first.getType()) {
             case "int":
-                IntType firstVal = new IntType((Integer) first.getValue());
-                IntType secondVal = new IntType((Integer) second.getValue());
-                stack.push(new BoolType(firstVal.getValue() <= secondVal.getValue()));
+                IntType firstInt = new IntType((Integer) first.getValue());
+                IntType secondInt = new IntType((Integer) second.getValue());
+                stack.push(new BoolType(firstInt.getValue() <= secondInt.getValue()));
                 break;
-            case "float":
-                FloatType firstFloat = (FloatType) first;
-                FloatType secondFloat = (FloatType) second;
-                stack.push(new BoolType(firstFloat.getValue().compareTo(secondFloat.getValue()) <= 0));
+            case "real":
+                RealType firstReal = (RealType) first;
+                RealType secondReal = (RealType) second;
+                stack.push(new BoolType(firstReal.getValue().compareTo(secondReal.getValue()) <= 0));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
@@ -1037,7 +1037,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("real") && !instruction[1].equals("asset")) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1056,7 +1056,7 @@ public class SmartContractVirtualMachine {
         String decimals = "";
         String assetId = "";
 
-        if (type.equals("float")) {
+        if (type.equals("real")) {
             decimals = instruction[3];
         }
 
@@ -1083,11 +1083,11 @@ public class SmartContractVirtualMachine {
             case "party":
                 argumentsSpace.put(variableName, new PartyType());
                 break;
-            case "float":
-                argumentsSpace.put(variableName, new FloatType(0, Integer.parseInt(decimals)));
+            case "real":
+                argumentsSpace.put(variableName, new RealType(0, Integer.parseInt(decimals)));
                 break;
             case "asset":
-                AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
+                AssetType value = new AssetType(assetId, new RealType(0, Integer.parseInt(decimals)));
                 argumentsSpace.put(variableName, value);
                 break;
             case "time":
@@ -1132,7 +1132,7 @@ public class SmartContractVirtualMachine {
 
             Type value = stack.pop();
 
-            // Check that the element popped from the stack is a float value
+            // Check that the element popped from the stack is a real value
             if (!value.getType().equals("asset")) {
                 trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
                 return;
@@ -1154,7 +1154,7 @@ public class SmartContractVirtualMachine {
 
             AssetType newValue = new AssetType(
                     assetValuePopped.getAssetId(),
-                    new FloatType(
+                    new RealType(
                             assetValuePopped.getValue().getInteger(),
                             assetValuePopped.getValue().getDecimals()
                     )
@@ -1171,7 +1171,7 @@ public class SmartContractVirtualMachine {
             return;
         }
 
-        if ((instruction.length - 1) > 2 && !instruction[1].equals("float") && !instruction[1].equals("asset")) {
+        if ((instruction.length - 1) > 2 && !instruction[1].equals("real") && !instruction[1].equals("asset")) {
             trap.raiseError(TrapErrorCodes.TOO_MANY_ARGUMENTS, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1186,7 +1186,7 @@ public class SmartContractVirtualMachine {
         String decimals = "";
         String assetId = "";
 
-        if (type.equals("float")) {
+        if (type.equals("real")) {
             decimals = instruction[3];
         }
 
@@ -1213,11 +1213,11 @@ public class SmartContractVirtualMachine {
             case "party":
                 globalSpace.put(variableName, new TraceChange(new PartyType(), true));
                 break;
-            case "float":
-                globalSpace.put(variableName, new TraceChange(new FloatType(0, Integer.parseInt(decimals)), true));
+            case "real":
+                globalSpace.put(variableName, new TraceChange(new RealType(0, Integer.parseInt(decimals)), true));
                 break;
             case "asset":
-                AssetType value = new AssetType(assetId, new FloatType(0, Integer.parseInt(decimals)));
+                AssetType value = new AssetType(assetId, new RealType(0, Integer.parseInt(decimals)));
                 globalSpace.put(variableName, new TraceChange(value, true));
                 break;
             case "time":
@@ -1302,7 +1302,7 @@ public class SmartContractVirtualMachine {
 
         result = new AssetType(
                 assetContract.getAssetId(),
-                new FloatType(
+                new RealType(
                         assetContract.getValue().getInteger() + assetToDeposit.getValue().getInteger(),
                         assetToDeposit.getValue().getDecimals()
                 )
@@ -1325,25 +1325,25 @@ public class SmartContractVirtualMachine {
 
         Type third = stack.pop();   // Party
         Type second = stack.pop();  // Asset
-        Type first = stack.pop();   // Float
+        Type first = stack.pop();   // Real
         AssetType result;
 
-        if (!first.getType().equals("float") || !second.getType().equals("asset") || !third.getType().equals("party")) {
+        if (!first.getType().equals("real") || !second.getType().equals("asset") || !third.getType().equals("party")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
         }
 
-        FloatType floatVal = (FloatType) first;
+        RealType realVal = (RealType) first;
         AssetType assetVal = (AssetType) second;
         PartyType partyVal = (PartyType) third;
 
-        if (assetVal.getValue().getDecimals() != floatVal.getDecimals()) {
+        if (assetVal.getValue().getDecimals() != realVal.getDecimals()) {
             trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         // Check that the value to withdraw is not negative
-        if (floatVal.getInteger() < 0) {
+        if (realVal.getInteger() < 0) {
             trap.raiseError(TrapErrorCodes.NEGATIVE_VALUE, executionPointer, Arrays.toString(instruction));
             return;
         }
@@ -1351,9 +1351,9 @@ public class SmartContractVirtualMachine {
         // Update the asset variable
         result = new AssetType(
                 assetVal.getAssetId(),
-                new FloatType(
-                        assetVal.getValue().getInteger() - floatVal.getInteger(),
-                        floatVal.getDecimals()
+                new RealType(
+                        assetVal.getValue().getInteger() - realVal.getInteger(),
+                        realVal.getDecimals()
                 )
         );
 
@@ -1362,7 +1362,7 @@ public class SmartContractVirtualMachine {
         // Set up the single-use seal
         SingleUseSeal singleUseSeal = new SingleUseSeal(
                 assetVal.getAssetId(),
-                floatVal,
+                realVal,
                 partyVal.getAddress()
         );
         singleUseSealsToCreate.put(partyVal.getAddress(), singleUseSeal);

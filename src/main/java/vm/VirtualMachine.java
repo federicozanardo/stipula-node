@@ -30,7 +30,7 @@ import vm.dfa.states.DfaState;
 import vm.event.EventTrigger;
 import vm.event.EventScheduler;
 import vm.types.AssetType;
-import vm.types.FloatType;
+import vm.types.RealType;
 import vm.types.TraceChange;
 import vm.types.Type;
 
@@ -644,7 +644,7 @@ public class VirtualMachine extends Thread {
 
                     AssetType value = new AssetType(
                             asset.getId(),
-                            new FloatType(
+                            new RealType(
                                     singleUseSeal.getAmount().getInteger(),
                                     singleUseSeal.getAmount().getDecimals()
                             )

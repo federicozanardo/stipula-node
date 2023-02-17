@@ -2,9 +2,9 @@ package vm.types;
 
 public class AssetType extends Type {
     private final String assetId;
-    private final FloatType amount;
+    private final RealType amount;
 
-    public AssetType(String assetId, FloatType amount) {
+    public AssetType(String assetId, RealType amount) {
         this.assetId = assetId;
         this.amount = amount;
     }
@@ -15,7 +15,7 @@ public class AssetType extends Type {
     }
 
     @Override
-    public FloatType getValue() {
+    public RealType getValue() {
         return this.amount;
     }
 
