@@ -4,28 +4,28 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public class FloatType extends Type implements Serializable {
+public class RealType extends Type implements Serializable {
     private final Integer value;
     private final int decimals;
 
-    public FloatType() {
+    public RealType() {
         this.value = 0;
         this.decimals = 2;
     }
 
-    public FloatType(Integer value) {
+    public RealType(Integer value) {
         this.value = value;
         this.decimals = 2;
     }
 
-    public FloatType(Integer value, int decimals) {
+    public RealType(Integer value, int decimals) {
         this.value = value;
         this.decimals = decimals;
     }
 
     @Override
     public String getType() {
-        return "float";
+        return "real";
     }
 
     @Override
@@ -35,7 +35,7 @@ public class FloatType extends Type implements Serializable {
     }
 
     /**
-     * @return the float value as integer.
+     * @return the real value as integer.
      */
     public Integer getInteger() {
         return value;
@@ -50,7 +50,7 @@ public class FloatType extends Type implements Serializable {
 
     @Override
     public String toString() {
-        return "FloatType{" +
+        return "RealType{" +
                 "value=" + value +
                 ", decimals=" + decimals +
                 '}';

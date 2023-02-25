@@ -1,10 +1,10 @@
 //fn agreement
-fn agreement Lender,Borrower Inactive float,time
+fn agreement Lender,Borrower Inactive real,time
 global:
 GINST party Lender
 GINST party Borrower
 GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
-GINST float cost 2
+GINST real cost 2
 GINST time rent_time
 GINST int use_code
 args:
@@ -12,7 +12,7 @@ PUSH party :Lender
 GSTORE Lender
 PUSH party :Borrower
 GSTORE Borrower
-PUSH float :cost
+PUSH real :cost
 GSTORE cost
 PUSH time :rent_time
 GSTORE rent_time
@@ -60,7 +60,7 @@ fn Using Borrower end End
 start:
 // start withdraw
 // start expression
-PUSH float 100 2
+PUSH real 100 2
 GLOAD wallet
 MUL
 // end expression
@@ -74,7 +74,7 @@ obligation Using accept_obl_1 End
 start:
 // start withdraw
 // start expression
-PUSH float 100 2
+PUSH real 100 2
 GLOAD wallet
 MUL
 // end expression
