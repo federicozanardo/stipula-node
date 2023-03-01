@@ -70,6 +70,8 @@ environment:
 
 ## Generate the grammar
 
+Download the `jar` file from https://github.com/antlr/website-antlr4/blob/gh-pages/download/antlr-4.10-complete.jar.
+
 ```bash
 java -jar antlr-4.10-complete.jar -visitor Stipula.g4
 ```
