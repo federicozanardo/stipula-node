@@ -1,4 +1,3 @@
-//fn agreement
 fn agreement Lender,Borrower Inactive real,time
 global:
 GINST party Lender
@@ -18,7 +17,6 @@ PUSH time :rent_time
 GSTORE rent_time
 start:
 HALT
-//fn offer Lender Proposal
 fn Inactive Lender offer Proposal int
 args:
 PUSH int :z
@@ -28,10 +26,8 @@ start:
 ALOAD z
 GSTORE use_code
 HALT
-//fn accept Borrower Using
 fn Proposal Borrower accept Using asset
 args:
-// PUSH asset 100 2 iop890
 PUSH asset :y
 AINST asset y 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
 ASTORE y
@@ -55,7 +51,6 @@ ADD
 TRIGGER accept_obl_1
 end:
 HALT
-//fn end Borrower End
 fn Using Borrower end End
 start:
 // start withdraw
