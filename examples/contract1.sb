@@ -45,8 +45,8 @@ GLOAD wallet
 DEPOSIT wallet
 // end deposit
 // trigger an obligation
-PUSH time now
 GLOAD rent_time
+PUSH time now
 ADD
 TRIGGER accept_obl_1
 end:
