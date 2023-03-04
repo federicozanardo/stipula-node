@@ -1,0 +1,28 @@
+stipula BikeRental {
+    asset wallet
+    field cost, rentingTime, use_code
+    init Inactive
+
+    agreement (Lender, Borrower)(cost, rentingTime){
+        Lender, Borrower: cost, rentingTime
+    } ==> @Inactive
+
+    @Inactive Lender : offer(z)[] {
+        z -> use_code;
+        _
+    } ==> @Proposal
+
+    @Proposal Borrower : accept()[y]
+        (y == cost) {
+            y -o wallet;
+            now + rentingTime >>
+                @Using {
+                    wallet -o Lender
+                } ==> @End
+    } ==> @Using
+
+    @Using Borrower : end()[] {
+        wallet -o Lender;
+        _
+    } ==> @End
+}
