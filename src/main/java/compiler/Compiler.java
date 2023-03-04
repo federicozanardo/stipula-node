@@ -71,8 +71,35 @@ public class Compiler {
             // ((Program) program).runProgram(typeinferencer);
             Map<Pair<String, Integer>, Type> globalVariables = typeInference.getGlobalVariables();
             System.out.println("globalVariables => " + globalVariables);
+
+            // Compile
             StipulaCompiler stipulaCompiler = new StipulaCompiler(globalVariables, functionTypes);
-            stipulaCompiler.visit(parseTree);
+            String bytecode = (String) stipulaCompiler.visit(parseTree);
+
+            // Set the initial state
+            DfaState initialState = stipulaCompiler.getInitialState();
+
+            // Set the final state
+            FinalStates finalStates = stipulaCompiler.getFinalStates();
+
+            // Set the DFA transitions
+            ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions = stipulaCompiler.getTransitions();
+            System.out.println("transitions => ");
+            for (Triple<DfaState, DfaState, TransitionData> transition : transitions) {
+                System.out.println("source => " + transition.getFirst());
+                System.out.println("destination => " + transition.getSecond());
+                System.out.println("transition data => " + transition.getThird() + "\n");
+            }
+
+            // Create the contract
+            Contract contract = new Contract(
+                    //contractToDeploy.getSourceCode()
+                    "",
+                    bytecode,
+                    initialState,
+                    finalStates,
+                    transitions
+            );
         }
     }
 

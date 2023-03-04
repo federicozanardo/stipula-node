@@ -3,9 +3,15 @@ package compiler.ast;
 import compiler.parser.StipulaBaseVisitor;
 import compiler.parser.StipulaParser;
 import lib.datastructures.Pair;
-import models.contract.Contract;
+import lib.datastructures.Triple;
+import vm.dfa.states.DfaState;
+import vm.dfa.states.FinalStates;
+import vm.dfa.transitions.ContractCallByEvent;
+import vm.dfa.transitions.ContractCallByParty;
+import vm.dfa.transitions.TransitionData;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 
 public class StipulaCompiler extends StipulaBaseVisitor {
@@ -14,12 +20,31 @@ public class StipulaCompiler extends StipulaBaseVisitor {
     private final Map<String, ArrayList<String>> functionTypes;
     private final ArrayList<String> obligationFunctions;
     private String finalBytecode;
+    private DfaState initialState;
+    private final HashSet<DfaState> acceptanceStates;
+    private final HashSet<DfaState> failingStates;
+    private final ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions;
 
     public StipulaCompiler(Map<Pair<String, Integer>, Type> globalVariables, Map<String, ArrayList<String>> functionTypes) {
         this.parties = new ArrayList<>();
         this.globalVariables = globalVariables;
         this.functionTypes = functionTypes;
         this.obligationFunctions = new ArrayList<>();
+        this.acceptanceStates = new HashSet<>();
+        this.failingStates = new HashSet<>();
+        this.transitions = new ArrayList<>();
+    }
+
+    public DfaState getInitialState() {
+        return initialState;
+    }
+
+    public FinalStates getFinalStates() {
+        return new FinalStates(acceptanceStates, failingStates);
+    }
+
+    public ArrayList<Triple<DfaState, DfaState, TransitionData>> getTransitions() {
+        return transitions;
     }
 
     @Override
@@ -28,6 +53,7 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         if (context.agreement() != null) {
             System.out.println("visitProg: getText => " + context.agreement().getText());
+            initialState = new DfaState(context.init_state.getText());
             finalBytecode = fullVisitAgreement(context.agreement(), context.init_state.getText());
         }
 
@@ -207,6 +233,16 @@ public class StipulaCompiler extends StipulaBaseVisitor {
         bytecode += functionName + " " + destinationState + " ";
 
         ArrayList<String> currentFunctionTypes = functionTypes.get(functionName);
+
+        // Add transition for state machine
+        transitions.add(
+                new Triple<>(
+                        new DfaState(sourceStates.get(0)),
+                        new DfaState(destinationState),
+                        new ContractCallByParty(functionName, parties.get(0), currentFunctionTypes)
+                )
+        );
+
         for (String type : currentFunctionTypes) {
             bytecode += type + ",";
         }
@@ -647,6 +683,15 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                     String sourceState = event.getInitState();
                     String destState = event.getEndState();
+
+                    // Add transition for state machine
+                    transitions.add(
+                            new Triple<>(
+                                    new DfaState(sourceState),
+                                    new DfaState(destState),
+                                    new ContractCallByEvent(obligationFunctionName)
+                            )
+                    );
 
                     String obligationFunction = "obligation " + sourceState + " " + obligationFunctionName + " " + destState + "\nstart:\n";
 
