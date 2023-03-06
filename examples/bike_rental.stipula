@@ -1,5 +1,5 @@
 stipula BikeRental {
-    asset wallet
+    asset wallet:f1ed3bd760ac
     field cost, rentingTime, use_code
     init Inactive
 

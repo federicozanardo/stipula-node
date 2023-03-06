@@ -2,7 +2,7 @@ fn agreement Lender,Borrower Inactive real,time
 global:
 GINST party Lender
 GINST party Borrower
-GINST asset wallet 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
+GINST asset wallet 2 f1ed3bd760ac
 GINST real cost 2
 GINST time rent_time
 GINST int use_code
@@ -29,7 +29,8 @@ HALT
 fn Proposal Borrower accept Using asset
 args:
 PUSH asset :y
-AINST asset y 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac
+//AINST asset y 2 :asset-id
+AINST asset :y
 ASTORE y
 start:
 ALOAD y
