@@ -49,10 +49,7 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
     @Override
     public String visitProg(StipulaParser.ProgContext context) {
-        System.out.println("visitProg: initial state => " + context.init_state.getText());
-
         if (context.agreement() != null) {
-            System.out.println("visitProg: getText => " + context.agreement().getText());
             initialState = new DfaState(context.init_state.getText());
             finalBytecode = fullVisitAgreement(context.agreement(), context.init_state.getText());
         }
@@ -65,7 +62,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
             finalBytecode += obligationFunction;
         }
 
-        System.out.println("visitProg: \n" + finalBytecode);
         return finalBytecode;
     }
 
@@ -80,11 +76,20 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         for (int i = 0; i < context.vardec().size(); i++) {
             String v = context.vardec().get(i).getText();
-            System.out.println("visitProg: vardec getText => " + v);
 
             for (Pair<String, Integer> globalVariable : globalVariables.keySet()) {
                 if (globalVariable.getFirst().equals(v)) {
-                    methodSignature += globalVariables.get(globalVariable).getTypeName() + ",";
+                    if (!globalVariables.get(globalVariable).getTypeName().equals("bool") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("int") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("party") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("real") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("str") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("time") &&
+                            !globalVariables.get(globalVariable).getTypeName().equals("asset")) {
+                        methodSignature += "*,";
+                    } else {
+                        methodSignature += globalVariables.get(globalVariable).getTypeName() + ",";
+                    }
                 }
             }
         }
@@ -96,7 +101,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
     @Override
     public String visitAgreement(StipulaParser.AgreementContext context) {
         String body = "global:\n";
-        //ArrayList<String> parties = new ArrayList<>();
         ArrayList<String> fields = new ArrayList<>();
 
         for (StipulaParser.PartyContext n : context.party()) {
@@ -120,6 +124,12 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                         globalVariable.getFirst() + " 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n";
             } else if (globalVariables.get(globalVariable).getTypeName().equals("real")) {
                 body += "GINST " + globalVariables.get(globalVariable).getTypeName() + " " + globalVariable.getFirst() + " 2\n";
+            } else if (!globalVariables.get(globalVariable).getTypeName().equals("bool") &&
+                    !globalVariables.get(globalVariable).getTypeName().equals("int") &&
+                    !globalVariables.get(globalVariable).getTypeName().equals("party") &&
+                    !globalVariables.get(globalVariable).getTypeName().equals("str") &&
+                    !globalVariables.get(globalVariable).getTypeName().equals("time")) {
+                body += "GINST * " + globalVariable.getFirst() + "\n";
             } else {
                 body += "GINST " + globalVariables.get(globalVariable).getTypeName() + " " + globalVariable.getFirst() + "\n";
             }
@@ -131,11 +141,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
             body += "PUSH party :" + party + "\n";
             body += "GSTORE " + party + "\n";
         }
-
-        /*ArrayList<Pair<Party, ArrayList<Field>>> vals = new ArrayList<Pair<Party, ArrayList<Field>>>();
-        for (StipulaParser.AssignContext ac : context.assign()) {
-            //vals.addAll(visitAssign(ac));
-        }*/
 
         // Set up fields arguments
         for (String field : fields) {
@@ -162,14 +167,12 @@ public class StipulaCompiler extends StipulaBaseVisitor {
             Field tmp = new Field(d.getText());
             fields.add(tmp);
         }
-        System.out.println("visitAssign: " + fields);
 
         for (StipulaParser.PartyContext d : context.party()) {
             Party nd = new Party(d.getText());
             pair = new Pair<Party, ArrayList<Field>>(nd, fields);
             toRet.add(pair);
         }
-        System.out.println("visitAssign: " + toRet);
 
         return toRet;
     }
@@ -178,11 +181,9 @@ public class StipulaCompiler extends StipulaBaseVisitor {
     public ArrayList<Asset> visitAssetdecl(StipulaParser.AssetdeclContext context) {
         ArrayList<Asset> retAssets = new ArrayList<Asset>();
         for (int i = 0; i < context.idAsset.size(); i++) {
-            System.out.println("visitAssetdecl: " + context.idAsset.get(i).getText());
             Asset tmpAsset = new Asset(context.idAsset.get(i).getText());
             retAssets.add(tmpAsset);
         }
-        System.out.println("visitAssetdecl: retAssets => " + retAssets);
         return retAssets;
     }
 
@@ -190,11 +191,9 @@ public class StipulaCompiler extends StipulaBaseVisitor {
     public ArrayList<Field> visitFielddecl(StipulaParser.FielddeclContext context) {
         ArrayList<Field> retFields = new ArrayList<Field>();
         for (int i = 0; i < context.idField.size(); i++) {
-            System.out.println("visitFielddecl: " + context.idField.get(i).getText());
             Field tmpField = new Field(context.idField.get(i).getText());
             retFields.add(tmpField);
         }
-        System.out.println("visitFielddecl: retFields => " + retFields);
         return retFields;
     }
 
@@ -216,23 +215,29 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                     sourceStates.add(state);
                 }
             }
-            System.out.println("visitFun: sourceStates => " + sourceStates);
-            System.out.println("visitFun: destinationState => " + destinationState);
             bytecode += sourceStates.get(0) + " "; // FIXME
         }
 
         ArrayList<String> parties = new ArrayList<>();
         for (StipulaParser.PartyContext party : context.party()) {
             parties.add(party.getText());
-            System.out.println("visitFun: party => " + party.getText());
         }
         bytecode += parties.get(0) + " "; // FIXME
 
         String functionName = context.funId.getText();
-        System.out.println("visitFun: functionName => " + functionName);
         bytecode += functionName + " " + destinationState + " ";
 
-        ArrayList<String> currentFunctionTypes = functionTypes.get(functionName);
+        ArrayList<String> currentFunctionTypes = new ArrayList<>();
+        for (String functionType : functionTypes.get(functionName)) {
+            if (!functionType.equals("bool") && !functionType.equals("int") &&
+                    !functionType.equals("party") && !functionType.equals("real") &&
+                    !functionType.equals("str") && !functionType.equals("time") &&
+                    !functionType.equals("asset")) {
+                currentFunctionTypes.add("*");
+            } else {
+                currentFunctionTypes.add(functionType);
+            }
+        }
 
         // Add transition for state machine
         transitions.add(
@@ -253,14 +258,12 @@ public class StipulaCompiler extends StipulaBaseVisitor {
         if (context.vardec() != null) {
             for (StipulaParser.VardecContext n : context.vardec()) {
                 arguments.add(n.getText());
-                System.out.println("visitFun: field => " + n.getText());
             }
         }
 
         if (context.assetdec() != null) {
             for (StipulaParser.AssetdecContext n : context.assetdec()) {
                 arguments.add(n.getText());
-                System.out.println("visitFun: asset => " + n.getText());
             }
         }
 
@@ -286,7 +289,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         if (context.prec() != null) {
             Expression conds = visitPrec(context.prec());
-            System.out.println("visitFun: conds => " + conds);
 
             Entity left = conds.getLeft();
             Entity right = conds.getRight();
@@ -329,14 +331,8 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                     if (pair.getFirst() == null) {
                         for (Statement statement : pair.getSecond()) {
                             if (!statement.getOperator().equals("FIELDUP")) {
-                                System.out.println("visitFun: ASSETUP");
-                                System.out.println("visitFun: statement => " + statement);
-                                System.out.println("visitFun: text statement => " + statement.getTextStatement());
                                 String left = statement.getLeftExpression().getId();
-                                System.out.println("visitFun: getLeftExpression statement => " + left);
                                 String right = statement.getRightExpression().getId();
-                                System.out.println("visitFun: getRightExpression statement => " + right);
-                                System.out.println("visitFun: getFract statement => " + statement.getFract());
 
                                 String rightTermType = "";
                                 boolean found = false;
@@ -401,7 +397,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                                         }
                                     }
                                 }
-                                System.out.println("visitFun: rightTermType => " + rightTermType);
 
                                 if (!found) {
                                     // TODO
@@ -433,6 +428,8 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                                     // i.e. wallet -o Borrower
                                     if (statement.isFractExpressionNull()) {
+                                        bytecode += "PUSH real 100 2\n";
+
                                         if (isLeftVariableGlobal) {
                                             bytecode += "GLOAD ";
                                         } else {
@@ -454,20 +451,10 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                                     }
                                 }
 
-                                if (!statement.isFractExpressionNull()) {
-                                    System.out.println("visitFun: getFractExpression statement => " + statement.getFractExpression());
-                                }
-
                             } else {
                                 // FIELDUP
-                                System.out.println("visitFun: FIELDUP");
-                                System.out.println("visitFun: statement => " + statement);
-                                System.out.println("visitFun: text statement => " + statement.getTextStatement());
                                 String left = statement.getLeftExpression().getId();
-                                System.out.println("visitFun: getLeftExpression statement => " + left);
                                 String right = statement.getRightExpression().getId();
-                                System.out.println("visitFun: getRightExpression statement => " + right);
-                                System.out.println("visitFun: getFract statement => " + statement.getFract());
 
                                 String rightTermType = "";
                                 boolean found = false;
@@ -532,7 +519,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                                         }
                                     }
                                 }
-                                System.out.println("visitFun: rightTermType => " + rightTermType);
 
                                 if (!found) {
                                     // TODO
@@ -558,15 +544,11 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                                     }
                                     bytecode += right + "\n";
                                 }
-
-                                if (!statement.isFractExpressionNull()) {
-                                    System.out.println("visitFun: getFractExpression statement => " + statement.getFractExpression());
-                                }
                             }
                         }
                     } else {
                         // newContract.addIfThenElse(ret);
-                        System.out.println("visitFun: ret => " + ret);
+                        // System.out.println("visitFun: ret => " + ret);
                     }
                 }
             }
@@ -578,10 +560,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 Event event = visitEvents(evn);
 
                 if (event != null) {
-                    // event.addContract(newContract);
-                    System.out.println("visitFun: event => " + event);
-
-                    System.out.println("visitFun: text event => " + event.getExpression().getTextExpression());
                     String left = null;
                     String right = null;
                     String operator;
@@ -590,23 +568,17 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                     if (event.getExpression().getLeft() != null) {
                         left = event.getExpression().getLeft().getId();
-                        System.out.println("visitFun: getLeft event => " + left);
                     }
 
                     if (event.getExpression().getRight() != null) {
                         right = event.getExpression().getRight().getId();
-                        System.out.println("visitFun: getRight event => " + right);
                     }
 
                     if (left == null && right == null) {
                         leftComplexExpression = event.getExpression().getLeftComplexExpression();
                         rightComplexExpression = event.getExpression().getRightComplexExpression();
-
                         left = leftComplexExpression.getLeft().getId();
-                        System.out.println("visitFun: complex getLeft event => " + left);
-
                         right = rightComplexExpression.getLeft().getId();
-                        System.out.println("visitFun: complex getRight event => " + right);
                     }
 
                     operator = getBytecodeOperand(event.getExpression().getOperator());
@@ -695,20 +667,14 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                     String obligationFunction = "obligation " + sourceState + " " + obligationFunctionName + " " + destState + "\nstart:\n";
 
-                    System.out.println("visitFun: event.getStatements => " + event.getStatements());
                     for (Pair<Expression, ArrayList<Statement>> pair : event.getStatements()) {
                         if (pair.getFirst() == null) {
                             for (Statement statement : pair.getSecond()) {
                                 // newContract.addStatement(stm);
 
                                 if (!statement.getOperator().equals("FIELDUP")) {
-                                    System.out.println("visitFun: statement => " + statement);
-                                    System.out.println("visitFun: text statement => " + statement.getTextStatement());
                                     left = statement.getLeftExpression().getId();
-                                    System.out.println("visitFun: getLeftExpression statement => " + left);
                                     right = statement.getRightExpression().getId();
-                                    System.out.println("visitFun: getRightExpression statement => " + right);
-                                    System.out.println("visitFun: getFract statement => " + statement.getFract());
 
                                     String rightTermType = "";
                                     found = false;
@@ -773,7 +739,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                                             }
                                         }
                                     }
-                                    System.out.println("visitFun: rightTermType => " + rightTermType);
 
                                     if (!found) {
                                         // TODO
@@ -805,6 +770,8 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                                         // i.e. wallet -o Borrower
                                         if (statement.isFractExpressionNull()) {
+                                            obligationFunction += "PUSH real 100 2\n";
+
                                             if (isLeftVariableGlobal) {
                                                 obligationFunction += "GLOAD ";
                                             } else {
@@ -825,33 +792,20 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
                                         }
                                     }
-
-                                    if (!statement.isFractExpressionNull()) {
-                                        System.out.println("visitFun: getFractExpression statement => " + statement.getFractExpression());
-                                    }
-
                                 }
                             }
                         } else {
                             // newContract.addIfThenElse(ret);
-                            System.out.println("visitFun: event.getStatements() => " + event.getStatements());
+                            // System.out.println("visitFun: event.getStatements() => " + event.getStatements());
                         }
                     }
-
                     obligationFunction += "end:\nHALT\n";
                     obligationFunctions.add(obligationFunction);
-
                     k++;
                 }
             }
         }
-
-        bytecode += "end:\nHALT\n";
-        System.out.println("visitFun: bytecode => \n" + bytecode);
-
-        finalBytecode += bytecode;
-
-        // return newContract;
+        finalBytecode += bytecode + "end:\nHALT\n";
         return null;
     }
 
@@ -917,8 +871,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                     if (expr.getRight() != null) {
                         left = new Asset(expr.getRight().getId());
                         right = new Asset(context.right.getText());
-                        System.out.println("visitStat-1: left => " + expr.getRight().getId());
-                        System.out.println("visitStat-1: right => " + context.right.getText());
 
                         try {
                             fract = Double.parseDouble(expr.getLeft().getId());
@@ -928,8 +880,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                     } else {
                         left = new Asset(expr.getRightComplexExpression().getLeft().getId());
                         right = new Asset(context.rightPlus.getText());
-                        System.out.println("visitStat-2: left => " + expr.getRightComplexExpression().getLeft().getId());
-                        System.out.println("visitStat-2: right => " + context.rightPlus.getText());
 
                         try {
                             fract = Double.parseDouble(expr.getLeftComplexExpression().getLeft().getId());
@@ -951,8 +901,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 } else {
                     left = new Asset(context.right.getText());
                     right = new Asset(context.rightPlus.getText());
-                    System.out.println("visitStat-3: left => " + context.right.getText());
-                    System.out.println("visitStat-3: right => " + context.rightPlus.getText());
 
                     ArrayList<Statement> tmpArray = new ArrayList<>();
                     tmpArray.add(new Statement(left, right, "ASSETUP"));
@@ -969,8 +917,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 if (expr.getRight() != null) {
                     left = new Asset(expr.getRight().getId());
                     right = new Asset(context.right.getText());
-                    System.out.println("visitStat-4: left => " + expr.getRight().getId());
-                    System.out.println("visitStat-4: right => " + context.right.getText());
 
                     try {
                         fract = Double.parseDouble(expr.getLeft().getId());
@@ -980,8 +926,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 } else {
                     left = new Asset(expr.getRightComplexExpression().getLeft().getId());
                     right = new Asset(context.right.getText());
-                    System.out.println("visitStat-5: left => " + expr.getRightComplexExpression().getLeft().getId());
-                    System.out.println("visitStat-5: right => " + context.right.getText());
 
                     try {
                         fract = Double.parseDouble(expr.getLeftComplexExpression().getLeft().getId());
@@ -1003,8 +947,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
             } else {
                 left = new Asset(context.left.getText());
                 right = new Asset(context.right.getText());
-                System.out.println("visitStat-6: left => " + context.left.getText());
-                System.out.println("visitStat-6: right => " + context.right.getText());
 
                 ArrayList<Statement> tmpArray = new ArrayList<>();
                 tmpArray.add(new Statement(left, right, "ASSETUP"));
