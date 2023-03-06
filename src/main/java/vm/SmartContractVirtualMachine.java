@@ -24,7 +24,7 @@ public class SmartContractVirtualMachine {
     private int executionPointer = -1;
     private final int offset;
     private final Stack<Type> stack = new Stack<Type>(10);
-    private final HashMap<String, Type> dataSpace = new HashMap<String, Type>(); // FIXME: rename
+    private final HashMap<String, Type> scopeSpace = new HashMap<String, Type>(); // FIXME: rename
     private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
     private final HashMap<String, TraceChange> globalSpace;
     private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<String, SingleUseSeal>();
@@ -205,11 +205,11 @@ public class SmartContractVirtualMachine {
             }
         }
 
-        if (dataSpace.isEmpty()) {
+        if (scopeSpace.isEmpty()) {
             System.out.println("\nSmartContractVirtualMachine: execute => The data space is empty");
         } else {
             System.out.println("\nSmartContractVirtualMachine: execute => DataSpace");
-            for (HashMap.Entry<String, Type> entry : dataSpace.entrySet()) {
+            for (HashMap.Entry<String, Type> entry : scopeSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
         }
@@ -698,29 +698,29 @@ public class SmartContractVirtualMachine {
             decimals = instruction[3];
         }
 
-        if (dataSpace.containsKey(variableName)) {
+        if (scopeSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_ALREADY_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         switch (type) {
             case "int":
-                dataSpace.put(variableName, new IntType());
+                scopeSpace.put(variableName, new IntType());
                 break;
             case "bool":
-                dataSpace.put(variableName, new BoolType());
+                scopeSpace.put(variableName, new BoolType());
                 break;
             case "str":
-                dataSpace.put(variableName, new StrType());
+                scopeSpace.put(variableName, new StrType());
                 break;
             case "party":
-                dataSpace.put(variableName, new PartyType());
+                scopeSpace.put(variableName, new PartyType());
                 break;
             case "real":
-                dataSpace.put(variableName, new RealType(0, Integer.parseInt(decimals)));
+                scopeSpace.put(variableName, new RealType(0, Integer.parseInt(decimals)));
                 break;
             case "time":
-                dataSpace.put(variableName, new TimeType());
+                scopeSpace.put(variableName, new TimeType());
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
@@ -734,11 +734,11 @@ public class SmartContractVirtualMachine {
 
         String variableName = instruction[1];
 
-        if (!dataSpace.containsKey(variableName)) {
+        if (!scopeSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
-        stack.push(dataSpace.get(variableName));
+        stack.push(scopeSpace.get(variableName));
     }
 
     private void storeOperation(String[] instruction) throws StackUnderflowException {
@@ -748,13 +748,13 @@ public class SmartContractVirtualMachine {
 
         String variableName = instruction[1];
 
-        if (!dataSpace.containsKey(variableName)) {
+        if (!scopeSpace.containsKey(variableName)) {
             trap.raiseError(TrapErrorCodes.VARIABLE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
         }
 
         Type value = stack.pop();
-        dataSpace.put(variableName, value);
+        scopeSpace.put(variableName, value);
     }
 
     private void andOperation(String[] instruction) throws StackUnderflowException, StackOverflowException {
