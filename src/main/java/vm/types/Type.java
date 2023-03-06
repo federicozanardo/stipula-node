@@ -2,8 +2,12 @@ package vm.types;
 
 import java.io.Serializable;
 
-public abstract class Type implements Serializable {
-    public abstract String getType();
+public class Type implements Serializable {
+    public String getType() {
+        return "*";
+    }
 
-    public abstract Object getValue();
+    public Object getValue() {
+        return null;
+    }
 }
