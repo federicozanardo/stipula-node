@@ -1,8 +1,8 @@
 package models.dto.requests.contract.agreement;
 
-import models.party.Party;
 import models.dto.requests.Message;
 import models.dto.requests.contract.FunctionArgument;
+import models.party.Party;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -2,7 +2,7 @@ package server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import compiler.StipulaCompiler;
+import compiler.Compiler;
 import exceptions.datastructures.queue.QueueOverflowException;
 import exceptions.models.dto.requests.MessageNotSupportedException;
 import exceptions.storage.OwnershipsNotFoundException;
@@ -98,7 +98,7 @@ public class ClientHandler extends Thread {
 
             if (message instanceof DeployContract) {
                 // Set up the compiler
-                StipulaCompiler compiler = new StipulaCompiler((DeployContract) message, contractsStorage);
+                Compiler compiler = new Compiler((DeployContract) message, contractsStorage);
                 String contractId = compiler.compile();
 
                 // Send the response
