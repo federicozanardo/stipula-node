@@ -74,9 +74,13 @@ public class DeterministicFiniteAutomata implements Serializable {
 
                                 while (j < callByParty.getArguments().size() && areAllArgumentsCorrect) {
                                     String argument = callByParty.getArguments().get(j);
-                                    if (!argumentTypes.get(j).equals(argument)) {
-                                        areAllArgumentsCorrect = false;
+
+                                    if (!argument.equals("*")) {
+                                        if (!argumentTypes.get(j).equals(argument)) {
+                                            areAllArgumentsCorrect = false;
+                                        }
                                     }
+
                                     j++;
                                 }
 
@@ -168,9 +172,13 @@ public class DeterministicFiniteAutomata implements Serializable {
 
                             while (j < callByParty.getArguments().size() && areAllArgumentsCorrect) {
                                 String argument = callByParty.getArguments().get(j);
-                                if (!argumentTypes.get(j).equals(argument)) {
-                                    areAllArgumentsCorrect = false;
+
+                                if (!argument.equals("*")) {
+                                    if (!argumentTypes.get(j).equals(argument)) {
+                                        areAllArgumentsCorrect = false;
+                                    }
                                 }
+
                                 j++;
                             }
 
