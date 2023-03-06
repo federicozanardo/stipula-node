@@ -238,8 +238,6 @@ public class VirtualMachine extends Thread {
                         // Load the bytecode
                         String bytecode;
                         bytecode = loadBytecode(rawBytecode, arguments);
-                        System.out.println("VirtualMachine: loadBytecode\n" + bytecode);
-
                         String[] instructions = bytecode.split("\n");
 
                         // Set up the virtual machine
@@ -312,7 +310,7 @@ public class VirtualMachine extends Thread {
                         sharedMemory.notifyThread(thread, new SuccessDataResponse("ack from VirtualMachine"));
                     }
                 } else if (triggerRequest != null) {
-                    System.out.println("VirtualMachine: just received a trigger request");
+                    System.out.println("VirtualMachine: Just received a trigger request");
                     String contractId = triggerRequest.getContractId();
                     String contractInstanceId = triggerRequest.getContractInstanceId();
                     String obligationFunctionName = triggerRequest.getRequest().getObligationFunctionName();
@@ -413,6 +411,8 @@ public class VirtualMachine extends Thread {
         String bytecodeFunction = "";
         boolean isFunctionStarted = false;
         boolean isFunctionEnded = false;
+        boolean areTypesToInfer = false;
+        ArrayList<Pair<Integer, String>> indexesOfArgumentsToInfer = new ArrayList<>();
 
         // Load all the bytecode
         Contract contract = contractsStorage.getContract(contractId);
@@ -455,8 +455,13 @@ public class VirtualMachine extends Thread {
                                 for (int j = 0; j < typeArgsFromFunction.length; j++) {
                                     String typeArgFromFunction = typeArgsFromFunction[j];
 
-                                    if (!typeArgFromFunction.equals(typeArguments.get(j))) {
-                                        areArgumentsTypesCorrect = false;
+                                    if (typeArgFromFunction.equals("*")) {
+                                        areTypesToInfer = true;
+                                        indexesOfArgumentsToInfer.add(new Pair<>(j, typeArguments.get(j)));
+                                    } else {
+                                        if (!typeArgFromFunction.equals(typeArguments.get(j))) {
+                                            areArgumentsTypesCorrect = false;
+                                        }
                                     }
                                 }
 
@@ -476,6 +481,12 @@ public class VirtualMachine extends Thread {
         }
         System.out.println("loadAgreementFunction: Function loaded");
 
+        if (areTypesToInfer) {
+            for (Pair<Integer, String> index : indexesOfArgumentsToInfer) {
+                bytecodeFunction = setTypeForDynamicVariable(bytecodeFunction, index.getFirst(), index.getSecond());
+            }
+        }
+
         return bytecodeFunction;
     }
 
@@ -492,6 +503,8 @@ public class VirtualMachine extends Thread {
         String bytecodeFunction = "";
         boolean isFunctionStarted = false;
         boolean isFunctionEnded = false;
+        boolean areTypesToInfer = false;
+        ArrayList<Pair<Integer, String>> indexesOfArgumentsToInfer = new ArrayList<>();
 
         // Load all the bytecode
         Contract contract = contractsStorage.getContract(contractId);
@@ -521,8 +534,14 @@ public class VirtualMachine extends Thread {
                         // Check the arguments types
                         for (int j = 0; j < argumentTypesFromFunction.length; j++) {
                             String argumentTypeFromFunction = argumentTypesFromFunction[j];
-                            if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
-                                areArgumentTypesCorrect = false;
+
+                            if (argumentTypeFromFunction.equals("*")) {
+                                areTypesToInfer = true;
+                                indexesOfArgumentsToInfer.add(new Pair<>(j, argumentTypes.get(j)));
+                            } else {
+                                if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
+                                    areArgumentTypesCorrect = false;
+                                }
                             }
                         }
 
@@ -543,7 +562,60 @@ public class VirtualMachine extends Thread {
         }
         System.out.println("loadCommonFunction: Function loaded");
 
+        if (areTypesToInfer) {
+            for (Pair<Integer, String> index : indexesOfArgumentsToInfer) {
+                bytecodeFunction = setTypeForDynamicVariable(bytecodeFunction, index.getFirst(), index.getSecond());
+            }
+        }
+
         return bytecodeFunction;
+    }
+
+    private String setTypeForDynamicVariable(String bytecode, int index, String type) {
+        boolean isArgumentsDeclarationStarted = false;
+        int i = 0;
+        int k = 0;
+        String[] instructions = bytecode.split("\n");
+        String newBytecode = "";
+
+        System.out.println("getArgumentFromBytecode: Loading the function...");
+
+        while (i < instructions.length) {
+            String[] instruction = instructions[i].trim().split(" ");
+
+            if (instruction[0].equals("start:")) {
+                isArgumentsDeclarationStarted = false;
+            }
+
+            if (isArgumentsDeclarationStarted) {
+                String[] secondInstruction = instructions[i + 1].trim().split(" ");
+                String[] thirdInstruction = instructions[i + 2].trim().split(" ");
+
+                if (instruction[0].equals("PUSH") && secondInstruction[0].equals("AINST") && thirdInstruction[0].equals("ASTORE")) {
+                    if (k == index) {
+                        if (type.equals("real")) {
+                            newBytecode += "PUSH " + type + " " + instruction[2] + " 2\n";
+                        } else {
+                            newBytecode += "PUSH " + type + " " + instruction[2] + "\n";
+                        }
+                        newBytecode += "AINST " + type + " " + secondInstruction[2] + "\n";
+                        newBytecode += instructions[i + 2] + "\n";
+
+                        i += 3;
+                    } else {
+                        k++;
+                    }
+                }
+            } else {
+                newBytecode += instructions[i] + "\n";
+                i++;
+            }
+
+            if (instruction[0].equals("args:")) {
+                isArgumentsDeclarationStarted = true;
+            }
+        }
+        return newBytecode;
     }
 
     // obligation <source_state> <obligation_function_name> <destination_state>
@@ -815,8 +887,11 @@ public class VirtualMachine extends Thread {
                         // Check the arguments types
                         for (int j = 0; j < argumentTypesFromFunction.length; j++) {
                             String argumentTypeFromFunction = argumentTypesFromFunction[j];
-                            if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
-                                areArgumentTypesCorrect = false;
+
+                            if (!argumentTypeFromFunction.equals("*")) {
+                                if (!argumentTypeFromFunction.equals(argumentTypes.get(j))) {
+                                    areArgumentTypesCorrect = false;
+                                }
                             }
                         }
 
