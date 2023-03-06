@@ -6,6 +6,11 @@ public enum TrapErrorCodes {
             return "ASSET_IDS_DOES_NOT_MATCH";
         }
     },
+    CANNOT_INFER_TYPE_RUNTIME {
+        public String toString() {
+            return "CANNOT_INFER_TYPE_RUNTIME";
+        }
+    },
     CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS {
         public String toString() {
             return "CRYPTOGRAPHIC_ALGORITHM_DOES_NOT_EXISTS";

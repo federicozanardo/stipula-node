@@ -332,6 +332,11 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
         Type result;
 
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
@@ -404,6 +409,11 @@ public class SmartContractVirtualMachine {
         Type first = stack.pop();
         Type result;
 
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
             IntType secondVal = (IntType) second;
@@ -471,6 +481,11 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
         Type result;
+
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
 
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
@@ -550,6 +565,11 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
         Type result;
+
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
 
         if (first.getType().equals("int") && second.getType().equals("int")) {
             IntType firstVal = (IntType) first;
@@ -745,6 +765,11 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
@@ -770,6 +795,11 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         if (!first.getType().equals(second.getType())) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE_OR_TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
             return;
@@ -793,6 +823,11 @@ public class SmartContractVirtualMachine {
         }
 
         Type first = stack.pop();
+
+        if (first.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
 
         if (!first.getType().equals("bool")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
@@ -857,6 +892,11 @@ public class SmartContractVirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
+
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
 
         if (first.getType().equals("asset") && second.getType().equals("real")) {
             AssetType firstAsset = (AssetType) first;
@@ -933,6 +973,11 @@ public class SmartContractVirtualMachine {
         Type second = stack.pop();
         Type first = stack.pop();
 
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         if (!first.getType().equals("int") && !first.getType().equals("real") && !first.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
             return;
@@ -988,6 +1033,11 @@ public class SmartContractVirtualMachine {
 
         Type second = stack.pop();
         Type first = stack.pop();
+
+        if (first.getType().equals("*") || second.getType().equals("*")) {
+            trap.raiseError(TrapErrorCodes.CANNOT_INFER_TYPE_RUNTIME, executionPointer, Arrays.toString(instruction));
+            return;
+        }
 
         if (!first.getType().equals("int") && !first.getType().equals("real") && !first.getType().equals("asset")) {
             trap.raiseError(TrapErrorCodes.INCORRECT_TYPE, executionPointer, Arrays.toString(instruction));
@@ -1222,6 +1272,9 @@ public class SmartContractVirtualMachine {
                 break;
             case "time":
                 globalSpace.put(variableName, new TraceChange(new TimeType(), true));
+                break;
+            case "*":
+                globalSpace.put(variableName, new TraceChange(new Type(), true));
                 break;
             default:
                 trap.raiseError(TrapErrorCodes.TYPE_DOES_NOT_EXIST, executionPointer, Arrays.toString(instruction));
