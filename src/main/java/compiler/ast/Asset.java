@@ -3,16 +3,24 @@ package compiler.ast;
 public class Asset extends Entity {
     private final String name;
     private float rawvalue;
-    private final Type type = new AssetType();
+    private Type type;
 
     public Asset() {
-        name = "";
-        rawvalue = 0;
+        this.name = "";
+        this.rawvalue = 0;
+        this.type = new AssetType();
     }
 
     public Asset(String n) {
-        name = n;
-        rawvalue = 0;
+        this.name = n;
+        this.rawvalue = 0;
+        this.type = new AssetType();
+    }
+
+    public Asset(String assetId, String n) {
+        this.name = n;
+        this.rawvalue = 0;
+        this.type = new AssetType(assetId);
     }
 
     public Asset(String n, int v) {
