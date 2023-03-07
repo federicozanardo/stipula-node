@@ -51,7 +51,8 @@ class Main {
                 virtualMachine,
                 sharedMemory,
                 contractsStorage,
-                ownershipsStorage
+                ownershipsStorage,
+                assetsStorage
         );
 
         // Start the virtual machine

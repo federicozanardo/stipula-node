@@ -18,6 +18,7 @@ import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
 import shared.SharedMemory;
+import storage.AssetsStorage;
 import storage.ContractsStorage;
 import storage.OwnershipsStorage;
 import vm.RequestQueue;
@@ -34,6 +35,7 @@ public class ClientHandler extends Thread {
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
     private final OwnershipsStorage ownershipsStorage;
+    private final AssetsStorage assetsStorage;
     private final Gson gson;
 
     public ClientHandler(
@@ -44,6 +46,7 @@ public class ClientHandler extends Thread {
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
             OwnershipsStorage ownershipsStorage,
+            AssetsStorage assetsStorage,
             MessageDeserializer messageDeserializer
     ) {
         super(name);
@@ -53,6 +56,7 @@ public class ClientHandler extends Thread {
         this.virtualMachine = virtualMachine;
         this.contractsStorage = contractsStorage;
         this.ownershipsStorage = ownershipsStorage;
+        this.assetsStorage = assetsStorage;
         this.gson = new GsonBuilder().registerTypeAdapter(Message.class, messageDeserializer).create();
     }
 
@@ -98,7 +102,7 @@ public class ClientHandler extends Thread {
 
             if (message instanceof DeployContract) {
                 // Set up the compiler
-                Compiler compiler = new Compiler((DeployContract) message, contractsStorage);
+                Compiler compiler = new Compiler((DeployContract) message, contractsStorage, assetsStorage);
                 String contractId = compiler.compile();
 
                 // Send the response

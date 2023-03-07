@@ -8,6 +8,7 @@ import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.ownership.GetOwnershipsByAddress;
 import models.dto.responses.Response;
 import shared.SharedMemory;
+import storage.AssetsStorage;
 import storage.ContractsStorage;
 import storage.OwnershipsStorage;
 import vm.RequestQueue;
@@ -25,6 +26,7 @@ public class MessageServer extends Thread {
     private final SharedMemory<Response> sharedMemory;
     private final ContractsStorage contractsStorage;
     private final OwnershipsStorage ownershipsStorage;
+    private final AssetsStorage assetsStorage;
 
     public MessageServer(
             int port,
@@ -32,7 +34,8 @@ public class MessageServer extends Thread {
             VirtualMachine virtualMachine,
             SharedMemory<Response> sharedMemory,
             ContractsStorage contractsStorage,
-            OwnershipsStorage ownershipsStorage
+            OwnershipsStorage ownershipsStorage,
+            AssetsStorage assetsStorage
     ) {
         super(MessageServer.class.getSimpleName());
         this.port = port;
@@ -41,6 +44,7 @@ public class MessageServer extends Thread {
         this.sharedMemory = sharedMemory;
         this.contractsStorage = contractsStorage;
         this.ownershipsStorage = ownershipsStorage;
+        this.assetsStorage = assetsStorage;
 
         // Set up the deserializer of messages
         this.messageDeserializer = new MessageDeserializer();
@@ -108,6 +112,7 @@ public class MessageServer extends Thread {
                                 sharedMemory,
                                 contractsStorage,
                                 ownershipsStorage,
+                                assetsStorage,
                                 messageDeserializer
                         ).start();
 

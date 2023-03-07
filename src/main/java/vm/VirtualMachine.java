@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -578,7 +579,7 @@ public class VirtualMachine extends Thread {
         String[] instructions = bytecode.split("\n");
         String newBytecode = "";
 
-        System.out.println("getArgumentFromBytecode: Loading the function...");
+        System.out.println("setTypeForDynamicVariable: Loading the function...");
 
         while (i < instructions.length) {
             String[] instruction = instructions[i].trim().split(" ");
@@ -593,11 +594,7 @@ public class VirtualMachine extends Thread {
 
                 if (instruction[0].equals("PUSH") && secondInstruction[0].equals("AINST") && thirdInstruction[0].equals("ASTORE")) {
                     if (k == index) {
-                        if (type.equals("real")) {
-                            newBytecode += "PUSH " + type + " " + instruction[2] + " 2\n";
-                        } else {
-                            newBytecode += "PUSH " + type + " " + instruction[2] + "\n";
-                        }
+                        newBytecode += "PUSH " + type + " " + instruction[2] + "\n";
                         newBytecode += "AINST " + type + " " + secondInstruction[2] + "\n";
                         newBytecode += instructions[i + 2] + "\n";
 
@@ -743,6 +740,7 @@ public class VirtualMachine extends Thread {
         boolean isPushSet = false;
 
         for (int i = 0; i < instructions.length; i++) {
+            System.out.println("loadBytecode: instructions[i] => " + instructions[i]);
             String[] instruction = instructions[i].trim().split(" ");
 
             // Check if the last element of the instruction starts with ':'
@@ -775,6 +773,32 @@ public class VirtualMachine extends Thread {
                                 for (int k = 0; k < instruction.length - 1; k++) {
                                     substitution += instruction[k] + " ";
                                 }
+                                //substitution += instruction[instruction.length - 1].substring(1) + " " + argument.getValue();
+                                substitution += argument.getValue();
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
+
+                                isPushSet = true;
+                            }
+                        } else if (argument.getType().equals("real")) {
+                            if (isPushSet) {
+                                for (int k = 0; k < instruction.length - 1; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
+
+                                String[] argumentValue = ((String) argument.getValue()).split(" ");
+                                String last = argumentValue[argumentValue.length - 1];
+                                substitution += instruction[instruction.length - 1].substring(1) + " " + last;
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
+
+                                isPushSet = false;
+                            } else {
+                                for (int k = 0; k < instruction.length - 1; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
                                 substitution += argument.getValue();
 
                                 bytecode += substitution + "\n";
@@ -783,15 +807,23 @@ public class VirtualMachine extends Thread {
                                 isPushSet = true;
                             }
                         } else {
-                            for (int k = 0; k < instruction.length - 1; k++) {
-                                substitution += instruction[k] + " ";
+                            if (instruction[0].equals("AINST")) {
+                                for (int k = 0; k < instruction.length; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
+                                substitution = substitution.replace(":", "");
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
+                            } else {
+                                for (int k = 0; k < instruction.length - 1; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
+                                substitution += argument.getValue();
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
                             }
-                            substitution += argument.getValue();
-
-                            bytecode += substitution + "\n";
-                            substitution = "";
-
-                            isPushSet = false;
                         }
                     } else {
                         j++;

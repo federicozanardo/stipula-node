@@ -2,14 +2,17 @@ package compiler.ast;
 
 import compiler.parser.StipulaBaseVisitor;
 import compiler.parser.StipulaParser;
+import exceptions.storage.AssetNotFoundException;
 import lib.datastructures.Pair;
 import lib.datastructures.Triple;
+import storage.AssetsStorage;
 import vm.dfa.states.DfaState;
 import vm.dfa.states.FinalStates;
 import vm.dfa.transitions.ContractCallByEvent;
 import vm.dfa.transitions.ContractCallByParty;
 import vm.dfa.transitions.TransitionData;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,8 +27,14 @@ public class StipulaCompiler extends StipulaBaseVisitor {
     private final HashSet<DfaState> acceptanceStates;
     private final HashSet<DfaState> failingStates;
     private final ArrayList<Triple<DfaState, DfaState, TransitionData>> transitions;
+    private final AssetsStorage assetsStorage;
 
-    public StipulaCompiler(Map<Pair<String, Integer>, Type> globalVariables, Map<String, ArrayList<String>> functionTypes) {
+    public StipulaCompiler(
+            Map<Pair<String, Integer>, Type> globalVariables,
+            Map<String, ArrayList<String>> functionTypes,
+            AssetsStorage assetsStorage
+    ) {
+        this.assetsStorage = assetsStorage;
         this.parties = new ArrayList<>();
         this.globalVariables = globalVariables;
         this.functionTypes = functionTypes;
@@ -118,17 +127,21 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         // Instantiate global variables
         for (Pair<String, Integer> globalVariable : globalVariables.keySet()) {
-            System.out.println("visitAgreement: globalVariables.get(globalVariable) => " + globalVariables.get(globalVariable));
-            if (globalVariables.get(globalVariable) instanceof AssetType) {
-                System.out.println("visitAgreement: asset");
-            }
-
             if (globalVariables.get(globalVariable).getTypeName().equals("asset")) {
                 AssetType assetType = (AssetType) globalVariables.get(globalVariable);
 
+                models.assets.Asset asset;
+                int numberOfDecimals = 2;
+                try {
+                    asset = this.assetsStorage.getAsset(assetType.getAssetId());
+                    numberOfDecimals = asset.getAsset().getDecimals();
+                } catch (IOException | AssetNotFoundException ex) {
+
+                }
+
                 body += "GINST " +
                         assetType.getTypeName() + " " +
-                        globalVariable.getFirst() + " 2 " + assetType.getAssetId() + "\n";
+                        globalVariable.getFirst() + " " + numberOfDecimals + " " + assetType.getAssetId() + "\n";
             } else if (globalVariables.get(globalVariable).getTypeName().equals("real")) {
                 body += "GINST " + globalVariables.get(globalVariable).getTypeName() + " " + globalVariable.getFirst() + " 2\n";
             } else if (!globalVariables.get(globalVariable).getTypeName().equals("bool") &&
@@ -283,7 +296,10 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 if (currentFunctionTypes.get(i).equals("asset")) {
                     bytecode += "AINST " + currentFunctionTypes.get(i) + " :" + arguments.get(i) + "\n";
                 } else if (currentFunctionTypes.get(i).equals("real")) {
-                    bytecode += "AINST " + currentFunctionTypes.get(i) + " " + arguments.get(i) + " 2\n";
+                    //bytecode += "AINST " + currentFunctionTypes.get(i) + " " + arguments.get(i) + " 2\n";
+                    bytecode += "AINST " + currentFunctionTypes.get(i) + " :" + arguments.get(i) + "\n";
+                } else if (currentFunctionTypes.get(i).equals("*")) {
+                    bytecode += "AINST " + currentFunctionTypes.get(i) + " :" + arguments.get(i) + "\n";
                 } else {
                     bytecode += "AINST " + currentFunctionTypes.get(i) + " " + arguments.get(i) + "\n";
                 }
@@ -555,7 +571,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                         }
                     } else {
                         // newContract.addIfThenElse(ret);
-                        // System.out.println("visitFun: ret => " + ret);
                     }
                 }
             }
@@ -803,7 +818,6 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                             }
                         } else {
                             // newContract.addIfThenElse(ret);
-                            // System.out.println("visitFun: event.getStatements() => " + event.getStatements());
                         }
                     }
                     obligationFunction += "end:\nHALT\n";

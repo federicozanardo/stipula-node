@@ -13,6 +13,7 @@ import models.contract.Contract;
 import models.dto.requests.contract.deploy.DeployContract;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import storage.AssetsStorage;
 import storage.ContractsStorage;
 import vm.dfa.states.DfaState;
 import vm.dfa.states.FinalStates;
@@ -20,10 +21,7 @@ import vm.dfa.transitions.ContractCallByEvent;
 import vm.dfa.transitions.ContractCallByParty;
 import vm.dfa.transitions.TransitionData;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,10 +30,12 @@ import java.util.Map;
 public class Compiler {
     private final DeployContract contractToDeploy;
     private final ContractsStorage contractsStorage;
+    private final AssetsStorage assetsStorage;
 
-    public Compiler(DeployContract contractToDeploy, ContractsStorage contractsStorage) {
+    public Compiler(DeployContract contractToDeploy, ContractsStorage contractsStorage, AssetsStorage assetsStorage) {
         this.contractToDeploy = contractToDeploy;
         this.contractsStorage = contractsStorage;
+        this.assetsStorage = assetsStorage;
     }
 
     public String compile() throws IOException {
@@ -68,7 +68,7 @@ public class Compiler {
             Map<Pair<String, Integer>, Type> globalVariables = typeInference.getGlobalVariables();
 
             // Compile
-            StipulaCompiler stipulaCompiler = new StipulaCompiler(globalVariables, functionTypes);
+            StipulaCompiler stipulaCompiler = new StipulaCompiler(globalVariables, functionTypes, assetsStorage);
             String bytecode = (String) stipulaCompiler.visit(parseTree);
             System.out.println("compile: Compilation successful");
 
