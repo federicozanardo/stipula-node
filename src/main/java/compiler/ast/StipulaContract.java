@@ -31,95 +31,16 @@ public class StipulaContract {
         index = i;
     }
 
-    public void addPrecondition(Expression cond) {
-        if (prec == null) {
-            prec = new ArrayList<>();
-        }
-        prec.add(cond);
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public void addEvent(Event e) {
-        events = e;
-    }
-
     public Event getEvent() {
         return events;
-    }
-
-    public void addStatement(Statement stm) {
-        if (statements == null) {
-            statements = new ArrayList<>();
-        }
-        statements.add(stm);
     }
 
     public ArrayList<Party> getParty() {
         return disputers;
     }
 
-    public ArrayList<Party> getGlobalParties() {
-        return globalParties;
-    }
-
-    public void setGlobalParties(ArrayList<Party> gD) {
-        globalParties = gD;
-    }
-
-    public ArrayList<Field> getVars() {
-        return vars;
-    }
-
-    public ArrayList<Asset> getAssets() {
-        return assets;
-    }
-
-    public ArrayList<Pair<Expression, ArrayList<Statement>>> getIfThenElse() {
-        return ifThenElse;
-    }
-
-    public void addIfThenElse(ArrayList<Pair<Expression, ArrayList<Statement>>> array) {
-        if (ifThenElse == null) {
-            ifThenElse = new ArrayList<>();
-        }
-        for (Pair<Expression, ArrayList<Statement>> pair : array) {
-            ifThenElse.add(pair);
-        }
-    }
-
     public String getId() {
         return id;
-    }
-
-    public ArrayList<String> getInitState() {
-        return initState;
-    }
-
-    public String getEndState() {
-        return endState;
-    }
-
-    public void addFields(ArrayList<Field> f) {
-        globalVars = f;
-    }
-
-    public void addAssets(ArrayList<Asset> a) {
-        globalAssets = a;
-    }
-
-    public ArrayList<Field> getGlobalVars() {
-        return globalVars;
-    }
-
-    public ArrayList<Asset> getGlobalAssets() {
-        return globalAssets;
-    }
-
-    public ArrayList<Statement> getStatements() {
-        return statements;
     }
 
     public int findVar(String expr, ArrayList<Field> array) {
@@ -150,16 +71,6 @@ public class StipulaContract {
             }
         }
         return indexRet;
-    }
-
-    public void updateTypes(Map<Pair<String, Integer>, Type> typedVars) {
-        for (Field f : vars) {
-            for (Pair<String, Integer> pair : typedVars.keySet()) {
-                if (pair.getFirst().equals(f.getId()) && pair.getSecond() == index) {
-                    f.setType(typedVars.get(pair));
-                }
-            }
-        }
     }
 
     public void setValuesConditions(Entity left, Entity right) {
@@ -788,135 +699,6 @@ public class StipulaContract {
                     }
                 }
             }
-        }
-        return valid;
-    }
-
-    public boolean runContract(TypeInference tc, int index) {
-        boolean valid = true;
-
-        Map<Pair<String, Integer>, Type> typedVars = tc.getTypes();
-        for (Field f : globalVars) {
-            for (Pair<String, Integer> pair : typedVars.keySet()) {
-                if (pair.getFirst().equals(f.getId()) && pair.getSecond() == 0) {
-                    f.setType(typedVars.get(pair));
-                }
-            }
-        }
-
-        if (prec != null) {
-            for (Expression c : prec) {
-                if (c.getLeftComplexExpression() != null && c.getRightComplexExpression() != null) {
-                    boolean validLeft = true;
-                    boolean validRight = true;
-                    Entity leftBigL = c.getLeftComplexExpression().getLeft();
-                    Entity leftBigR = c.getLeftComplexExpression().getRight();
-                    Entity rightBigL = c.getRightComplexExpression().getLeft();
-                    Entity rightBigR = c.getRightComplexExpression().getRight();
-
-                    setValuesConditions(leftBigL, leftBigR);
-                    setValuesConditions(rightBigL, rightBigR);
-
-                    if (!c.isValid(leftBigL, leftBigR, c.getLeftComplexExpression().getOperator())) {
-                        validLeft = false;
-                    }
-
-                    if (!c.isValid(rightBigL, rightBigR, c.getRightComplexExpression().getOperator())) {
-                        validRight = false;
-                    }
-
-                    if (c.getOperator().equals("&&")) {
-                        valid = validLeft && validRight;
-                    } else if (c.getOperator().equals("||")) {
-                        valid = validLeft || validRight;
-                    }
-                } else {
-                    Entity left = c.getLeft();
-                    Entity right = c.getRight();
-
-                    setValuesConditions(left, right);
-
-                    if (!c.isValid(left, right, c.getOperator())) {
-                        valid = false;
-                    }
-                }
-            }
-        }
-
-        if (statements != null && valid) {
-            valid = runStatements(valid, tc, statements);
-        }
-
-        if (ifThenElse != null && valid) {
-            boolean flag = false;
-
-            for (Pair<Expression, ArrayList<Statement>> pair : ifThenElse) {
-                if (pair.getFirst() != null) {
-                    if (pair.getFirst().getLeftComplexExpression() != null && pair.getFirst().getRightComplexExpression() != null) {
-                        boolean validLeft = true;
-                        boolean validRight = true;
-                        Entity leftBigL = pair.getFirst().getLeftComplexExpression().getLeft();
-                        Entity leftBigR = pair.getFirst().getLeftComplexExpression().getRight();
-                        Entity rightBigL = pair.getFirst().getRightComplexExpression().getLeft();
-                        Entity rightBigR = pair.getFirst().getRightComplexExpression().getRight();
-
-                        setValuesConditions(leftBigL, leftBigR);
-                        setValuesConditions(rightBigL, rightBigR);
-
-                        if (!pair.getFirst().isValid(leftBigL, leftBigR, pair.getFirst().getLeftComplexExpression().getOperator())) {
-                            validLeft = false;
-                        }
-
-                        if (!pair.getFirst().isValid(rightBigL, rightBigR, pair.getFirst().getRightComplexExpression().getOperator())) {
-                            validRight = false;
-                        }
-
-                        if (pair.getFirst().getOperator().equals("&&")) {
-                            valid = validLeft && validRight;
-                        } else if (pair.getFirst().getOperator().equals("||")) {
-                            valid = validLeft || validRight;
-                        }
-                    } else if (pair.getFirst().getLeftComplexExpression() != null) {
-                        setValuesConditions(pair.getFirst().getLeftComplexExpression().getLeft(), pair.getFirst().getLeftComplexExpression().getRight());
-                        setValuesConditions(pair.getFirst().getRightComplexExpression().getLeft(), pair.getFirst().getRightComplexExpression().getRight());
-                    } else {
-                        if (!pair.getFirst().getLeft().getId().equals("_")) {
-                            setValuesConditions(pair.getFirst().getLeft(), pair.getFirst().getRight());
-                        }
-                    }
-
-                    if (pair.getFirst().getLeftComplexExpression() != null && pair.getFirst().getRightComplexExpression() != null && valid) {
-                        if (!flag) {
-                            valid = runStatements(valid, tc, pair.getSecond());
-                            flag = true;
-                        }
-                    } else if ((pair.getFirst().getLeftComplexExpression() == null && pair.getFirst().getLeft().getId().equals("_")) || pair.getFirst().isValidExpr(pair.getFirst())) {
-                        if (!flag) {
-
-                            valid = runStatements(valid, tc, pair.getSecond());
-                            flag = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (Field f : globalVars) {
-            for (Pair<String, Integer> pair : typedVars.keySet()) {
-                if (pair.getFirst().equals(f.getId()) && pair.getSecond() == 0) {
-                    if (!(typedVars.get(pair) instanceof GeneralType)) {
-                        f.setType(typedVars.get(pair));
-                    }
-                }
-            }
-        }
-
-        if (!valid) {
-            System.out.print("Preconditions do not hold (");
-            for (Expression c : prec) {
-                c.printExpression();
-            }
-            System.out.println(").");
         }
         return valid;
     }

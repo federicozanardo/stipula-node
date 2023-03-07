@@ -1,9 +1,9 @@
 package compiler.ast;
 
 class Entity {
-    String name;
-    float value = 0;
-    String valueStr = "";
+    public final String name;
+    private float value = 0;
+    private String valueStr = "";
 
     public Entity() {
         name = "";
