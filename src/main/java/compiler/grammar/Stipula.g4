@@ -15,7 +15,7 @@ prog :  STIPULA contract_id = ID CLPAR (assetdecl)? (fielddecl)? INIT init_state
 
 agreement : (AGREEMENT LPAR party (COMMA party)* RPAR LPAR vardec (COMMA vardec)* RPAR CLPAR (assign)+ CRPAR IMPL AT state);
 
-assetdecl :  ASSET idAsset+=ID (',' idAsset+=ID)* ;
+assetdecl :  ASSET idAsset+=ID ':' assetId+=ID (',' idAsset+=ID ':' assetId+=ID)* ;
 
 fielddecl : FIELD idField+=ID (',' idField+=ID)* ;
 
@@ -24,6 +24,7 @@ fun	:  ((AT state)* party (COMMA party)* COLON funId=ID LPAR (vardec ( COMMA var
 assign : (party (COMMA party)* COLON vardec (COMMA vardec)*);
 
 dec : (ASSET | FIELD) ID  ;
+//dec : ASSET ID ':' ID | FIELD ID  ;
 
 type :  INTEGER | DOUBLE | BOOLEAN | STRING ;
 

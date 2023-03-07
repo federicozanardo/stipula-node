@@ -136,15 +136,7 @@ public class TypeChecking extends StipulaBaseVisitor<Object> {
                 contractNames = new ArrayList<>();
             }
 
-            String name = "";
-            /*for (StipulaParser.PartyContext party : f.party()) {
-                name += party.ID().getText();
-            }*/
-
-            // name += "." + f.ID().getText();
-            name = function.ID().getText();
-            System.out.println("visitProg: name => " + name);
-            contractNames.add(name);
+            contractNames.add(function.ID().getText());
         }
         return types;
     }
@@ -152,7 +144,10 @@ public class TypeChecking extends StipulaBaseVisitor<Object> {
     public Map<Pair<String, Integer>, Type> visitAssetdecl(StipulaParser.AssetdeclContext context) {
         Map<Pair<String, Integer>, Type> retAssets = new LinkedHashMap<Pair<String, Integer>, Type>();
         for (int i = 0; i < context.idAsset.size(); i++) {
-            retAssets.put(new Pair<String, Integer>(context.idAsset.get(i).getText(), numberOfScope), new AssetType());
+            retAssets.put(
+                    new Pair<String, Integer>(context.idAsset.get(i).getText(), numberOfScope),
+                    new AssetType(context.assetId.get(i).getText())
+            );
         }
         return retAssets;
     }
