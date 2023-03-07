@@ -1,7 +1,7 @@
 package compiler.ast;
 
 public class Field extends Entity {
-    private String name;
+    private final String name;
     private float value = 0;
     private String valueStr = null;
     private boolean valueBool;
@@ -24,10 +24,6 @@ public class Field extends Entity {
 
     public void setValue(float val) {
         value = val;
-    }
-
-    public void setValueBool(boolean val) {
-        valueBool = val;
     }
 
     public void setType(Type t) {

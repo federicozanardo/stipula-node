@@ -23,40 +23,8 @@ public class Event {
         this.expression = expression;
     }
 
-    public void addContract(StipulaContract c) {
-        stipulaContract = c;
-    }
-
     public StipulaContract getContract() {
         return stipulaContract;
-    }
-
-    public void setTimer(int seconds) {
-        Object lock = new Object();
-
-        timer = new Timer();
-        timer.schedule(new DelayEvent(lock), seconds * 1000);
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException ex) {
-            }
-        }
-    }
-
-    class DelayEvent extends TimerTask {
-        private Object lock;
-
-        public DelayEvent(Object lock) {
-            this.lock = lock;
-        }
-
-        public void run() {
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-            timer.cancel();
-        }
     }
 
     public String getInitState() {

@@ -55,66 +55,6 @@ public class Agreement {
         return s;
     }
 
-    public ArrayList<ArrayList<Pair<Field, String>>> askValues() {
-        Scanner input = new Scanner(System.in);
-        ArrayList<ArrayList<Pair<Field, String>>> values = new ArrayList<>();
-        ArrayList<Pair<Field, String>> str;
-        for (Pair<Party, ArrayList<Field>> pair : vals) {
-            str = new ArrayList<>();
-            System.out.println();
-            System.out.println("# Please, " + pair.getFirst().getId() + " insert your id: ");
-            String read1 = input.nextLine();
-
-            if (read1.equals(pair.getFirst().getUserId())) {
-                System.out.println("# Please, " + pair.getFirst().getId() + " insert the values for the fields: ");
-                for (int i = 0; i < pair.getSecond().size(); i++) {
-                    System.out.println(pair.getSecond().get(i).getId() + ": ");
-                    String read = input.nextLine();
-                    str.add(new Pair(pair.getSecond().get(i), read));
-                }
-                values.add(str);
-            } else {
-                values = null;
-                break;
-            }
-        }
-        for (Party disp : disputers) {
-            boolean flag = false;
-            for (Pair<Party, ArrayList<Field>> pair : vals) {
-                if (pair.getFirst().getId().equals(disp.getId())) {
-                    flag = true;
-                }
-            }
-            if (!flag) {
-                System.out.println("# Please, " + disp.getId() + " insert your id: ");
-                String read1 = input.nextLine();
-                if (!read1.equals(disp.getUserId())) {
-                    values = null;
-                    break;
-                }
-            }
-        }
-
-        return values;
-    }
-
-    public boolean doAgree(ArrayList<ArrayList<Pair<Field, String>>> values) {
-        boolean agree = true;
-        ArrayList<Pair<Field, String>> ref = values.get(0);
-        for (int i = 1; i < values.size() && agree; i++) {
-            for (int j = 0; j < values.get(i).size(); j++) {
-                for (int k = 0; k < ref.size(); k++) {
-                    if (ref.get(k).getFirst().getId().equals(values.get(i).get(j).getFirst().getId())) {
-                        if (!ref.get(k).getSecond().equals(values.get(i).get(j).getSecond())) {
-                            agree = false;
-                        }
-                    }
-                }
-            }
-        }
-        return agree;
-    }
-
     public void printAgreement() {
         for (Party d : disputers) {
             d.printParty();

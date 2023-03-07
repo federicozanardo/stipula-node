@@ -27,10 +27,6 @@ public class Party extends Entity {
         valueAsset.increase(v);
     }
 
-    public void setValueAssetCalc(float v) {
-        valueAsset.setCalcValue(v);
-    }
-
     public void moveAsset(Party d, float val) {
         valueAsset.withdraw(d, val);
     }
