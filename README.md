@@ -11,9 +11,9 @@ What does it include at the moment?
   - [x] Handle triggers
     - [x] Thread management
     - [x] Develop code for virtual machine
-- [ ] Deploy a contract
+- [x] Deploy a contract
   - [x] Handle the request 
-  - [ ] Stipula compiler 
+  - [x] Stipula compiler 
 
 Future improvements:
 - [ ] Consensus layer
@@ -32,6 +32,8 @@ The node is able to:
 - [x] Manage payments ("pat-to-contract" and "pay-to-party")
 - [x] Manage client connections and requests/responses 
 - [x] Add Docker support
+- [x] Compiler contracts
+- [x] Dynamic typing
 
 "Pay-to-party" means when a user wants to pay a contract and "pay-to-party" means when the contract wants to pay an party. 
 
