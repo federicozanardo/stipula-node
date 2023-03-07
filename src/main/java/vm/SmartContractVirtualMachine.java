@@ -23,19 +23,19 @@ public class SmartContractVirtualMachine {
     private boolean isRunning = true;
     private int executionPointer = -1;
     private final int offset;
-    private final Stack<Type> stack = new Stack<Type>(10);
-    private final HashMap<String, Type> scopeSpace = new HashMap<String, Type>(); // FIXME: rename
-    private final HashMap<String, Type> argumentsSpace = new HashMap<String, Type>();
+    private final Stack<Type> stack = new Stack<>(10);
+    private final HashMap<String, Type> scopeSpace = new HashMap<>();
+    private final HashMap<String, Type> argumentsSpace = new HashMap<>();
     private final HashMap<String, TraceChange> globalSpace;
-    private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<String, SingleUseSeal>();
-    private final ArrayList<CreateEventRequest> createEventRequests = new ArrayList<CreateEventRequest>();
+    private final HashMap<String, SingleUseSeal> singleUseSealsToCreate = new HashMap<>();
+    private final ArrayList<CreateEventRequest> createEventRequests = new ArrayList<>();
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
     public SmartContractVirtualMachine(String[] instructions, int offset) {
         this.instructions = instructions;
         this.offset = offset;
-        this.globalSpace = new HashMap<String, TraceChange>();
+        this.globalSpace = new HashMap<>();
         this.trap = new Trap(offset);
     }
 
@@ -1347,9 +1347,14 @@ public class SmartContractVirtualMachine {
             return;
         }
 
+        if (!assetContract.getAssetId().equals(assetToDeposit.getAssetId())) {
+            trap.raiseError(TrapErrorCodes.ASSET_IDS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
+            return;
+        }
+
         // Check that the value of the asset to deposit is not negative
         if (assetToDeposit.getValue().getInteger() < 0) {
-            trap.raiseError(TrapErrorCodes.DECIMALS_DOES_NOT_MATCH, executionPointer, Arrays.toString(instruction));
+            trap.raiseError(TrapErrorCodes.NEGATIVE_VALUE, executionPointer, Arrays.toString(instruction));
             return;
         }
 

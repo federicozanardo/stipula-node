@@ -740,6 +740,8 @@ public class VirtualMachine extends Thread {
         String[] instructions = rawBytecode.split("\n");
 
         System.out.println("loadBytecode: Loading the bytecode...");
+        boolean isPushSet = false;
+
         for (int i = 0; i < instructions.length; i++) {
             String[] instruction = instructions[i].trim().split(" ");
 
@@ -754,14 +756,43 @@ public class VirtualMachine extends Thread {
                     if (argument.getVariableName().equals(instruction[instruction.length - 1].substring(1))) {
                         wasArgumentFound = true;
 
-                        for (int k = 0; k < instruction.length - 1; k++) {
-                            substitution += instruction[k] + " ";
+                        if (argument.getType().equals("asset")) {
+                            if (isPushSet) {
+                                for (int k = 0; k < instruction.length - 1; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
+
+                                String[] argumentValue = ((String) argument.getValue()).split(" ");
+                                String last = argumentValue[argumentValue.length - 1];
+                                String secondLast = argumentValue[argumentValue.length - 2];
+                                substitution += instruction[instruction.length - 1].substring(1) + " " + secondLast + " " + last;
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
+
+                                isPushSet = false;
+                            } else {
+                                for (int k = 0; k < instruction.length - 1; k++) {
+                                    substitution += instruction[k] + " ";
+                                }
+                                substitution += argument.getValue();
+
+                                bytecode += substitution + "\n";
+                                substitution = "";
+
+                                isPushSet = true;
+                            }
+                        } else {
+                            for (int k = 0; k < instruction.length - 1; k++) {
+                                substitution += instruction[k] + " ";
+                            }
+                            substitution += argument.getValue();
+
+                            bytecode += substitution + "\n";
+                            substitution = "";
+
+                            isPushSet = false;
                         }
-
-                        substitution += argument.getValue();
-
-                        bytecode += substitution + "\n";
-                        substitution = "";
                     } else {
                         j++;
                     }
@@ -771,7 +802,6 @@ public class VirtualMachine extends Thread {
             }
         }
         System.out.println("loadBytecode: Bytecode loaded\n");
-
         return bytecode;
     }
 

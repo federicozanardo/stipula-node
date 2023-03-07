@@ -118,10 +118,17 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         // Instantiate global variables
         for (Pair<String, Integer> globalVariable : globalVariables.keySet()) {
+            System.out.println("visitAgreement: globalVariables.get(globalVariable) => " + globalVariables.get(globalVariable));
+            if (globalVariables.get(globalVariable) instanceof AssetType) {
+                System.out.println("visitAgreement: asset");
+            }
+
             if (globalVariables.get(globalVariable).getTypeName().equals("asset")) {
+                AssetType assetType = (AssetType) globalVariables.get(globalVariable);
+
                 body += "GINST " +
-                        globalVariables.get(globalVariable).getTypeName() + " " +
-                        globalVariable.getFirst() + " 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n";
+                        assetType.getTypeName() + " " +
+                        globalVariable.getFirst() + " 2 " + assetType.getAssetId() + "\n";
             } else if (globalVariables.get(globalVariable).getTypeName().equals("real")) {
                 body += "GINST " + globalVariables.get(globalVariable).getTypeName() + " " + globalVariable.getFirst() + " 2\n";
             } else if (!globalVariables.get(globalVariable).getTypeName().equals("bool") &&
@@ -159,9 +166,9 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
     @Override
     public ArrayList<Pair<Party, ArrayList<Field>>> visitAssign(StipulaParser.AssignContext context) {
-        ArrayList<Pair<Party, ArrayList<Field>>> toRet = new ArrayList<Pair<Party, ArrayList<Field>>>();
-        Pair<Party, ArrayList<Field>> pair = null;
-        ArrayList<Field> fields = new ArrayList<Field>();
+        ArrayList<Pair<Party, ArrayList<Field>>> toRet = new ArrayList<>();
+        Pair<Party, ArrayList<Field>> pair;
+        ArrayList<Field> fields = new ArrayList<>();
 
         for (StipulaParser.VardecContext d : context.vardec()) {
             Field tmp = new Field(d.getText());
@@ -170,7 +177,7 @@ public class StipulaCompiler extends StipulaBaseVisitor {
 
         for (StipulaParser.PartyContext d : context.party()) {
             Party nd = new Party(d.getText());
-            pair = new Pair<Party, ArrayList<Field>>(nd, fields);
+            pair = new Pair<>(nd, fields);
             toRet.add(pair);
         }
 
@@ -274,7 +281,7 @@ public class StipulaCompiler extends StipulaBaseVisitor {
                 bytecode += "PUSH " + currentFunctionTypes.get(i) + " :" + arguments.get(i) + "\n";
 
                 if (currentFunctionTypes.get(i).equals("asset")) {
-                    bytecode += "AINST " + currentFunctionTypes.get(i) + " " + arguments.get(i) + " 2 1a3e31ad-5032-484c-9cdd-f1ed3bd760ac\n";
+                    bytecode += "AINST " + currentFunctionTypes.get(i) + " :" + arguments.get(i) + "\n";
                 } else if (currentFunctionTypes.get(i).equals("real")) {
                     bytecode += "AINST " + currentFunctionTypes.get(i) + " " + arguments.get(i) + " 2\n";
                 } else {

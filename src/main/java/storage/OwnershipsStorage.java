@@ -28,7 +28,7 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
     }
 
     public void seed() throws IOException {
-        String assetId = "1a3e31ad-5032-484c-9cdd-f1ed3bd760ac";
+        String assetId = "f1ed3bd760ac";
         String borrowerAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
         String ownershipId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
         RealType amount = new RealType(1200, 2);
