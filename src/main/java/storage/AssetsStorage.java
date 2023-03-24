@@ -24,7 +24,7 @@ public class AssetsStorage extends StorageSerializer<Asset> {
 
     public void seed() throws IOException {
         FungibleAsset bitcoin = new FungibleAsset("Bitcoin", "BTC", 10000, 2);
-        String assetId = "f1ed3bd760ac";
+        String assetId = "stipula_coin_asd345";
         Asset asset = new Asset(assetId, bitcoin);
 
         levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
