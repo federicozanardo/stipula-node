@@ -737,9 +737,9 @@ public class VirtualMachine extends Thread {
         String[] instructions = rawBytecode.split("\n");
 
         System.out.println("loadBytecode: Loading the bytecode...");
-        boolean isPushSet = false;
 
         for (int i = 0; i < instructions.length; i++) {
+            boolean isPushSet = false;
             System.out.println("loadBytecode: instructions[i] => " + instructions[i]);
             String[] instruction = instructions[i].trim().split(" ");
 
