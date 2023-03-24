@@ -1,0 +1,23 @@
+stipula SwapAsset {
+    asset assetA:stipula_assetA_ed8i9wk, assetB:stipula_assetB_pl1n5cc
+    field amountAssetA, amountAssetB
+    init Inactive
+
+    agreement (Alice, Bob)(amountAssetA, amountAssetB) {
+        Alice, Bob: amountAssetA, amountAssetB
+    } ==> @Inactive
+
+    @Inactive Alice : depositAssetA()[y]
+        (y == amountAssetA) {
+            y -o assetA;
+            _
+    } ==> @Swap
+
+    @Swap Bob : depositAssetB()[y]
+        (y == amountAssetB) {
+            y -o assetB
+            assetB -o Alice
+            assetA -o Bob;
+            _
+    } ==> @End
+}
