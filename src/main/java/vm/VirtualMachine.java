@@ -239,6 +239,7 @@ public class VirtualMachine extends Thread {
                         // Load the bytecode
                         String bytecode;
                         bytecode = loadBytecode(rawBytecode, arguments);
+                        System.out.println("VirtualMachine: bytecode => \n" + bytecode);
                         String[] instructions = bytecode.split("\n");
 
                         // Set up the virtual machine
@@ -735,11 +736,11 @@ public class VirtualMachine extends Thread {
         String bytecode = "";
         String substitution = "";
         String[] instructions = rawBytecode.split("\n");
+        boolean isPushSet = false;
 
         System.out.println("loadBytecode: Loading the bytecode...");
-
         for (int i = 0; i < instructions.length; i++) {
-            boolean isPushSet = false;
+
             System.out.println("loadBytecode: instructions[i] => " + instructions[i]);
             String[] instruction = instructions[i].trim().split(" ");
 
@@ -773,13 +774,16 @@ public class VirtualMachine extends Thread {
                                 for (int k = 0; k < instruction.length - 1; k++) {
                                     substitution += instruction[k] + " ";
                                 }
-                                //substitution += instruction[instruction.length - 1].substring(1) + " " + argument.getValue();
                                 substitution += argument.getValue();
 
                                 bytecode += substitution + "\n";
                                 substitution = "";
 
-                                isPushSet = true;
+                                // Check next instruction
+                                String[] nextInstruction = instructions[i + 1].trim().split(" ");
+                                if (nextInstruction[0].equals("INST") || nextInstruction[0].equals("AINST") || nextInstruction[0].equals("GINST")) {
+                                    isPushSet = true;
+                                }
                             }
                         } else if (argument.getType().equals("real")) {
                             if (isPushSet) {
@@ -804,7 +808,11 @@ public class VirtualMachine extends Thread {
                                 bytecode += substitution + "\n";
                                 substitution = "";
 
-                                isPushSet = true;
+                                // Check next instruction
+                                String[] nextInstruction = instructions[i + 1].trim().split(" ");
+                                if (nextInstruction[0].equals("INST") || nextInstruction[0].equals("AINST") || nextInstruction[0].equals("GINST")) {
+                                    isPushSet = true;
+                                }
                             }
                         } else {
                             if (instruction[0].equals("AINST")) {
