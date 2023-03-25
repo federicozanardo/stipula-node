@@ -741,7 +741,6 @@ public class VirtualMachine extends Thread {
         System.out.println("loadBytecode: Loading the bytecode...");
         for (int i = 0; i < instructions.length; i++) {
 
-            System.out.println("loadBytecode: instructions[i] => " + instructions[i]);
             String[] instruction = instructions[i].trim().split(" ");
 
             // Check if the last element of the instruction starts with ':'
