@@ -13,7 +13,7 @@ stipula SwapAsset {
             _
     } ==> @Swap
 
-    @Swap Bob : depositAssetB()[y]
+    @Swap Bob : depositAssetBAndSwap()[y]
         (y == amountAssetB) {
             y -o assetB
             assetB -o Alice
