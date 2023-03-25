@@ -29,6 +29,8 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
 
     public void seed() throws IOException {
         String assetId = "stipula_coin_asd345";
+        String aliceAssetId = "stipula_assetA_ed8i9wk";
+        String bobAssetId = "stipula_assetB_pl1n5cc";
 
         String aliceAddress = "ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=";
         String bobAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
@@ -55,7 +57,7 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
             funds = new ArrayList<>();
         }
 
-        funds.add(new Ownership(aliceOwnershipId, new SingleUseSeal(assetId, amountAliceOwnership, aliceAddress)));
+        funds.add(new Ownership(aliceOwnershipId, new SingleUseSeal(aliceAssetId, amountAliceOwnership, aliceAddress)));
         levelDb.put(bytes(aliceAddress), this.serialize(funds));
 
         funds = null;
@@ -70,7 +72,7 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
             funds = new ArrayList<>();
         }
 
-        funds.add(new Ownership(bobOwnershipId, new SingleUseSeal(assetId, amountBobOwnership, bobAddress)));
+        funds.add(new Ownership(bobOwnershipId, new SingleUseSeal(bobAssetId, amountBobOwnership, bobAddress)));
         funds.add(new Ownership(borrowerOwnershipId, new SingleUseSeal(assetId, amountBorrowerOwnership, bobAddress)));
         levelDb.put(bytes(bobAddress), this.serialize(funds));
         levelDb.close();
