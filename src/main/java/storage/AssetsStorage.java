@@ -23,15 +23,27 @@ public class AssetsStorage extends StorageSerializer<Asset> {
     }
 
     public void seed() throws IOException {
-        FungibleAsset bitcoin = new FungibleAsset("Bitcoin", "BTC", 10000, 2);
         String assetId = "stipula_coin_asd345";
-        Asset asset = new Asset(assetId, bitcoin);
+        String aliceAssetId = "stipula_assetA_ed8i9wk";
+        String bobAssetId = "stipula_assetB_pl1n5cc";
+
+        FungibleAsset stipulaCoinConfig = new FungibleAsset("StipulaCoin", "STC", 10000, 2);
+        FungibleAsset assetAConfig = new FungibleAsset("Asset A", "ASA", 10000, 2);
+        FungibleAsset assetBConfig = new FungibleAsset("Asset B", "ASB", 10000, 2);
+
+        Asset stipulaCoin = new Asset(assetId, stipulaCoinConfig);
+        Asset assetA = new Asset(aliceAssetId, assetAConfig);
+        Asset assetB = new Asset(bobAssetId, assetBConfig);
 
         levelDb = factory.open(new File(String.valueOf(Constants.ASSETS_PATH)), new Options());
-        levelDb.put(bytes(assetId), this.serialize(asset));
+        levelDb.put(bytes(assetId), this.serialize(stipulaCoin));
+        levelDb.put(bytes(aliceAssetId), this.serialize(assetA));
+        levelDb.put(bytes(bobAssetId), this.serialize(assetB));
         levelDb.close();
 
         System.out.println("seed: assetId => " + assetId);
+        System.out.println("seed: aliceAssetId => " + aliceAssetId);
+        System.out.println("seed: bobAssetId => " + bobAssetId);
     }
 
     /**
