@@ -3,7 +3,6 @@ package compiler.ast;
 import lib.datastructures.Pair;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 public class StipulaContract {
     private final ArrayList<Party> disputers;
