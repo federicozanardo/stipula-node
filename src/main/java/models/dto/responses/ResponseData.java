@@ -3,8 +3,8 @@ package models.dto.responses;
 public class ResponseData extends Response {
     private final Object data;
 
-    public ResponseData(boolean status, Object data) {
-        super(status);
+    public ResponseData(int statusCode, String statusMessage, Object data) {
+        super(statusCode, statusMessage);
         this.data = data;
     }
 

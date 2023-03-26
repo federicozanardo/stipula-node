@@ -7,6 +7,7 @@ import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.ownership.GetOwnershipsByAddress;
 import models.dto.responses.Response;
+import models.dto.responses.VirtualMachineResponse;
 import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractsStorage;
@@ -23,7 +24,7 @@ public class MessageServer extends Thread {
     private final RequestQueue requestQueue;
     private final MessageDeserializer messageDeserializer;
     private final VirtualMachine virtualMachine;
-    private final SharedMemory<Response> sharedMemory;
+    private final SharedMemory<VirtualMachineResponse> sharedMemory;
     private final ContractsStorage contractsStorage;
     private final OwnershipsStorage ownershipsStorage;
     private final AssetsStorage assetsStorage;
@@ -32,7 +33,7 @@ public class MessageServer extends Thread {
             int port,
             RequestQueue requestQueue,
             VirtualMachine virtualMachine,
-            SharedMemory<Response> sharedMemory,
+            SharedMemory<VirtualMachineResponse> sharedMemory,
             ContractsStorage contractsStorage,
             OwnershipsStorage ownershipsStorage,
             AssetsStorage assetsStorage

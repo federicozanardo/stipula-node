@@ -1,20 +1,27 @@
 package models.dto.responses;
 
 public class Response {
-    private final boolean success;
+    private final int statusCode;
+    private final String statusMessage;
 
-    public Response(boolean success) {
-        this.success = success;
+    public Response(int statusCode, String statusMessage) {
+        this.statusCode = statusCode;
+        this.statusMessage = statusMessage;
     }
 
-    public boolean isSuccess() {
-        return success;
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
     }
 
     @Override
     public String toString() {
         return "Response{" +
-                "success=" + success +
+                "statusCode=" + statusCode +
+                ", statusMessage='" + statusMessage + '\'' +
                 '}';
     }
 }

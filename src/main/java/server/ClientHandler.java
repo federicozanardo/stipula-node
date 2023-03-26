@@ -15,9 +15,8 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.ownership.GetOwnershipsByAddress;
-import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
-import models.dto.responses.SuccessDataResponse;
+import models.dto.responses.VirtualMachineResponse;
 import models.party.Party;
 import shared.SharedMemory;
 import storage.AssetsStorage;
@@ -40,7 +39,7 @@ public class ClientHandler extends Thread {
     private final Socket socket;
     private final RequestQueue requestQueue;
     private final VirtualMachine virtualMachine;
-    private final SharedMemory<Response> sharedMemory;
+    private final SharedMemory<VirtualMachineResponse> sharedMemory;
     private final ContractsStorage contractsStorage;
     private final OwnershipsStorage ownershipsStorage;
     private final AssetsStorage assetsStorage;
@@ -51,7 +50,7 @@ public class ClientHandler extends Thread {
             Socket socket,
             RequestQueue requestQueue,
             VirtualMachine virtualMachine,
-            SharedMemory<Response> sharedMemory,
+            SharedMemory<VirtualMachineResponse> sharedMemory,
             ContractsStorage contractsStorage,
             OwnershipsStorage ownershipsStorage,
             AssetsStorage assetsStorage,
@@ -87,24 +86,13 @@ public class ClientHandler extends Thread {
             signedMessage = clientConnection.getInputMessage();
 
             if (signedMessage == null) {
-                // TODO: Send a response to notify that the thread received an wrong request
-                clientConnection.sendResponse(
-                        new ErrorResponse(
-                                123,
-                                "Error while getting the message"
-                        )
-                );
+                clientConnection.sendErrorResponse(300);
                 return;
             }
 
-            // TODO: Check message signatures
+            // Check message signatures
             if (signedMessage.getSignatures().size() == 0) {
-                clientConnection.sendResponse(
-                        new ErrorResponse(
-                                123,
-                                "There are no signatures in this message"
-                        )
-                );
+                clientConnection.sendErrorResponse(301);
                 return;
             }
 
@@ -114,21 +102,11 @@ public class ClientHandler extends Thread {
                 AgreementCall agreementCallMessage = (AgreementCall) message;
 
                 if (signedMessage.getSignatures().size() < 2) {
-                    clientConnection.sendResponse(
-                            new ErrorResponse(
-                                    123,
-                                    "Too few signatures in this message"
-                            )
-                    );
+                    clientConnection.sendErrorResponse(302);
                     return;
                 } else {
                     if (agreementCallMessage.getParties().size() != signedMessage.getSignatures().size()) {
-                        clientConnection.sendResponse(
-                                new ErrorResponse(
-                                        123,
-                                        "The number of signatures does not match with the number of parties"
-                                )
-                        );
+                        clientConnection.sendErrorResponse(303);
                         return;
                     } else {
                         for (Map.Entry<String, String> entrySignature : signedMessage.getSignatures().entrySet()) {
@@ -149,24 +127,14 @@ public class ClientHandler extends Thread {
                                     boolean result = Crypto.verify(message.toString(), signature, publicKey);
 
                                     if (!result) {
-                                        clientConnection.sendResponse(
-                                                new ErrorResponse(
-                                                        123,
-                                                        "Wrong signature for this message"
-                                                )
-                                        );
+                                        clientConnection.sendErrorResponse(304);
                                         return;
                                     }
                                 }
                             }
 
                             if (!found) {
-                                clientConnection.sendResponse(
-                                        new ErrorResponse(
-                                                123,
-                                                "Impossible to find the public key in the set of parties"
-                                        )
-                                );
+                                clientConnection.sendErrorResponse(305);
                                 return;
                             }
                         }
@@ -174,12 +142,7 @@ public class ClientHandler extends Thread {
                 }
             } else {
                 if (signedMessage.getSignatures().size() > 1) {
-                    clientConnection.sendResponse(
-                            new ErrorResponse(
-                                    123,
-                                    "Too many signatures in this message"
-                            )
-                    );
+                    clientConnection.sendErrorResponse(306);
                     return;
                 } else {
                     // Check signature
@@ -195,12 +158,7 @@ public class ClientHandler extends Thread {
                         boolean result = Crypto.verify(message.toString(), signature, publicKey);
 
                         if (!result) {
-                            clientConnection.sendResponse(
-                                    new ErrorResponse(
-                                            123,
-                                            "Wrong signature for this message"
-                                    )
-                            );
+                            clientConnection.sendErrorResponse(307);
                             return;
                         }
                     }
@@ -213,27 +171,21 @@ public class ClientHandler extends Thread {
                 String contractId = compiler.compile();
 
                 // Send the response
-                Response response = new SuccessDataResponse(contractId);
-                clientConnection.sendResponse(response);
+                clientConnection.sendSuccessDataResponse(200, contractId);
             } else if (message instanceof GetOwnershipsByAddress) {
                 // Get all the ownerships associated to the address
                 GetOwnershipsByAddress getOwnershipsByAddress = (GetOwnershipsByAddress) message;
                 String address = getOwnershipsByAddress.getAddress();
-                Response response;
 
                 try {
                     ArrayList<Ownership> ownerships = ownershipsStorage.getFunds(address);
 
-                    // Prepare the response
-                    response = new SuccessDataResponse(ownerships.toString());
-
+                    // Send the response
+                    clientConnection.sendSuccessDataResponse(200, ownerships.toString());
                 } catch (OwnershipsNotFoundException exception) {
-                    // Prepare the response
-                    response = new ErrorResponse(123, "There are no funds associated to the address = " + address);
+                    // Send the response
+                    clientConnection.sendErrorDataResponse(308, "There are no funds associated to the address = " + address);
                 }
-
-                // Send the response
-                clientConnection.sendResponse(response);
             } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                 try {
                     // Send a request to the queue manager
@@ -250,13 +202,25 @@ public class ClientHandler extends Thread {
                     }
 
                     // Send the response
-                    Response response = sharedMemory.get(Thread.currentThread().getName());
-                    clientConnection.sendResponse(response);
+                    VirtualMachineResponse response = sharedMemory.get(Thread.currentThread().getName());
+                    if (response.getStatusCode() >= 300) {
+                        if (response.getData() != null) {
+                            clientConnection.sendErrorResponse(response.getStatusCode());
+                        } else {
+                            clientConnection.sendErrorDataResponse(response.getStatusCode(), response.getData());
+                        }
+                    } else {
+                        if (response.getData() != null) {
+                            clientConnection.sendSuccessResponse(response.getStatusCode());
+                        } else {
+                            clientConnection.sendSuccessDataResponse(response.getStatusCode(), response.getData());
+                        }
+                    }
                 } catch (MessageNotSupportedException | QueueOverflowException exception) {
-                    clientConnection.sendResponse(new ErrorResponse(123, "Error while enqueuing the request"));
+                    clientConnection.sendErrorResponse(309);
                 }
             } else {
-                clientConnection.sendResponse(new ErrorResponse(123, "This is not a valid message"));
+                clientConnection.sendErrorResponse(310);
             }
 
             System.out.println("ClientHandler: Closing the connection with the client...");
@@ -265,6 +229,7 @@ public class ClientHandler extends Thread {
         } catch (IOException | InterruptedException | NoSuchAlgorithmException | InvalidKeySpecException |
                  SignatureException | InvalidKeyException exception) {
             System.out.println("ClientHandler: " + exception);
+            exception.printStackTrace();
         }
 
         // Deallocate the cell from the shared memory

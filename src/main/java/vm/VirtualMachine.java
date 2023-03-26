@@ -16,9 +16,10 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.event.CreateEventRequest;
 import models.dto.requests.event.EventSchedulingRequest;
-import models.dto.responses.ErrorResponse;
+import models.dto.responses.VirtualMachineResponse;
+import models.dto.responses.error.ErrorResponse;
 import models.dto.responses.Response;
-import models.dto.responses.SuccessDataResponse;
+import models.dto.responses.success.SuccessDataResponse;
 import models.party.Party;
 import shared.SharedMemory;
 import storage.AssetsStorage;
@@ -43,7 +44,7 @@ import java.util.Map;
 
 public class VirtualMachine extends Thread {
     private final RequestQueue queue;
-    private final SharedMemory<Response> sharedMemory;
+    private final SharedMemory<VirtualMachineResponse> sharedMemory;
     private int offset = 0;
     private final EventScheduler eventScheduler;
     private final ContractsStorage contractsStorage;
@@ -53,7 +54,7 @@ public class VirtualMachine extends Thread {
 
     public VirtualMachine(
             RequestQueue queue,
-            SharedMemory<Response> sharedMemory,
+            SharedMemory<VirtualMachineResponse> sharedMemory,
             EventScheduler eventScheduler,
             ContractsStorage contractsStorage,
             ContractInstancesStorage contractInstancesStorage,
@@ -98,7 +99,7 @@ public class VirtualMachine extends Thread {
                     triggerRequest = (EventSchedulingRequest) request.getSecond();
                 } else {
                     System.out.println("VirtualMachine: Request not valid");
-                    sharedMemory.notifyThread(thread, new ErrorResponse(123, "Request not valid"));
+                    sharedMemory.notifyThread(thread, new VirtualMachineResponse(400));
                 }
 
                 if (signedMessage != null) {
@@ -106,7 +107,7 @@ public class VirtualMachine extends Thread {
 
                     if (!(message instanceof AgreementCall) && !(message instanceof FunctionCall)) {
                         System.out.println("VirtualMachine: Message not valid");
-                        sharedMemory.notifyThread(thread, new ErrorResponse(123, "Message not valid"));
+                        sharedMemory.notifyThread(thread, new VirtualMachineResponse(401));
                     } else {
                         Contract contract;
                         ContractInstance contractInstance;
@@ -208,7 +209,7 @@ public class VirtualMachine extends Thread {
                                     System.out.println("VirtualMachine: Current state => " + currentState);
                                     System.out.println("VirtualMachine: Next state => " + nextState);
                                     System.exit(-1);
-                                    sharedMemory.notifyThread(thread, new ErrorResponse(123, "This function cannot be called in the current state"));
+                                    sharedMemory.notifyThread(thread, new VirtualMachineResponse(402));
                                 } else {
                                     System.out.println("VirtualMachine: nextState: " + nextState);
                                 }
@@ -216,7 +217,7 @@ public class VirtualMachine extends Thread {
                                 rawBytecode = loadCommonFunction(contractId, currentState, partyName, functionName, nextState, argumentsTypes);
                                 System.out.println("VirtualMachine: Function\n" + rawBytecode);
                             } else {
-                                sharedMemory.notifyThread(thread, new ErrorResponse(123, "Impossible to find the party in the contract instance"));
+                                sharedMemory.notifyThread(thread, new VirtualMachineResponse(403));
                             }
                         }
 
@@ -308,7 +309,7 @@ public class VirtualMachine extends Thread {
                         HashMap<String, SingleUseSeal> singleUseSealsToSend = vm.getSingleUseSealsToCreate();
                         ownershipsStorage.addFunds(singleUseSealsToSend);
 
-                        sharedMemory.notifyThread(thread, new SuccessDataResponse("ack from VirtualMachine"));
+                        sharedMemory.notifyThread(thread, new VirtualMachineResponse(200));
                     }
                 } else if (triggerRequest != null) {
                     System.out.println("VirtualMachine: Just received a trigger request");
