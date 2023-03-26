@@ -6,6 +6,7 @@ import compiler.Compiler;
 import exceptions.datastructures.queue.QueueOverflowException;
 import exceptions.models.dto.requests.MessageNotSupportedException;
 import exceptions.storage.OwnershipsNotFoundException;
+import lib.crypto.Crypto;
 import models.contract.Ownership;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
@@ -17,6 +18,7 @@ import models.dto.requests.ownership.GetOwnershipsByAddress;
 import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
 import models.dto.responses.SuccessDataResponse;
+import models.party.Party;
 import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractsStorage;
@@ -26,7 +28,13 @@ import vm.VirtualMachine;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
@@ -89,16 +97,115 @@ public class ClientHandler extends Thread {
                 return;
             }
 
-            // TODO: check signatures
+            // TODO: Check message signatures
             if (signedMessage.getSignatures().size() == 0) {
-                // Error
-            }
-
-            if (signedMessage.getSignatures().size() > 1) {
-                // Error
+                clientConnection.sendResponse(
+                        new ErrorResponse(
+                                123,
+                                "There are no signatures in this message"
+                        )
+                );
+                return;
             }
 
             Message message = signedMessage.getMessage();
+
+            if (message instanceof AgreementCall) {
+                AgreementCall agreementCallMessage = (AgreementCall) message;
+
+                if (signedMessage.getSignatures().size() < 2) {
+                    clientConnection.sendResponse(
+                            new ErrorResponse(
+                                    123,
+                                    "Too few signatures in this message"
+                            )
+                    );
+                    return;
+                } else {
+                    if (agreementCallMessage.getParties().size() != signedMessage.getSignatures().size()) {
+                        clientConnection.sendResponse(
+                                new ErrorResponse(
+                                        123,
+                                        "The number of signatures does not match with the number of parties"
+                                )
+                        );
+                        return;
+                    } else {
+                        for (Map.Entry<String, String> entrySignature : signedMessage.getSignatures().entrySet()) {
+                            boolean found = false;
+                            String pubKey = entrySignature.getKey();
+
+                            for (Map.Entry<String, Party> entryParty : agreementCallMessage.getParties().entrySet()) {
+                                if (entryParty.getValue().getPublicKey().equals(pubKey)) {
+                                    found = true;
+                                    // Check signature
+                                    // Get public key
+                                    PublicKey publicKey = Crypto.getPublicKeyFromString(pubKey);
+
+                                    // Get signature
+                                    String signature = signedMessage.getSignatures().get(pubKey);
+
+                                    // Verify the signature
+                                    boolean result = Crypto.verify(message.toString(), signature, publicKey);
+
+                                    if (!result) {
+                                        clientConnection.sendResponse(
+                                                new ErrorResponse(
+                                                        123,
+                                                        "Wrong signature for this message"
+                                                )
+                                        );
+                                        return;
+                                    }
+                                }
+                            }
+
+                            if (!found) {
+                                clientConnection.sendResponse(
+                                        new ErrorResponse(
+                                                123,
+                                                "Impossible to find the public key in the set of parties"
+                                        )
+                                );
+                                return;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (signedMessage.getSignatures().size() > 1) {
+                    clientConnection.sendResponse(
+                            new ErrorResponse(
+                                    123,
+                                    "Too many signatures in this message"
+                            )
+                    );
+                    return;
+                } else {
+                    // Check signature
+                    if (signedMessage.getSignatures().keySet().stream().findFirst().isPresent()) {
+                        // Get public key
+                        String pubKey = signedMessage.getSignatures().keySet().stream().findFirst().get();
+                        PublicKey publicKey = Crypto.getPublicKeyFromString(pubKey);
+
+                        // Get signature
+                        String signature = signedMessage.getSignatures().get(pubKey);
+
+                        // Verify the signature
+                        boolean result = Crypto.verify(message.toString(), signature, publicKey);
+
+                        if (!result) {
+                            clientConnection.sendResponse(
+                                    new ErrorResponse(
+                                            123,
+                                            "Wrong signature for this message"
+                                    )
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
 
             if (message instanceof DeployContract) {
                 // Set up the compiler
@@ -155,7 +262,8 @@ public class ClientHandler extends Thread {
             System.out.println("ClientHandler: Closing the connection with the client...");
             clientConnection.close();
             System.out.println("ClientHandler: Client connection closed");
-        } catch (IOException | InterruptedException exception) {
+        } catch (IOException | InterruptedException | NoSuchAlgorithmException | InvalidKeySpecException |
+                 SignatureException | InvalidKeyException exception) {
             System.out.println("ClientHandler: " + exception);
         }
 
