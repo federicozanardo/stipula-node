@@ -4,7 +4,6 @@ import lib.datastructures.Pair;
 
 import java.util.ArrayList;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class Event {
     private final int SECS = 60;

@@ -3,7 +3,6 @@ package compiler.ast;
 import lib.datastructures.Pair;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Agreement {
     public static final int LEN = 5;

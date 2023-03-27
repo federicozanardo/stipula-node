@@ -1,5 +1,6 @@
 import constants.Constants;
 import models.dto.responses.Response;
+import models.dto.responses.VirtualMachineResponse;
 import server.MessageServer;
 import shared.SharedMemory;
 import storage.AssetsStorage;
@@ -19,7 +20,7 @@ class Main {
         RequestQueue requestQueue = new RequestQueue();
 
         // Set up a shared memory for client handlers and virtual machine
-        SharedMemory<Response> sharedMemory = new SharedMemory<>();
+        SharedMemory<VirtualMachineResponse> sharedMemory = new SharedMemory<>();
 
         // Set up the storage
         ContractsStorage contractsStorage = new ContractsStorage();

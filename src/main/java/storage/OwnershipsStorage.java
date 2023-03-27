@@ -28,19 +28,27 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
     }
 
     public void seed() throws IOException {
-        String assetId = "f1ed3bd760ac";
-        String borrowerAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
-        String ownershipId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
-        RealType amount = new RealType(1200, 2);
+        String assetId = "stipula_coin_asd345";
+        String aliceAssetId = "stipula_assetA_ed8i9wk";
+        String bobAssetId = "stipula_assetB_pl1n5cc";
 
-        SingleUseSeal singleUseSeal = new SingleUseSeal(assetId, amount, borrowerAddress);
-        Ownership ownership = new Ownership(ownershipId, singleUseSeal);
+        String aliceAddress = "ubL35Am7TimL5R4oMwm2OxgAYA3XT3BeeDE56oxqdLc=";
+        String bobAddress = "f3hVW1Amltnqe3KvOT00eT7AU23FAUKdgmCluZB+nss=";
+
+        String aliceOwnershipId = "2b4a4614-3bb4-4554-93fe-c034c3ba5a9c";
+        String bobOwnershipId = "7a19f50e-eae9-461d-bd58-9946ea39ccf0";
+        String borrowerOwnershipId = "1ce080e5-8c81-48d1-b732-006fa1cc4e2e";
+
+        RealType amountAliceOwnership = new RealType(1400, 2);
+        RealType amountBobOwnership = new RealType(1100, 2);
+        RealType amountBorrowerOwnership = new RealType(1200, 2);
 
         levelDb = factory.open(new File(String.valueOf(Constants.OWNERSHIPS_PATH)), new Options());
+
         ArrayList<Ownership> funds = null;
 
         try {
-            funds = this.deserialize(levelDb.get(bytes(borrowerAddress)));
+            funds = this.deserialize(levelDb.get(bytes(aliceAddress)));
         } catch (Exception exception) {
             System.out.println("seed: This address does not have any asset saved in the storage");
         }
@@ -49,11 +57,29 @@ public class OwnershipsStorage extends StorageSerializer<ArrayList<Ownership>> {
             funds = new ArrayList<>();
         }
 
-        funds.add(ownership);
-        levelDb.put(bytes(borrowerAddress), this.serialize(funds));
+        funds.add(new Ownership(aliceOwnershipId, new SingleUseSeal(aliceAssetId, amountAliceOwnership, aliceAddress)));
+        levelDb.put(bytes(aliceAddress), this.serialize(funds));
+
+        funds = null;
+
+        try {
+            funds = this.deserialize(levelDb.get(bytes(bobAddress)));
+        } catch (Exception exception) {
+            System.out.println("seed: This address does not have any asset saved in the storage");
+        }
+
+        if (funds == null) {
+            funds = new ArrayList<>();
+        }
+
+        funds.add(new Ownership(bobOwnershipId, new SingleUseSeal(bobAssetId, amountBobOwnership, bobAddress)));
+        funds.add(new Ownership(borrowerOwnershipId, new SingleUseSeal(assetId, amountBorrowerOwnership, bobAddress)));
+        levelDb.put(bytes(bobAddress), this.serialize(funds));
         levelDb.close();
 
-        System.out.println("seed: ownershipId => " + ownershipId);
+        System.out.println("seed: aliceOwnershipId => " + aliceOwnershipId);
+        System.out.println("seed: bobOwnershipId => " + bobOwnershipId);
+        System.out.println("seed: borrowerOwnershipId => " + borrowerOwnershipId);
     }
 
     /**
