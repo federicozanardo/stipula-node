@@ -46,7 +46,7 @@ docker build -t stipula-node:<version> .
 
 Example:
 ```bash
-docker build -t stipula-node:v0.1.5 .
+docker build -t stipula-node:v0.4.2 .
 ```
 
 Run the image:
@@ -56,7 +56,7 @@ docker run -d stipula-node:<version>
 
 Example
 ```bash
-docker run -d stipula-node:v0.1.5
+docker run -d stipula-node:v0.4.2
 ```
 
 In order to execute properly the node, there is the need to launch it with `docker-compose`:
@@ -64,11 +64,20 @@ In order to execute properly the node, there is the need to launch it with `dock
 docker-compose -f docker-compose.yml up -d
 ```
 
-Inside the `docker-compose.yml` there is the need to specify the version of the image (i.e. `image: stipula-node:v0.2.0`). Furthermore, due to the limitations in the current development, in order to start up the node, there is the need to *seed* the node with ownerships (single-use seals) and assets (create an asset an its supply). In order to do that, there is the need to specify the seeding process with `yes` or `no`:
+Inside the `docker-compose.yml` there is the need to specify the version of the image (i.e. `image: stipula-node:v0.4.2`). Furthermore, due to the limitations in the current development, in order to start up the node, there is the need to *seed* the node with ownerships (single-use seals) and assets (create an asset an its supply). In order to do that, there is the need to specify the seeding process with `yes` or `no`:
 ```
 environment:
   - SEED=no
 ```
+Another way to run a node is to substitute 
+```
+image: stipula-node:v0.4.2
+```
+with
+```
+image: "ghcr.io/federicozanardo/stipula-node:v0.4.2"
+```
+In this way, `docker-compose` downloads the image from GitHub packages section and runs a node.
 
 ## Generate the grammar
 
