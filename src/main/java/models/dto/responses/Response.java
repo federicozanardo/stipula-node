@@ -1,10 +1,13 @@
 package models.dto.responses;
 
 public class Response {
-
-    public Response(int statusCode, String statusMessage) {
+    private final int statusCode;
+    private final String statusMessage;
+    private final String type;
+    public Response(int statusCode, String statusMessage, String type) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
+        this.type = type;
     }
 
     public int getStatusCode() {
@@ -17,5 +20,14 @@ public class Response {
 
     public String getType() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                "statusCode=" + statusCode +
+                ", statusMessage='" + statusMessage + '\'' +
+                ", type='" + type + '\'' +
+                '}';
     }
 }
