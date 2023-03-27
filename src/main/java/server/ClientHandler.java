@@ -6,6 +6,7 @@ import compiler.Compiler;
 import exceptions.datastructures.queue.QueueOverflowException;
 import exceptions.models.dto.requests.MessageNotSupportedException;
 import exceptions.storage.OwnershipsNotFoundException;
+import lib.crypto.Crypto;
 import models.contract.Ownership;
 import models.dto.requests.Message;
 import models.dto.requests.MessageDeserializer;
@@ -14,9 +15,9 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.ownership.GetOwnershipsByAddress;
-import models.dto.responses.ErrorResponse;
 import models.dto.responses.Response;
-import models.dto.responses.SuccessDataResponse;
+import models.dto.responses.VirtualMachineResponse;
+import models.party.Party;
 import shared.SharedMemory;
 import storage.AssetsStorage;
 import storage.ContractsStorage;
@@ -26,13 +27,19 @@ import vm.VirtualMachine;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
     private final RequestQueue requestQueue;
     private final VirtualMachine virtualMachine;
-    private final SharedMemory<Response> sharedMemory;
+    private final SharedMemory<VirtualMachineResponse> sharedMemory;
     private final ContractsStorage contractsStorage;
     private final OwnershipsStorage ownershipsStorage;
     private final AssetsStorage assetsStorage;
@@ -43,7 +50,7 @@ public class ClientHandler extends Thread {
             Socket socket,
             RequestQueue requestQueue,
             VirtualMachine virtualMachine,
-            SharedMemory<Response> sharedMemory,
+            SharedMemory<VirtualMachineResponse> sharedMemory,
             ContractsStorage contractsStorage,
             OwnershipsStorage ownershipsStorage,
             AssetsStorage assetsStorage,
@@ -79,26 +86,84 @@ public class ClientHandler extends Thread {
             signedMessage = clientConnection.getInputMessage();
 
             if (signedMessage == null) {
-                // TODO: Send a response to notify that the thread received an wrong request
-                clientConnection.sendResponse(
-                        new ErrorResponse(
-                                123,
-                                "Error while getting the message"
-                        )
-                );
+                clientConnection.sendErrorResponse(300);
                 return;
             }
 
-            // TODO: check signatures
+            // Check message signatures
             if (signedMessage.getSignatures().size() == 0) {
-                // Error
-            }
-
-            if (signedMessage.getSignatures().size() > 1) {
-                // Error
+                clientConnection.sendErrorResponse(301);
+                return;
             }
 
             Message message = signedMessage.getMessage();
+
+            if (message instanceof AgreementCall) {
+                AgreementCall agreementCallMessage = (AgreementCall) message;
+
+                if (signedMessage.getSignatures().size() < 2) {
+                    clientConnection.sendErrorResponse(302);
+                    return;
+                } else {
+                    if (agreementCallMessage.getParties().size() != signedMessage.getSignatures().size()) {
+                        clientConnection.sendErrorResponse(303);
+                        return;
+                    } else {
+                        for (Map.Entry<String, String> entrySignature : signedMessage.getSignatures().entrySet()) {
+                            boolean found = false;
+                            String pubKey = entrySignature.getKey();
+
+                            for (Map.Entry<String, Party> entryParty : agreementCallMessage.getParties().entrySet()) {
+                                if (entryParty.getValue().getPublicKey().equals(pubKey)) {
+                                    found = true;
+                                    // Check signature
+                                    // Get public key
+                                    PublicKey publicKey = Crypto.getPublicKeyFromString(pubKey);
+
+                                    // Get signature
+                                    String signature = signedMessage.getSignatures().get(pubKey);
+
+                                    // Verify the signature
+                                    boolean result = Crypto.verify(message.toString(), signature, publicKey);
+
+                                    if (!result) {
+                                        clientConnection.sendErrorResponse(304);
+                                        return;
+                                    }
+                                }
+                            }
+
+                            if (!found) {
+                                clientConnection.sendErrorResponse(305);
+                                return;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (signedMessage.getSignatures().size() > 1) {
+                    clientConnection.sendErrorResponse(306);
+                    return;
+                } else {
+                    // Check signature
+                    if (signedMessage.getSignatures().keySet().stream().findFirst().isPresent()) {
+                        // Get public key
+                        String pubKey = signedMessage.getSignatures().keySet().stream().findFirst().get();
+                        PublicKey publicKey = Crypto.getPublicKeyFromString(pubKey);
+
+                        // Get signature
+                        String signature = signedMessage.getSignatures().get(pubKey);
+
+                        // Verify the signature
+                        boolean result = Crypto.verify(message.toString(), signature, publicKey);
+
+                        if (!result) {
+                            clientConnection.sendErrorResponse(307);
+                            return;
+                        }
+                    }
+                }
+            }
 
             if (message instanceof DeployContract) {
                 // Set up the compiler
@@ -106,27 +171,21 @@ public class ClientHandler extends Thread {
                 String contractId = compiler.compile();
 
                 // Send the response
-                Response response = new SuccessDataResponse(contractId);
-                clientConnection.sendResponse(response);
+                clientConnection.sendSuccessDataResponse(200, contractId);
             } else if (message instanceof GetOwnershipsByAddress) {
                 // Get all the ownerships associated to the address
                 GetOwnershipsByAddress getOwnershipsByAddress = (GetOwnershipsByAddress) message;
                 String address = getOwnershipsByAddress.getAddress();
-                Response response;
 
                 try {
                     ArrayList<Ownership> ownerships = ownershipsStorage.getFunds(address);
 
-                    // Prepare the response
-                    response = new SuccessDataResponse(ownerships.toString());
-
+                    // Send the response
+                    clientConnection.sendSuccessDataResponse(200, ownerships.toString());
                 } catch (OwnershipsNotFoundException exception) {
-                    // Prepare the response
-                    response = new ErrorResponse(123, "There are no funds associated to the address = " + address);
+                    // Send the response
+                    clientConnection.sendErrorDataResponse(308, "There are no funds associated to the address = " + address);
                 }
-
-                // Send the response
-                clientConnection.sendResponse(response);
             } else if (message instanceof AgreementCall || message instanceof FunctionCall) {
                 try {
                     // Send a request to the queue manager
@@ -143,20 +202,34 @@ public class ClientHandler extends Thread {
                     }
 
                     // Send the response
-                    Response response = sharedMemory.get(Thread.currentThread().getName());
-                    clientConnection.sendResponse(response);
+                    VirtualMachineResponse response = sharedMemory.get(Thread.currentThread().getName());
+                    if (response.getStatusCode() >= 300) {
+                        if (response.getData() != null) {
+                            clientConnection.sendErrorResponse(response.getStatusCode());
+                        } else {
+                            clientConnection.sendErrorDataResponse(response.getStatusCode(), response.getData());
+                        }
+                    } else {
+                        if (response.getData() != null) {
+                            clientConnection.sendSuccessResponse(response.getStatusCode());
+                        } else {
+                            clientConnection.sendSuccessDataResponse(response.getStatusCode(), response.getData());
+                        }
+                    }
                 } catch (MessageNotSupportedException | QueueOverflowException exception) {
-                    clientConnection.sendResponse(new ErrorResponse(123, "Error while enqueuing the request"));
+                    clientConnection.sendErrorResponse(309);
                 }
             } else {
-                clientConnection.sendResponse(new ErrorResponse(123, "This is not a valid message"));
+                clientConnection.sendErrorResponse(310);
             }
 
             System.out.println("ClientHandler: Closing the connection with the client...");
             clientConnection.close();
             System.out.println("ClientHandler: Client connection closed");
-        } catch (IOException | InterruptedException exception) {
+        } catch (IOException | InterruptedException | NoSuchAlgorithmException | InvalidKeySpecException |
+                 SignatureException | InvalidKeyException exception) {
             System.out.println("ClientHandler: " + exception);
+            exception.printStackTrace();
         }
 
         // Deallocate the cell from the shared memory

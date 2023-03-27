@@ -2,9 +2,11 @@ package server;
 
 import com.google.gson.Gson;
 import models.dto.requests.SignedMessage;
-import models.dto.responses.ErrorResponse;
-import models.dto.responses.Response;
-import models.dto.responses.SuccessDataResponse;
+import models.dto.responses.*;
+import models.dto.responses.error.ErrorDataResponse;
+import models.dto.responses.error.ErrorResponse;
+import models.dto.responses.success.SuccessDataResponse;
+import models.dto.responses.success.SuccessResponse;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -60,9 +62,56 @@ public class ClientConnection {
     }
 
     /**
+     *
+     */
+    public void sendSuccessResponse() {
+        SuccessResponse successResponse = new SuccessResponse();
+        this.sendResponse(successResponse);
+    }
+
+    /**
+     *
+     * @param statusCode
+     */
+    public void sendSuccessResponse(int statusCode) {
+        SuccessResponse successResponse = new SuccessResponse(statusCode);
+        this.sendResponse(successResponse);
+    }
+
+    /**
+     *
+     * @param statusCode
+     * @param data
+     */
+    public void sendSuccessDataResponse(int statusCode, Object data) {
+        SuccessDataResponse successDataResponse = new SuccessDataResponse(statusCode, data);
+        this.sendResponse(successDataResponse);
+    }
+
+    /**
+     *
+     * @param statusCode
+     */
+    public void sendErrorResponse(int statusCode) {
+        ErrorResponse errorResponse = new ErrorResponse(statusCode);
+        this.sendResponse(errorResponse);
+    }
+
+    /**
+     *
+     * @param statusCode
+     * @param data
+     */
+    public void sendErrorDataResponse(int statusCode, Object data) {
+        String errorMessage = ResponseCodes.getMessage(statusCode);
+        ErrorDataResponse errorDataResponse = new ErrorDataResponse(statusCode, errorMessage, data);
+        this.sendResponse(errorDataResponse);
+    }
+
+    /**
      * @param response
      */
-    public void sendResponse(Response response) {
+    private void sendResponse(Response response) {
         // Prepare the response
         String json = "";
 

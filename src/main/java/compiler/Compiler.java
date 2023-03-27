@@ -6,7 +6,6 @@ import compiler.ast.TypeChecking;
 import compiler.ast.TypeInference;
 import compiler.lexer.StipulaLexer;
 import compiler.parser.StipulaParser;
-import constants.Constants;
 import lib.datastructures.Pair;
 import lib.datastructures.Triple;
 import models.contract.Contract;
@@ -17,14 +16,13 @@ import storage.AssetsStorage;
 import storage.ContractsStorage;
 import vm.dfa.states.DfaState;
 import vm.dfa.states.FinalStates;
-import vm.dfa.transitions.ContractCallByEvent;
-import vm.dfa.transitions.ContractCallByParty;
 import vm.dfa.transitions.TransitionData;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Map;
 
 public class Compiler {
@@ -71,6 +69,7 @@ public class Compiler {
             StipulaCompiler stipulaCompiler = new StipulaCompiler(globalVariables, functionTypes, assetsStorage);
             String bytecode = (String) stipulaCompiler.visit(parseTree);
             System.out.println("compile: Compilation successful");
+            System.out.println("compile: Bytecode => \n" + bytecode);
 
             // Set the initial state
             DfaState initialState = stipulaCompiler.getInitialState();
