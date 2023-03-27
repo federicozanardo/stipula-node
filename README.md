@@ -29,13 +29,13 @@ The node is able to:
 - [x] Manage assets
 - [x] Manage storage
 - [x] Schedule and trigger events
-- [x] Manage payments ("pat-to-contract" and "pay-to-party")
+- [x] Manage payments ("pay-to-contract" and "pay-to-party")
 - [x] Manage client connections and requests/responses 
 - [x] Add Docker support
 - [x] Compiler contracts
 - [x] Dynamic typing
 
-"Pay-to-party" means when a user wants to pay a contract and "pay-to-party" means when the contract wants to pay an party. 
+"Pay-to-contract" means when a user wants to pay a contract and "pay-to-party" means when the contract wants to pay a party. 
 
 ## How to run a node?
 
