@@ -2,7 +2,7 @@ version: "3.3"
 services:
   node:
     container_name: "stipula-node"
-    image: stipula-node:v0.3.1
+    image: stipula-node:v0.4.2
     # image: "ghcr.io/federicozanardo/stipula-node:v0.3.1"
     ports:
       - 127.0.0.1:8080:8080
