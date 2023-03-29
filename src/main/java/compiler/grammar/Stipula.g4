@@ -24,7 +24,6 @@ fun	:  ((AT state)* party (COMMA party)* COLON funId=ID LPAR (vardec ( COMMA var
 assign : (party (COMMA party)* COLON vardec (COMMA vardec)*);
 
 dec : (ASSET | FIELD) ID  ;
-//dec : ASSET ID ':' ID | FIELD ID  ;
 
 type :  INTEGER | DOUBLE | BOOLEAN | STRING ;
 
