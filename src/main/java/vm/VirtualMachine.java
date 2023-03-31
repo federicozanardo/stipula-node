@@ -17,9 +17,6 @@ import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.event.CreateEventRequest;
 import models.dto.requests.event.EventSchedulingRequest;
 import models.dto.responses.VirtualMachineResponse;
-import models.dto.responses.error.ErrorResponse;
-import models.dto.responses.Response;
-import models.dto.responses.success.SuccessDataResponse;
 import models.party.Party;
 import shared.SharedMemory;
 import storage.AssetsStorage;
@@ -243,17 +240,17 @@ public class VirtualMachine extends Thread {
                         String[] instructions = bytecode.split("\n");
 
                         // Set up the virtual machine
-                        SmartContractVirtualMachine vm;
+                        LegalContractVirtualMachine vm;
 
                         if (message instanceof AgreementCall) {
-                            vm = new SmartContractVirtualMachine(instructions, offset);
+                            vm = new LegalContractVirtualMachine(instructions, offset);
                         } else {
                             // Load global space
                             for (HashMap.Entry<String, Type> entry : contractInstance.getGlobalSpace().entrySet()) {
                                 globalSpace.put(entry.getKey(), new TraceChange(entry.getValue()));
                             }
 
-                            vm = new SmartContractVirtualMachine(instructions, offset, globalSpace);
+                            vm = new LegalContractVirtualMachine(instructions, offset, globalSpace);
                         }
 
                         // Execute the code
@@ -340,14 +337,14 @@ public class VirtualMachine extends Thread {
                         String[] instructions = bytecode.split("\n");
 
                         // Set up the virtual machine
-                        SmartContractVirtualMachine vm;
+                        LegalContractVirtualMachine vm;
 
                         // Load global space
                         for (HashMap.Entry<String, Type> entry : contractInstance.getGlobalSpace().entrySet()) {
                             globalSpace.put(entry.getKey(), new TraceChange(entry.getValue()));
                         }
 
-                        vm = new SmartContractVirtualMachine(instructions, offset, globalSpace);
+                        vm = new LegalContractVirtualMachine(instructions, offset, globalSpace);
 
                         // Execute the code
                         boolean result = vm.execute();

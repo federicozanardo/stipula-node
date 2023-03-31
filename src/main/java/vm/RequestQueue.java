@@ -16,12 +16,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue {
     private final Queue<Pair<Thread, Object>> functionCallRequests;
-    private final Queue<Pair<Thread, Object>> triggerRequests;
+    private final Queue<Pair<Thread, Object>> obligationRequests;
     private final ReentrantLock mutex;
 
     public RequestQueue() {
         this.functionCallRequests = new Queue<>(100);
-        this.triggerRequests = new Queue<>(100);
+        this.obligationRequests = new Queue<>(100);
         this.mutex = new ReentrantLock();
     }
 
@@ -60,12 +60,12 @@ public class RequestQueue {
     public void enqueue(EventSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();
 
-        if (triggerRequests.isFull()) {
+        if (obligationRequests.isFull()) {
             mutex.unlock();
             throw new QueueOverflowException();
         }
 
-        triggerRequests.enqueue(new Pair<>(null, value));
+        obligationRequests.enqueue(new Pair<>(null, value));
         mutex.unlock();
     }
 
@@ -79,8 +79,8 @@ public class RequestQueue {
         Pair<Thread, Object> request;
         mutex.lock();
 
-        if (!triggerRequests.isEmpty()) {
-            request = triggerRequests.dequeue();
+        if (!obligationRequests.isEmpty()) {
+            request = obligationRequests.dequeue();
             mutex.unlock();
             return request;
         }
@@ -99,7 +99,7 @@ public class RequestQueue {
     public String toString() {
         return "RequestQueue{" +
                 "functionCallRequests=" + functionCallRequests +
-                ", triggerRequests=" + triggerRequests +
+                ", obligationRequests=" + obligationRequests +
                 '}';
     }
 }

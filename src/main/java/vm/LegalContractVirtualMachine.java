@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class SmartContractVirtualMachine {
+public class LegalContractVirtualMachine {
     private final String[] instructions;
     private boolean isRunning = true;
     private int executionPointer = -1;
@@ -32,14 +32,14 @@ public class SmartContractVirtualMachine {
     private final Trap trap;
     // private String stuffToStore; // TODO: data to save in a blockchain transaction
 
-    public SmartContractVirtualMachine(String[] instructions, int offset) {
+    public LegalContractVirtualMachine(String[] instructions, int offset) {
         this.instructions = instructions;
         this.offset = offset;
         this.globalSpace = new HashMap<>();
         this.trap = new Trap(offset);
     }
 
-    public SmartContractVirtualMachine(String[] instructions, int offset, HashMap<String, TraceChange> globalSpace) {
+    public LegalContractVirtualMachine(String[] instructions, int offset, HashMap<String, TraceChange> globalSpace) {
         this.instructions = instructions;
         this.offset = offset;
         this.globalSpace = globalSpace;
