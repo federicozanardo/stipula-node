@@ -165,23 +165,23 @@ public class LegalContractVirtualMachine {
         }
 
         if (!trap.isStackEmpty()) {
-            System.out.println("\nSmartContractVirtualMachine: execute => Errors in the stack");
+            System.out.println("\nLegalContractVirtualMachine: execute => Errors in the stack");
             System.out.println(trap.printStack());
             return false;
         }
 
-        System.out.println("SmartContractVirtualMachine: execute => Final state of the execution below");
+        System.out.println("LegalContractVirtualMachine: execute => Final state of the execution below");
 
         if (stack.isEmpty()) {
-            System.out.println("SmartContractVirtualMachine: execute => The stack is empty");
+            System.out.println("LegalContractVirtualMachine: execute => The stack is empty");
         } else {
-            System.out.println("SmartContractVirtualMachine: execute => Stack => " + stack.toString());
+            System.out.println("LegalContractVirtualMachine: execute => Stack => " + stack.toString());
         }
 
         if (globalSpace.isEmpty()) {
-            System.out.println("\nSmartContractVirtualMachine: execute => The global space is empty");
+            System.out.println("\nLegalContractVirtualMachine: execute => The global space is empty");
         } else {
-            System.out.println("\nSmartContractVirtualMachine: execute => GlobalSpace");
+            System.out.println("\nLegalContractVirtualMachine: execute => GlobalSpace");
             for (HashMap.Entry<String, TraceChange> entry : globalSpace.entrySet()) {
                 TraceChange value = entry.getValue();
                 if (value.getValue().getType().equals("party")) {
@@ -197,18 +197,18 @@ public class LegalContractVirtualMachine {
         }
 
         if (argumentsSpace.isEmpty()) {
-            System.out.println("\nSmartContractVirtualMachine: execute => The argument space is empty");
+            System.out.println("\nLegalContractVirtualMachine: execute => The argument space is empty");
         } else {
-            System.out.println("\nSmartContractVirtualMachine: execute => ArgumentsSpace");
+            System.out.println("\nLegalContractVirtualMachine: execute => ArgumentsSpace");
             for (HashMap.Entry<String, Type> entry : argumentsSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
         }
 
         if (scopeSpace.isEmpty()) {
-            System.out.println("\nSmartContractVirtualMachine: execute => The data space is empty");
+            System.out.println("\nLegalContractVirtualMachine: execute => The data space is empty");
         } else {
-            System.out.println("\nSmartContractVirtualMachine: execute => DataSpace");
+            System.out.println("\nLegalContractVirtualMachine: execute => DataSpace");
             for (HashMap.Entry<String, Type> entry : scopeSpace.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue().getValue());
             }
