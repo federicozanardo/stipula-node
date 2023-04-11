@@ -35,7 +35,7 @@ The node is able to:
 - [x] Compiler contracts
 - [x] Dynamic typing
 
-"Pay-to-contract" means when a user wants to pay a contract and "pay-to-party" means when the contract wants to pay a party. 
+"Pay-to-Contract" means when a user wants to pay a contract and "Pay-to-Party" means when the contract wants to pay a party. 
 
 ## How to run a node?
 
