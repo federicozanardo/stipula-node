@@ -1,7 +1,14 @@
 package models.dto.requests.event;
 
 public class CreateEventRequest {
+    /**
+     * Name of the obligation function to execute at a specific time.
+     */
     private final String obligationFunctionName;
+
+    /**
+     * When execute the obligation function.
+     */
     private final int time;
 
     public CreateEventRequest(String obligationFunctionName, int time) {
