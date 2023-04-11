@@ -16,8 +16,8 @@ What does it include at the moment?
   - [x] Stipula compiler 
 
 Future improvements:
-- [ ] Consensus layer
-- [ ] Commitment layer
+- [ ] Consensus layer (see https://github.com/federicozanardo/stipula-node/milestone/3)
+- [ ] Commitment layer (see https://github.com/federicozanardo/stipula-node/milestone/3)
 
 ## Status of the project
 
@@ -86,3 +86,11 @@ Download the `jar` file from https://github.com/antlr/website-antlr4/blob/gh-pag
 ```bash
 java -jar antlr-4.10-complete.jar -visitor Stipula.g4
 ```
+
+## Example of client
+
+An example of an application interacting with the current Stipula implementation is available at https://github.com/federicozanardo/stipula-client.
+
+## Guide
+
+The functioning of the architecture is explained in the thesis present at the address https://github.com/federicozanardo/stipula-thesis.
