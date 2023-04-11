@@ -2,7 +2,8 @@ package server;
 
 import com.google.gson.Gson;
 import models.dto.requests.SignedMessage;
-import models.dto.responses.*;
+import models.dto.responses.Response;
+import models.dto.responses.ResponseCodes;
 import models.dto.responses.error.ErrorDataResponse;
 import models.dto.responses.error.ErrorResponse;
 import models.dto.responses.success.SuccessDataResponse;
@@ -44,7 +45,9 @@ public class ClientConnection {
     }
 
     /**
-     * @return
+     * Read the message from the socket.
+     *
+     * @return the SignedMessage received from the socket.
      */
     public SignedMessage getInputMessage() {
         String json;
@@ -62,7 +65,7 @@ public class ClientConnection {
     }
 
     /**
-     *
+     * Send a success response without payload and with the default status code.
      */
     public void sendSuccessResponse() {
         SuccessResponse successResponse = new SuccessResponse();
@@ -70,8 +73,9 @@ public class ClientConnection {
     }
 
     /**
+     * Send a success response without payload and with a specific status code.
      *
-     * @param statusCode
+     * @param statusCode: specific code to include in the response.
      */
     public void sendSuccessResponse(int statusCode) {
         SuccessResponse successResponse = new SuccessResponse(statusCode);
@@ -79,9 +83,20 @@ public class ClientConnection {
     }
 
     /**
+     * Send a success response with a custom payload and with default status code.
      *
-     * @param statusCode
-     * @param data
+     * @param data: payload to include in the response.
+     */
+    public void sendSuccessDataResponse(Object data) {
+        SuccessDataResponse successDataResponse = new SuccessDataResponse(data);
+        this.sendResponse(successDataResponse);
+    }
+
+    /**
+     * Send a success response with a custom payload and with a specific status code.
+     *
+     * @param statusCode: specific code to include in the response.
+     * @param data:       payload to include in the response.
      */
     public void sendSuccessDataResponse(int statusCode, Object data) {
         SuccessDataResponse successDataResponse = new SuccessDataResponse(statusCode, data);
@@ -89,8 +104,9 @@ public class ClientConnection {
     }
 
     /**
+     * Send an error response with a specific status code.
      *
-     * @param statusCode
+     * @param statusCode: specific code to include in the response.
      */
     public void sendErrorResponse(int statusCode) {
         ErrorResponse errorResponse = new ErrorResponse(statusCode);
@@ -98,9 +114,10 @@ public class ClientConnection {
     }
 
     /**
+     * Send an error response with a custom payload and with a specific status code.
      *
-     * @param statusCode
-     * @param data
+     * @param statusCode: specific code to include in the response.
+     * @param data:       payload to include in the response.
      */
     public void sendErrorDataResponse(int statusCode, Object data) {
         String errorMessage = ResponseCodes.getMessage(statusCode);
@@ -109,7 +126,9 @@ public class ClientConnection {
     }
 
     /**
-     * @param response
+     * Send a response to the client socket.
+     *
+     * @param response: object to send to the client socket.
      */
     private void sendResponse(Response response) {
         // Prepare the response
@@ -131,7 +150,9 @@ public class ClientConnection {
     }
 
     /**
-     * @throws IOException
+     * Close the socket with the client.
+     *
+     * @throws IOException: throws when an error occurred while trying to close the socket.
      */
     public void close() throws IOException {
         inputClientStream.close();

@@ -28,7 +28,7 @@ public class DeterministicFiniteAutomata implements Serializable {
     }
 
     /**
-     * Check if the given state is the next state of the current state, given a party.
+     * Check if the given state is the next state of the current state, given a party, a function name and a list of argument types.
      *
      * @param party:              the party that made the request.
      * @param functionName:       the name of the function called.
@@ -37,7 +37,7 @@ public class DeterministicFiniteAutomata implements Serializable {
      * @return true, if the given state is the next state of the current state; false, otherwise.
      */
     public boolean isNextState(String party, String functionName, DfaState candidateNextState, ArrayList<String> argumentTypes) {
-        /**
+        /*
          * To verify if candidateNextState is effectively the next state of the current state, there is the need to match:
          * - function name
          * - party that made the function call
@@ -138,7 +138,7 @@ public class DeterministicFiniteAutomata implements Serializable {
     }
 
     /**
-     * Update the state machine.
+     * Update the state machine, given a party, a function name and a list of argument types.
      *
      * @param party:         the party that made the request.
      * @param functionName:  the name of the function called.
@@ -196,7 +196,7 @@ public class DeterministicFiniteAutomata implements Serializable {
     }
 
     /**
-     * Update the state machine.
+     * Update the state machine, given an obligation function name.
      *
      * @param obligationFunctionName: the name of the obligation function called.
      */

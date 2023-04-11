@@ -4,6 +4,7 @@ public class Response {
     private final int statusCode;
     private final String statusMessage;
     private final String type;
+
     public Response(int statusCode, String statusMessage, String type) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;

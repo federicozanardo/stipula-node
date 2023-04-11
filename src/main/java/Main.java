@@ -1,5 +1,4 @@
 import constants.Constants;
-import models.dto.responses.Response;
 import models.dto.responses.VirtualMachineResponse;
 import server.MessageServer;
 import shared.SharedMemory;
@@ -31,7 +30,7 @@ class Main {
         // Seeding the database
         setup(assetsStorage, ownershipsStorage);
 
-        // Set up the Event trigger handler
+        // Set up the Event scheduler
         EventScheduler eventScheduler = new EventScheduler();
 
         // Set up the virtual machine

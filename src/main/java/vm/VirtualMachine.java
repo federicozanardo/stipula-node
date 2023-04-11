@@ -85,9 +85,11 @@ public class VirtualMachine extends Thread {
 
             System.out.println("VirtualMachine: Ready to dequeue a value...");
             try {
+                // Dequeue a request from the request queue
                 request = this.queue.dequeue();
                 System.out.println("VirtualMachine: Request received => " + request);
 
+                // Get the thread to communicate with the client socket
                 thread = request.getFirst();
 
                 if (request.getSecond() instanceof SignedMessage) {
@@ -138,6 +140,7 @@ public class VirtualMachine extends Thread {
                             // Create a new instance of the contract
                             contractInstance = new ContractInstance(contractId, deterministicFiniteAutomata, parties);
 
+                            // Save the new contract instance in the storage
                             try {
                                 contractInstanceId = contractInstancesStorage.saveContractInstance(contractInstance);
                             } catch (IOException e) {
@@ -283,7 +286,7 @@ public class VirtualMachine extends Thread {
                             eventScheduler.addTask(eventTrigger);
                         }
 
-                        // Update the ownerships/single-use seals
+                        // Update the ownerships
                         for (PayToContract ownershipToUpdate : ownershipsToUpdate) {
                             ownershipsStorage.makeOwnershipSpent(
                                     ownershipToUpdate.getAddress(),
@@ -390,14 +393,26 @@ public class VirtualMachine extends Thread {
         }
     }
 
-    // '*' means optional
-    // fn agreement <parties>       <destination_state> <type_args*>
+    /**
+     * This method allows to load the agreement function from a contract.
+     *
+     * @param contractId:       id of the contract from which to load the bytecode.
+     * @param parties:          party names of the agreement function.
+     * @param destinationState: destination state of the agreement function.
+     * @param argumentTypes:    list of argument types for the agreement function.
+     * @return return the bytecode code of the agreement function.
+     * @throws IOException:               throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException: throws when the contract id is not referred to any contract saved in the storage.
+     */
     private String loadAgreementFunction(
             String contractId,
             ArrayList<String> parties,
             DfaState destinationState,
-            ArrayList<String> typeArguments
+            ArrayList<String> argumentTypes
     ) throws IOException, ContractNotFoundException {
+        // '*' means optional
+        // fn agreement <parties>       <destination_state> <type_args*>
+
         if (parties == null) {
             throw new NullPointerException("Impossible to load the agreement function without the parties of the contract");
         }
@@ -413,7 +428,7 @@ public class VirtualMachine extends Thread {
         boolean areTypesToInfer = false;
         ArrayList<Pair<Integer, String>> indexesOfArgumentsToInfer = new ArrayList<>();
 
-        // Load all the bytecode
+        // Load all the bytecode of the contract
         Contract contract = contractsStorage.getContract(contractId);
         String bytecode = contract.getBytecode();
         String[] instructions = bytecode.split("\n");
@@ -429,14 +444,15 @@ public class VirtualMachine extends Thread {
             if (instruction[0].equals("fn") && instruction[1].equals("agreement")) {
                 // Check the parties
                 boolean arePartiesCorrect = true;
-
                 String[] partiesFromFunction = instruction[2].split(",");
+
                 if (partiesFromFunction.length == parties.size()) {
                     for (int j = 0; j < partiesFromFunction.length; j++) {
                         String partyFromFunction = partiesFromFunction[j];
 
                         if (!parties.contains(partyFromFunction)) {
                             arePartiesCorrect = false;
+                            break;
                         }
                     }
                 }
@@ -444,21 +460,21 @@ public class VirtualMachine extends Thread {
                 if (arePartiesCorrect) {
                     // Check the destination state
                     if (instruction[3].equals(destinationState.getName())) {
-                        if (instruction.length == 5 && typeArguments != null) {
+                        if (instruction.length == 5 && argumentTypes != null) {
                             // Check the arguments types
                             boolean areArgumentsTypesCorrect = true;
                             String[] typeArgsFromFunction = instruction[4].split(",");
 
-                            if (typeArgsFromFunction.length == typeArguments.size()) {
+                            if (typeArgsFromFunction.length == argumentTypes.size()) {
                                 // Check the arguments types
                                 for (int j = 0; j < typeArgsFromFunction.length; j++) {
                                     String typeArgFromFunction = typeArgsFromFunction[j];
 
                                     if (typeArgFromFunction.equals("*")) {
                                         areTypesToInfer = true;
-                                        indexesOfArgumentsToInfer.add(new Pair<>(j, typeArguments.get(j)));
+                                        indexesOfArgumentsToInfer.add(new Pair<>(j, argumentTypes.get(j)));
                                     } else {
-                                        if (!typeArgFromFunction.equals(typeArguments.get(j))) {
+                                        if (!typeArgFromFunction.equals(argumentTypes.get(j))) {
                                             areArgumentsTypesCorrect = false;
                                         }
                                     }
@@ -489,8 +505,19 @@ public class VirtualMachine extends Thread {
         return bytecodeFunction;
     }
 
-    // '*' means optional
-    // fn <source_state> <party> <function_name> <destination_state> <type_args*>
+    /**
+     * This method allows to load a common function from a contract.
+     *
+     * @param contractId:       id of the contract from which to load the bytecode.
+     * @param sourceState:      source state of the common function.
+     * @param party:            party name of the common function.
+     * @param functionName:     name of the function to load.
+     * @param destinationState: destination state of the common function.
+     * @param argumentTypes:    list of argument types for the common function.
+     * @return return the bytecode code of the common function.
+     * @throws IOException:               throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException: throws when the contract id is not referred to any contract saved in the storage.
+     */
     private String loadCommonFunction(
             String contractId,
             DfaState sourceState,
@@ -499,6 +526,9 @@ public class VirtualMachine extends Thread {
             DfaState destinationState,
             ArrayList<String> argumentTypes
     ) throws IOException, ContractNotFoundException {
+        // '*' means optional
+        // fn <source_state> <party> <function_name> <destination_state> <type_args*>
+
         String bytecodeFunction = "";
         boolean isFunctionStarted = false;
         boolean isFunctionEnded = false;
@@ -570,6 +600,14 @@ public class VirtualMachine extends Thread {
         return bytecodeFunction;
     }
 
+    /**
+     * Set the type for untyped argument.
+     *
+     * @param bytecode: represents the bytecode of a function.
+     * @param index:    specify which argument is untyped.
+     * @param type:     new type for the untyped argument.
+     * @return return the bytecode with all the arguments typed.
+     */
     private String setTypeForDynamicVariable(String bytecode, int index, String type) {
         boolean isArgumentsDeclarationStarted = false;
         int i = 0;
@@ -613,13 +651,25 @@ public class VirtualMachine extends Thread {
         return newBytecode;
     }
 
-    // obligation <source_state> <obligation_function_name> <destination_state>
+    /**
+     * This method allows to load an obligation function from a contract.
+     *
+     * @param contractId:             id of the contract from which to load the bytecode.
+     * @param sourceState:            source state of the common function.
+     * @param obligationFunctionName: name of the obligation function to load.
+     * @param destinationState:       destination state of the common function.
+     * @return return the bytecode code of the obligation function.
+     * @throws IOException:               throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException: throws when the contract id is not referred to any contract saved in the storage.
+     */
     private String loadObligationFunction(
             String contractId,
             DfaState sourceState,
             String obligationFunctionName,
             DfaState destinationState
     ) throws IOException, ContractNotFoundException {
+        // obligation <source_state> <obligation_function_name> <destination_state>
+
         String bytecodeFunction = "";
         boolean isFunctionStarted = false;
         boolean isFunctionEnded = false;
@@ -655,7 +705,20 @@ public class VirtualMachine extends Thread {
         return bytecodeFunction;
     }
 
-    private ArrayList<FunctionArgument> loadArguments(Message message) throws UnsupportedTypeException, AssetNotFoundException, IOException, OwnershipNotFoundException, OwnershipsNotFoundException {
+    /**
+     * From the message sent by the party, parse the arguments for the function.
+     *
+     * @param message:                      message sent by the party that contains the values for the arguments.
+     * @return                              return the list of argument parsed from the message sent by the party.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws AssetNotFoundException:      throws when the asset id is not referred to any asset saved in the storage.
+     * @throws OwnershipsNotFoundException: throws when there are no funds associated to the given address.
+     * @throws OwnershipNotFoundException:  throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
+     * @throws UnsupportedTypeException:    throws when there is a type not supported by {@link FunctionArgument}.
+     */
+    private ArrayList<FunctionArgument> loadArguments(Message message)
+            throws AssetNotFoundException, IOException, OwnershipNotFoundException,
+            OwnershipsNotFoundException, UnsupportedTypeException {
         ArrayList<FunctionArgument> arguments = new ArrayList<>();
 
         if (message instanceof AgreementCall) {
@@ -729,6 +792,13 @@ public class VirtualMachine extends Thread {
         return arguments;
     }
 
+    /**
+     * Given the bytecode of a function and the arguments, return the bytecode function with argument variables instantiated.
+     *
+     * @param rawBytecode:  bytecode of the function, loaded from the contract.
+     * @param arguments:    list of argument values to instantiate in the bytecode function.
+     * @return              return the bytecode function with argument variables instantiated.
+     */
     private String loadBytecode(String rawBytecode, ArrayList<FunctionArgument> arguments) {
         String bytecode = "";
         String substitution = "";
@@ -841,7 +911,19 @@ public class VirtualMachine extends Thread {
         return bytecode;
     }
 
-    private ArrayList<PayToContract> validateOwnerships(Party party, FunctionCall functionCall) throws Exception {
+    /**
+     * This method allows to validate the ownerships.
+     *
+     * @param party:                        the party that sent the payment.
+     * @param functionCall:                 message sent by the party.
+     * @return                              return the list of payments done by the party to the contract instance.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws AssetNotFoundException:      throws when the asset id is not referred to any asset saved in the storage.
+     * @throws OwnershipsNotFoundException: throws when there are no funds associated to the given address.
+     * @throws OwnershipNotFoundException:  throws when the ownership id is not referred to the given address or to any ownership saved in the storage.
+     */
+    private ArrayList<PayToContract> validateOwnerships(Party party, FunctionCall functionCall)
+            throws AssetNotFoundException, IOException, OwnershipNotFoundException, OwnershipsNotFoundException {
         ArrayList<PayToContract> ownershipsToUpdate = new ArrayList<>();
         ArrayList<FunctionArgument> arguments = functionCall.getArguments();
 
@@ -924,6 +1006,18 @@ public class VirtualMachine extends Thread {
         return ownershipsToUpdate;
     }
 
+    /**
+     * Get the next state from the signature of a common function.
+     *
+     * @param contractId:                   id of the contract from which to get the next state.
+     * @param sourceState:                  source state of the common function.
+     * @param party:                        party name of the common function.
+     * @param functionName:                 name of the function.
+     * @param argumentTypes:                list of argument types for the common function.
+     * @return                              return the next state got from the signature of the common function.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException:   throws when the contract id is not referred to any contract saved in the storage.
+     */
     private DfaState getNextStateFromCommonFunction(
             String contractId,
             DfaState sourceState,
@@ -973,6 +1067,16 @@ public class VirtualMachine extends Thread {
         return null;
     }
 
+    /**
+     * Get the next state from the signature of the obligation function.
+     *
+     * @param contractId:                   id of the contract from which to get the next state.
+     * @param sourceState:                  source state of the obligation function.
+     * @param obligationFunctionName:       name of the obligation function to load.
+     * @return                              return the next state got from the signature of the obligation function.
+     * @throws IOException:                 throws when an error occur while opening or closing the connection with the storage.
+     * @throws ContractNotFoundException:   throws when the contract id is not referred to any contract saved in the storage.
+     */
     private DfaState getNextStateFromObligationFunction(
             String contractId,
             DfaState sourceState,

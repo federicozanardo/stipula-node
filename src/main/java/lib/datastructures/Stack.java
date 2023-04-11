@@ -10,17 +10,17 @@ public class Stack<T> {
     /**
      * Data structure used to represent the stack.
      */
-    ArrayList<T> S;
+    private final ArrayList<T> S;
 
     /**
      * Represents the most recently inserted element.
      */
-    int top = -1;
+    private int top = -1;
 
     /**
      * Maximum dimension of the stack.
      */
-    int size;
+    private final int size;
 
     public Stack(int size) {
         this.size = size;

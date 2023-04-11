@@ -28,10 +28,10 @@ public class RequestQueue {
     /**
      * This method enqueue a request received from a client.
      *
-     * @param thread: the thread that enqueued the request.
-     * @param value:  value to be enqueued.
-     * @throws QueueOverflowException:       throws when the current value exceed the queue space limit.
-     * @throws MessageNotSupportedException: throws if the message is different from {@link AgreementCall} and {@link FunctionCall}.
+     * @param thread:                           the thread that enqueued the request.
+     * @param value:                            value to be enqueued.
+     * @throws QueueOverflowException:          throws when the current value exceed the queue space limit.
+     * @throws MessageNotSupportedException:    throws if the message is different from {@link AgreementCall} and {@link FunctionCall}.
      */
     public void enqueue(Thread thread, SignedMessage value) throws QueueOverflowException, MessageNotSupportedException {
         Message message = value.getMessage();
@@ -54,8 +54,8 @@ public class RequestQueue {
     /**
      * This method enqueue a request received from a {@link EventTrigger}.
      *
-     * @param value: value to be enqueued.
-     * @throws QueueOverflowException: throws when the current value exceed the queue space limit.
+     * @param value:                    value to be enqueued.
+     * @throws QueueOverflowException:  throws when the current value exceed the queue space limit.
      */
     public void enqueue(EventSchedulingRequest value) throws QueueOverflowException {
         mutex.lock();

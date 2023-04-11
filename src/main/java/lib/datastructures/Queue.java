@@ -9,22 +9,22 @@ public class Queue<T> {
     /**
      * Data structure used to represent the queue.
      */
-    ArrayList<T> Q;
+    private final ArrayList<T> Q;
 
     /**
      * Maximum dimension of the queue.
      */
-    int length;
+    private final int length;
 
     /**
      * Pointer to the first element of the queue.
      */
-    int head = 0;
+    private int head = 0;
 
     /**
      * Pointer to the last element of the queue.
      */
-    int tail = 0;
+    private int tail = 0;
 
     public Queue(int length) {
         this.length = length;
@@ -40,7 +40,10 @@ public class Queue<T> {
         if (this.isFull()) {
             throw new QueueOverflowException();
         } else {
+            // Add new element in the queue
             Q.add(tail, value);
+
+            // Update 'tail'
             if (tail == length) {
                 tail = 1;
             } else {
@@ -50,7 +53,7 @@ public class Queue<T> {
     }
 
     /**
-     * Dequque a value from the queue.
+     * Dequeue a value from the queue.
      *
      * @return the value dequeued from the queue.
      */
@@ -58,7 +61,10 @@ public class Queue<T> {
         if (this.isEmpty()) {
             throw new QueueUnderflowException();
         } else {
+            // Get a value from the queue
             T value = Q.get(head);
+
+            // // Update 'head'
             if (head == length) {
                 head = 1;
             } else {

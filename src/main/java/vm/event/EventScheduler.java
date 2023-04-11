@@ -43,6 +43,7 @@ public class EventScheduler {
         int i = 0;
         boolean found = false;
 
+        // Remove the scheduling request from the list
         while (i < tasks.size() && !found) {
             EventTrigger task = tasks.get(i);
             EventSchedulingRequest taskRequest = task.getSchedulingRequest();

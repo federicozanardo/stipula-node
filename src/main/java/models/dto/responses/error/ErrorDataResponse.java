@@ -15,6 +15,7 @@ public class ErrorDataResponse extends ResponseData {
         super(statusCode, ResponseCodes.getMessage(statusCode), data, ErrorDataResponse.class.getSimpleName());
         this.errorMessage = errorMessage;
     }
+
     public String getErrorMessage() {
         return errorMessage;
     }

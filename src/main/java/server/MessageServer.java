@@ -6,7 +6,6 @@ import models.dto.requests.contract.agreement.AgreementCall;
 import models.dto.requests.contract.deploy.DeployContract;
 import models.dto.requests.contract.function.FunctionCall;
 import models.dto.requests.ownership.GetOwnershipsByAddress;
-import models.dto.responses.Response;
 import models.dto.responses.VirtualMachineResponse;
 import shared.SharedMemory;
 import storage.AssetsStorage;
